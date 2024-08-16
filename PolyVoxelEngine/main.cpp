@@ -1,10 +1,4 @@
-#include "Game.h"
-
-#include <Windows.h>
-#include <dxgi.h>
-#pragma comment(lib, "dxgi.lib") // Link with DXGI library
-#undef max
-#undef min
+#include "Menu.h"
 
 int main()
 {
@@ -40,9 +34,9 @@ int main()
 		}
 	}
 
-	// game loop
-	Game game;
-	game.run();
+	// menu
+	Menu menu;
+	menu.run();
 
 	GraphicController::clean();
 	HardwareUsageInfo::destroy();
