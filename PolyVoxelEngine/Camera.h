@@ -8,6 +8,9 @@
 #include "Shader.h"
 #include "Shapes.h"
 
+#undef far
+#undef near
+
 constexpr glm::vec3 GLOBAL_UP(0.0f, 1.0f, 0.0f);
 
 class Camera

@@ -153,6 +153,7 @@
     <ClCompile Include="Block.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Chunk.cpp" />
+    <ClCompile Include="Game.cpp" />
     <ClCompile Include="HardwareUsageInfo.cpp" />
     <ClCompile Include="PhysicEntity.cpp" />
     <ClCompile Include="SSBO.cpp" />
@@ -181,6 +182,7 @@
     <ClInclude Include="Block.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Chunk.h" />
+    <ClInclude Include="Game.h" />
     <ClInclude Include="HardwareUsageInfo.h" />
     <ClInclude Include="PhysicEntity.h" />
     <ClInclude Include="SSBO.h" />

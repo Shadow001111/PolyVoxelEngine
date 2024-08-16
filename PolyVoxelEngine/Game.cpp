@@ -183,10 +183,11 @@ void Game::run()
 	{
 		return;
 	}
-	Player player({ 0.0f, 0.0f, 0.0f }, 80.0f, 0.1f, Settings::MAX_RENDER_DISTANCE);
 
+	Player player({ 0.0f, 0.0f, 0.0f }, 80.0f, 0.1f, Settings::MAX_RENDER_DISTANCE);
 	World world(0);
 	PhysicEntity::world = &world;
+
 	// load data
 	{
 		WorldData worldData = world.loadWorldData();
