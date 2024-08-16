@@ -1112,8 +1112,13 @@ PhysicEntityCollider::PhysicEntityCollider(glm::vec3& position, glm::vec3& size,
 
 bool Face::operator==(const Face& other) const
 {
-	return false;
-	//return ao == other.ao && textureID == other.textureID && lighting == other.lighting;
+#if ENABLE_SMOOTH_LIGHTING
+	return ao == other.ao && textureID == other.textureID && lighting == other.lighting &&
+		smoothLighting[0] == other.smoothLighting[0] && smoothLighting[1] == other.smoothLighting[1] &&
+		smoothLighting[2] == other.smoothLighting[2] && smoothLighting[3] == other.smoothLighting[3];
+#else
+	return ao == other.ao && textureID == other.textureID && lighting == other.lighting;
+#endif
 }
 
 Light::Light() : pos(0, 0, 0), power(0), blockOrSky(false)
