@@ -2,11 +2,11 @@
 
 glm::vec3 Camera::GlobalUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
+
 Camera::Camera(glm::vec3 position, float fov, float near, float far) : position(position), nearPlane(near), farPlane(far)
 {
 	window = GraphicController::window;
 	Fov = glm::radians(fov);
-	updateFrustum();
 }
 
 void Camera::updateVectors()
