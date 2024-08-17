@@ -14,6 +14,10 @@ const ButtonVertex buttonVertexes[4] =
 	{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}
 };
 
+Button::Button()
+{
+}
+
 Button::Button(float x, float y, float width, float height, const std::string& label, std::function<void()> onClick, AligmentX aligmentX, AligmentY aligmentY) :
 	width(width), height(height), label(label), onClick(onClick)
 {
@@ -61,4 +65,23 @@ void Button::drawText() const
 	float centerX = x + width * 0.5f;
 	float centerY = y + height * 0.5f;
 	TextRenderer::renderText(label, centerX, centerY, 0.05f, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Center, AligmentY::Center);
+}
+
+void Button::clean() const
+{
+	vao.clean();
+	vbo.clean();
+}
+
+bool Button::click(float x, float y) const
+{
+	if (x > this->x &&
+		x < this->x + width &&
+		y > this->y &&
+		y < this->y + height)
+	{
+		onClick();
+		return true;
+	}
+	return false;
 }

@@ -1,32 +1,67 @@
 #include "Menu.h"
-#include "Button.h"
+
+void menuKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	Menu* menu = (Menu*)glfwGetWindowUserPointer(window);
+	menu->keyCallback(key, scancode, action, mods);
+}
+
+void menuMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	Menu* menu = (Menu*)glfwGetWindowUserPointer(window);
+	menu->mouseButtonCallback(button, action);
+}
+
+void menuScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	Menu* menu = (Menu*)glfwGetWindowUserPointer(window);
+	menu->scrollCallback(yoffset);
+}
+
+void onClick()
+{
+	
+}
 
 Menu::Menu()
 {}
 
-void onClick()
+Menu::~Menu()
 {
-
+	for (const auto& button : buttons)
+	{
+		button.clean();
+	}
 }
 
 void Menu::run()
 {
-	Button startButton(0.0f, 0.25f, 0.5f, 0.25f, "START", onClick, AligmentX::Center, AligmentY::Center);
-	Button exitButton(0.0f, -0.25f, 0.5f, 0.25f, "EXIT", onClick, AligmentX::Center, AligmentY::Center);
+	GraphicController::setCursorMode(GLFW_CURSOR_NORMAL);
 
+	glfwSetWindowUserPointer(GraphicController::window, (void*)this);
+	glfwSetKeyCallback(GraphicController::window, &menuKeyCallback);
+	glfwSetScrollCallback(GraphicController::window, &menuScrollCallback);
+	glfwSetMouseButtonCallback(GraphicController::window, &menuMouseButtonCallback);
+
+	buttons.emplace_back(0.0f, 0.25f, 0.5f, 0.25f, "START", onClick, AligmentX::Center, AligmentY::Center);
+	buttons.emplace_back(0.0f, -0.25f, 0.5f, 0.25f, "EXIT", onClick, AligmentX::Center, AligmentY::Center);
 
 	while (!GraphicController::shouldWindowClose())
 	{
 		GraphicController::beforeRender();
 		{
 			GraphicController::buttonProgram->bind();
-			startButton.draw();
-			exitButton.draw();
+			for (const Button& button : buttons)
+			{
+				button.draw();
+			}
 
 			TextRenderer::beforeTextRender();
 			{
-				startButton.drawText();
-				exitButton.drawText();
+				for (const Button& button : buttons)
+				{
+					button.drawText();
+				}
 			}
 			TextRenderer::afterTextRender();
 		}
@@ -35,4 +70,33 @@ void Menu::run()
 	}
 	//Game game;
 	//game.run();
+}
+
+void Menu::keyCallback(int key, int scancode, int action, int mods)
+{
+	
+}
+
+void Menu::mouseButtonCallback(int button, int action)
+{
+	if (action != GLFW_PRESS)
+	{
+		double mouseX, mouseY;
+		glfwGetCursorPos(GraphicController::window, &mouseX, &mouseY);
+
+		mouseX = GraphicController::aspectRatio * ((float)mouseX / (float)GraphicController::width * 2.0f - 1.0f);
+		mouseY = -((float)mouseY / (float)GraphicController::height * 2.0f - 1.0f);
+
+		for (const Button& button : buttons)
+		{
+			if (button.click(mouseX, mouseY))
+			{
+				break;
+			}
+		}
+	}
+}
+
+void Menu::scrollCallback(int yOffset)
+{
 }

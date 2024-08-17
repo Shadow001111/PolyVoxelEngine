@@ -14,9 +14,14 @@ class Button
 	VAO vao;
 	VBO vbo;
 public:
+	Button();
 	Button(float x, float y, float width, float height, const std::string& label, std::function<void()> onClick, AligmentX aligmentX, AligmentY aligmentY);
 
 	void draw() const;
 	void drawText() const;
+
+	void clean() const;
+
+	bool click(float x, float y) const;
 };
 
