@@ -150,6 +150,14 @@ Player::Player(glm::vec3 position, float fov, float near, float far) :
 	flyMode = gamemode == Gamemode::Creative;
 }
 
+void Player::clean() const
+{
+	voxelGhostVAO.clean();
+	voxelGhostVBO.clean();
+	uiVAO.clean();
+	uiVBO.clean();
+}
+
 void Player::physicUpdate(float dt, float time)
 {
 	previousRotation = rotation;

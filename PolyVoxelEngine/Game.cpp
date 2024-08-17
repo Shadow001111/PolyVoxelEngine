@@ -1,7 +1,6 @@
 #include "Game.h"
 #include "settings.h"
 #include "Camera.h"
-#include "Player.h"
 #include "World.h"
 #include "TerrainGenerator.h"
 
@@ -184,7 +183,7 @@ void Game::run()
 		return;
 	}
 
-	Player player({ 0.0f, 0.0f, 0.0f }, 80.0f, 0.1f, Settings::MAX_RENDER_DISTANCE);
+	player = new Player({ 0.0f, 0.0f, 0.0f }, 80.0f, 0.1f, Settings::MAX_RENDER_DISTANCE);
 	World world(0);
 	PhysicEntity::world = &world;
 
@@ -192,7 +191,7 @@ void Game::run()
 	{
 		WorldData worldData = world.loadWorldData();
 
-		auto& pos = player.physicEntity.position;
+		auto& pos = player->physicEntity.position;
 		pos.x = worldData.playerPosition.x;
 		pos.z = worldData.playerPosition.z;
 		if (worldData.playerPosition.y == INT_MIN)
@@ -229,13 +228,13 @@ void Game::run()
 
 		while (playerTick.checkLoop())
 		{
-			player.physicUpdate(playerTick.delay, currentTime);
+			player->physicUpdate(playerTick.delay, currentTime);
 		}
-		player.update(playerTick.getRatio());
+		player->update(playerTick.getRatio());
 
 		while (worldTick.checkLoop())
 		{
-			world.update(player.physicEntity.position, glm::length2(player.physicEntity.velocity) > 5.0f);
+			world.update(player->physicEntity.position, glm::length2(player->physicEntity.velocity) > 5.0f);
 		}
 
 		if (guiTick.checkOnce())
@@ -255,10 +254,10 @@ void Game::run()
 
 		GraphicController::beforeRender();
 		{
-			player.BeforeRender();
+			player->BeforeRender();
 
-			world.draw(player.camera);
-			player.draw();
+			world.draw(player->camera);
+			player->draw();
 
 			TextRenderer::beforeTextRender();
 			{
@@ -291,6 +290,8 @@ void Game::run()
 
 	// save data
 	WorldData worldData;
-	worldData.playerPosition = player.physicEntity.position;
+	worldData.playerPosition = player->physicEntity.position;
 	world.saveWorldData(worldData);
+
+	player->clean(); delete player;
 }

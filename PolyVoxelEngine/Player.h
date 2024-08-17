@@ -62,6 +62,7 @@ public:
 	PhysicEntity physicEntity;
 
 	Player(glm::vec3 position, float fov, float near, float far);
+	void clean() const;
 
 	void physicUpdate(float dt, float time);
 	void update(float intelpolation);
