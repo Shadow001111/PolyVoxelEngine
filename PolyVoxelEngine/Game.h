@@ -8,11 +8,8 @@
 #include "TextRenderer.h"
 #include "HardwareUsageInfo.h"
 
-#include "Player.h"
-
 class Game
 {
-	Player* player = nullptr;
 public:
 	Game();
 	void run();
