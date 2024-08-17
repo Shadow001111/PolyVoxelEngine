@@ -7,6 +7,8 @@ VBO* TextRenderer::textVBO = nullptr;
 
 size_t TextRenderer::fontSize = 52;
 
+Shader* TextRenderer::textShader = nullptr;
+
 struct TextVertex
 {
     glm::vec2 pos;
@@ -16,8 +18,10 @@ struct TextVertex
     {}
 };
 
-int TextRenderer::init()
+int TextRenderer::init(Shader* textShader)
 {
+    TextRenderer::textShader = textShader;
+
     FT_Library ft;
     if (FT_Init_FreeType(&ft))
     {
@@ -102,11 +106,11 @@ void TextRenderer::destroy()
     delete textVBO;
 }
 
-void TextRenderer::beforeTextRender(Shader* shader)
+void TextRenderer::beforeTextRender()
 {
     glEnable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
-    shader->bind();
+    textShader->bind();
     textVAO->bind();
     textVBO->bind();
 }
@@ -117,13 +121,10 @@ void TextRenderer::afterTextRender()
     glEnable(GL_DEPTH_TEST);
 }
 
-void TextRenderer::renderText(Shader* shader, std::string text, float x, float y, float scale, glm::vec3 color)
+void TextRenderer::renderText(const std::string& text, float x, float y, float scale, glm::vec3 color)
 {
-    shader->setUniformFloat3("textColor", color.r, color.g, color.b);
+    textShader->setUniformFloat3("textColor", color.r, color.g, color.b);
 
-    float aspectRatio = GraphicController::aspectRatio;
-
-    x = ((((x + 1.0f) * 0.5f) / aspectRatio) * 2.0f) - 1.0f;
     scale *= 2.0f / fontSize;
 
     for (char c : text)
@@ -139,8 +140,8 @@ void TextRenderer::renderText(Shader* shader, std::string text, float x, float y
         TextVertex vertices[4] =
         {
             {posX, posY - h, 0.0f, 1.0f},
-            {posX + w / aspectRatio, posY - h, 1.0f, 1.0f},
-            {posX + w / aspectRatio, posY, 1.0f, 0.0f},
+            {posX + w, posY - h, 1.0f, 1.0f},
+            {posX + w, posY, 1.0f, 0.0f},
             {posX, posY, 0.0f, 0.0f}
         };
 
@@ -149,6 +150,6 @@ void TextRenderer::renderText(Shader* shader, std::string text, float x, float y
 
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
-        x += (ch.advance >> 6) * scale / aspectRatio;
+        x += (ch.advance >> 6) * scale;
     }
 }

@@ -25,6 +25,7 @@ public:
 	static Shader* textProgram;
 	static Shader* voxelGhostProgram;
 	static Shader* hotbarProgram;
+	static Shader* buttonProgram;
 
 	static int init(int width, int height, bool vsync, int openglVersion);
 

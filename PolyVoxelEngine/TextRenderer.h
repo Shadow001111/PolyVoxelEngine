@@ -23,14 +23,16 @@ class TextRenderer
 	static std::unordered_map<char, Character> characters;
 	static VAO* textVAO;
 	static VBO* textVBO;
-
 	static size_t fontSize;
+
+	static Shader* textShader;
 public:
-	static int init();
+
+	static int init(Shader* textShader);
 	static void destroy();
 
-	static void beforeTextRender(Shader* shader);
+	static void beforeTextRender();
 	static void afterTextRender();
-	static void renderText(Shader* shader, std::string text, float x, float y, float scale, glm::vec3 color);
+	static void renderText(const std::string& text, float x, float y, float scale, glm::vec3 color);
 };
 

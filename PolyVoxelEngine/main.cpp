@@ -25,7 +25,7 @@ int main()
 			return result;
 		}
 
-		result = TextRenderer::init();
+		result = TextRenderer::init(GraphicController::textProgram);
 		if (result != 0)
 		{
 			HardwareUsageInfo::destroy();

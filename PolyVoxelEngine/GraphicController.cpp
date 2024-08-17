@@ -12,6 +12,7 @@ Shader* GraphicController::chunkProgram = nullptr;
 Shader* GraphicController::textProgram = nullptr;
 Shader* GraphicController::voxelGhostProgram = nullptr;
 Shader* GraphicController::hotbarProgram = nullptr;
+Shader* GraphicController::buttonProgram = nullptr;
 
 void GraphicController::centerWindow()
 {
@@ -91,10 +92,16 @@ int GraphicController::init(int width, int height, bool vsync, int openglVersion
 	framebufferProgram->setUniformInt("screenTexture", 0);
 
 	textProgram = new Shader("text");
+	textProgram->bind();
+	textProgram->setUniformFloat("aspectRatio", aspectRatio);
 
 	voxelGhostProgram = new Shader("voxelGhost");
 
 	hotbarProgram = new Shader("hotbar");
+
+	buttonProgram = new Shader("button");
+	buttonProgram->bind();
+	buttonProgram->setUniformFloat("aspectRatio", aspectRatio);
 	
 	// fbo
 	fbo = new FBO(width, height);
@@ -144,6 +151,7 @@ void GraphicController::clean()
 	textProgram->clean(); delete textProgram;
 	voxelGhostProgram->clean(); delete voxelGhostProgram;
 	hotbarProgram->clean(); delete hotbarProgram;
+	buttonProgram->clean(); delete buttonProgram;
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

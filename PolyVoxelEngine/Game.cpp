@@ -260,7 +260,7 @@ void Game::run()
 			world.draw(player.camera);
 			player.draw();
 
-			TextRenderer::beforeTextRender(GraphicController::textProgram);
+			TextRenderer::beforeTextRender();
 			{
 				std::string FPS = "FPS: " + std::to_string(guiData.fps);
 				std::string CPU = "CPU: " + std::to_string(guiData.cpu);
@@ -274,11 +274,11 @@ void Game::run()
 				float scale = 0.05f;
 				float offsetYPerText = scale * 2.0f;
 
-				TextRenderer::renderText(GraphicController::textProgram, FPS, -1.0f + offsetX, 1.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
-				TextRenderer::renderText(GraphicController::textProgram, CPU, -1.0f + offsetX, 1.0f - offsetYPerText - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
-				TextRenderer::renderText(GraphicController::textProgram, RAM, -1.0f + offsetX, 1.0f - offsetYPerText * 2.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
-				TextRenderer::renderText(GraphicController::textProgram, GPU, -1.0f + offsetX, 1.0f - offsetYPerText * 3.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
-				TextRenderer::renderText(GraphicController::textProgram, VRAM, -1.0f + offsetX, 1.0f - offsetYPerText * 4.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
+				TextRenderer::renderText(FPS, -1.0f + offsetX, 1.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
+				TextRenderer::renderText(CPU, -1.0f + offsetX, 1.0f - offsetYPerText - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
+				TextRenderer::renderText(RAM, -1.0f + offsetX, 1.0f - offsetYPerText * 2.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
+				TextRenderer::renderText(GPU, -1.0f + offsetX, 1.0f - offsetYPerText * 3.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
+				TextRenderer::renderText(VRAM, -1.0f + offsetX, 1.0f - offsetYPerText * 4.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
 			}
 			TextRenderer::afterTextRender();
 		}

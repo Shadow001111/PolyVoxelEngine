@@ -1,14 +1,14 @@
 #version 460 core
-layout (location = 0) in vec2 pos;
-layout (location = 1) in vec2 texCoords;
-out vec2 uv;
 
+uniform vec2 position;
+uniform vec2 scale;
 uniform float aspectRatio;
+
+layout (location = 0) in vec2 inPos;
 
 void main()
 {
-    uv = texCoords;
-    vec2 vertPos = pos;
+    vec2 vertPos = position + inPos * scale;
     vertPos.x /= aspectRatio;
     gl_Position = vec4(vertPos, 0.0f, 1.0f);
-}  
+}

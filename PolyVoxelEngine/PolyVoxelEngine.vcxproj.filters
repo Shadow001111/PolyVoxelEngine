@@ -99,6 +99,9 @@
     <ClCompile Include="Menu.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Button.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FBO.h">
@@ -179,6 +182,9 @@
     <ClInclude Include="Menu.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="Button.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\chunk.vert" />
@@ -193,5 +199,7 @@
     <None Include="Shaders\hotbar.vert" />
     <None Include="Shaders\chunkSmooth.vert" />
     <None Include="Shaders\chunkSmooth.frag" />
+    <None Include="Shaders\button.frag" />
+    <None Include="Shaders\button.vert" />
   </ItemGroup>
 </Project>
