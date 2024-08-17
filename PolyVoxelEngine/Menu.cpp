@@ -18,11 +18,6 @@ void menuScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 	menu->scrollCallback(yoffset);
 }
 
-void startGame()
-{
-	
-}
-
 void exitApp()
 {
 	GraphicController::closeWindow();
@@ -40,33 +35,47 @@ void Menu::run()
 	glfwSetScrollCallback(GraphicController::window, &menuScrollCallback);
 	glfwSetMouseButtonCallback(GraphicController::window, &menuMouseButtonCallback);
 
+	bool closeMenu = false;
+
+	auto startGame = [&]()
+		{
+			closeMenu = true;
+		};
+
 	buttons.emplace_back(0.0f, 0.25f, 0.5f, 0.25f, "START", startGame, AligmentX::Center, AligmentY::Center);
 	buttons.emplace_back(0.0f, -0.25f, 0.5f, 0.25f, "EXIT", exitApp, AligmentX::Center, AligmentY::Center);
 
 	while (!GraphicController::shouldWindowClose())
 	{
-		GraphicController::beforeRender();
+		while (!closeMenu && !GraphicController::shouldWindowClose())
 		{
-			GraphicController::buttonProgram->bind();
-			for (const Button& button : buttons)
+			GraphicController::beforeRender();
 			{
-				button.draw();
-			}
-
-			TextRenderer::beforeTextRender();
-			{
+				GraphicController::buttonProgram->bind();
 				for (const Button& button : buttons)
 				{
-					button.drawText();
+					button.draw();
 				}
+
+				TextRenderer::beforeTextRender();
+				{
+					for (const Button& button : buttons)
+					{
+						button.drawText();
+					}
+				}
+				TextRenderer::afterTextRender();
 			}
-			TextRenderer::afterTextRender();
+			GraphicController::afterRender();
+			glfwPollEvents();
 		}
-		GraphicController::afterRender();
-		glfwPollEvents();
+		closeMenu = false;
+		if (!GraphicController::shouldWindowClose())
+		{
+			Game game;
+			game.run();
+		}
 	}
-	//Game game;
-	//game.run();
 }
 
 void Menu::keyCallback(int key, int scancode, int action, int mods)
