@@ -19,7 +19,7 @@ Button::Button()
 }
 
 Button::Button(float x, float y, float width, float height, const std::string& label, std::function<void()> onClick, AligmentX aligmentX, AligmentY aligmentY) :
-	width(width), height(height), label(label), onClick(onClick)
+	initialized(true), width(width), height(height), label(label), onClick(onClick)
 {
 	if (aligmentX == AligmentX::Left)
 	{
@@ -50,6 +50,14 @@ Button::Button(float x, float y, float width, float height, const std::string& l
 	vbo = VBO((const char*)buttonVertexes, sizeof(buttonVertexes), GL_STATIC_DRAW);
 	vao.linkFloat(2, sizeof(ButtonVertex));
 	VAO::unbind();
+}
+
+Button::~Button()
+{
+	if (initialized)
+	{
+		clean();
+	}
 }
 
 void Button::draw() const

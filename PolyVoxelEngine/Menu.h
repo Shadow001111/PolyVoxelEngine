@@ -7,7 +7,6 @@ class Menu
 	std::vector<Button> buttons;
 public:
 	Menu();
-	~Menu();
 	void run();
 
 	void keyCallback(int key, int scancode, int action, int mods);

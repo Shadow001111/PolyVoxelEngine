@@ -7,6 +7,7 @@
 
 class Button
 {
+	bool initialized = false;
 	float x, y, width, height;
 	std::string label;
 	std::function<void()> onClick;
@@ -16,6 +17,7 @@ class Button
 public:
 	Button();
 	Button(float x, float y, float width, float height, const std::string& label, std::function<void()> onClick, AligmentX aligmentX, AligmentY aligmentY);
+	~Button();
 
 	void draw() const;
 	void drawText() const;

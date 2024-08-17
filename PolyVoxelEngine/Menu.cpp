@@ -31,14 +31,6 @@ void exitApp()
 Menu::Menu()
 {}
 
-Menu::~Menu()
-{
-	for (const auto& button : buttons)
-	{
-		button.clean();
-	}
-}
-
 void Menu::run()
 {
 	GraphicController::setCursorMode(GLFW_CURSOR_NORMAL);
