@@ -28,6 +28,6 @@ void Menu::run()
 		GraphicController::afterRender();
 		glfwPollEvents();
 	}
-	Game game;
-	game.run();
+	/*Game game;
+	game.run();*/
 }

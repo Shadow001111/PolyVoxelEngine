@@ -8,6 +8,20 @@
 #include "VBO.h"
 #include "GraphicController.h"
 
+enum class AligmentX : char
+{
+	Left,
+	Center,
+	Right
+};
+
+enum class AligmentY : char
+{
+	Bottom,
+	Center,
+	Top
+};
+
 struct Character
 {
 	unsigned int textureID;
@@ -33,6 +47,6 @@ public:
 
 	static void beforeTextRender();
 	static void afterTextRender();
-	static void renderText(const std::string& text, float x, float y, float scale, glm::vec3 color);
+	static void renderText(const std::string& text, float x, float y, float scale, glm::vec3 color, AligmentX aligmentX, AligmentY aligmentY);
 };
 

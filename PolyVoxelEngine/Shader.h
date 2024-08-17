@@ -13,6 +13,7 @@ GLuint CreateShader(GLuint type, const char* filepath);
 
 class Shader
 {
+	std::string name;
 public:
 	GLuint ID;
 	Shader(const std::string& name);

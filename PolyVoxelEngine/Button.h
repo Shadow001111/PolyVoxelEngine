@@ -3,20 +3,7 @@
 #include <functional>
 #include "VAO.h"
 #include "VBO.h"
-
-enum class AligmentX : char
-{
-	Left,
-	Center,
-	Right
-};
-
-enum class AligmentY : char
-{
-	Bottom,
-	Center,
-	Top
-};
+#include "TextRenderer.h"
 
 class Button
 {

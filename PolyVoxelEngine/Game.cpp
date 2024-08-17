@@ -274,11 +274,13 @@ void Game::run()
 				float scale = 0.05f;
 				float offsetYPerText = scale * 2.0f;
 
-				TextRenderer::renderText(FPS, -1.0f + offsetX, 1.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
-				TextRenderer::renderText(CPU, -1.0f + offsetX, 1.0f - offsetYPerText - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
-				TextRenderer::renderText(RAM, -1.0f + offsetX, 1.0f - offsetYPerText * 2.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
-				TextRenderer::renderText(GPU, -1.0f + offsetX, 1.0f - offsetYPerText * 3.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
-				TextRenderer::renderText(VRAM, -1.0f + offsetX, 1.0f - offsetYPerText * 4.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f));
+				float x = -1.0f * GraphicController::aspectRatio + offsetX;
+
+				TextRenderer::renderText(FPS, x, 1.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
+				TextRenderer::renderText(CPU, x, 1.0f - offsetYPerText - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
+				TextRenderer::renderText(RAM, x, 1.0f - offsetYPerText * 2.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
+				TextRenderer::renderText(GPU, x, 1.0f - offsetYPerText * 3.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
+				TextRenderer::renderText(VRAM, x, 1.0f - offsetYPerText * 4.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
 			}
 			TextRenderer::afterTextRender();
 		}

@@ -71,12 +71,14 @@ uniform float aspectRatio;
 
 void main()
 {
-	if ((abs(texCoords.x - 0.5) * aspectRatio < 0.001 && abs(texCoords.y - 0.5) < 0.015) || (abs(texCoords.y - 0.5) < 0.001 && abs(texCoords.x - 0.5) * aspectRatio < 0.015))
-	{
-		fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-	}
-	else
-	{
-		fragColor = texture(screenTexture, texCoords);
-	}
+// cross
+//	if ((abs(texCoords.x - 0.5) * aspectRatio < 0.001 && abs(texCoords.y - 0.5) < 0.015) || (abs(texCoords.y - 0.5) < 0.001 && abs(texCoords.x - 0.5) * aspectRatio < 0.015))
+//	{
+//		fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+//	}
+//	else
+//	{
+//		fragColor = texture(screenTexture, texCoords);
+//	}
+	fragColor = texture(screenTexture, texCoords);
 }

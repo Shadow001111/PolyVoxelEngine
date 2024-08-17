@@ -121,12 +121,41 @@ void TextRenderer::afterTextRender()
     glEnable(GL_DEPTH_TEST);
 }
 
-void TextRenderer::renderText(const std::string& text, float x, float y, float scale, glm::vec3 color)
+void TextRenderer::renderText(const std::string& text, float x, float y, float scale, glm::vec3 color, AligmentX aligmentX, AligmentY aligmentY)
 {
     textShader->setUniformFloat3("textColor", color.r, color.g, color.b);
-
     scale *= 2.0f / fontSize;
 
+    // get width and height
+    float textW = 0.0f;
+    float textH = 0.0f;
+    for (char c : text)
+    {
+        const Character& ch = characters[c];
+        textW += ch.size.x;
+        textH = fmaxf(textH, ch.size.y);
+    }
+    textW *= scale;
+    textH *= scale;
+
+    if (aligmentX == AligmentX::Right)
+    {
+        x -= textW;
+    }
+    else if (aligmentX == AligmentX::Center)
+    {
+        x -= textW * 0.5f;
+    }
+    if (aligmentY == AligmentY::Bottom)
+    {
+        y += textH;
+    }
+    else if (aligmentY == AligmentY::Center)
+    {
+        y += textH * 0.5f;
+    }
+
+    // render
     for (char c : text)
     {
         const Character& ch = characters[c];

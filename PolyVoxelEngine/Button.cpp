@@ -1,7 +1,6 @@
 #include "Button.h"
 #include <glad/glad.h>
 #include "GraphicController.h"
-#include "TextRenderer.h"
 
 struct ButtonVertex
 {
@@ -59,5 +58,7 @@ void Button::draw() const
 
 void Button::drawText() const
 {
-	TextRenderer::renderText(label, x, y, 0.05f, glm::vec3(1.0f, 0.0f, 0.0f));
+	float centerX = x + width * 0.5f;
+	float centerY = y + height * 0.5f;
+	TextRenderer::renderText(label, centerX, centerY, 0.05f, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Center, AligmentY::Center);
 }

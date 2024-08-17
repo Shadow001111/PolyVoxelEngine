@@ -23,7 +23,7 @@ GLuint CreateShader(GLuint type, const char* filepath)
 	return shader;
 }
 
-Shader::Shader(const std::string& name)
+Shader::Shader(const std::string& name) : name(name)
 {
 	// shaders
 	GLuint vertexShader = CreateShader(GL_VERTEX_SHADER, ("Shaders/" + name + ".vert").c_str());
@@ -68,7 +68,7 @@ GLint Shader::getUniformPosition(const std::string& name)
 	if (it == uniformCache.end()) {
 		GLint position = glGetUniformLocation(ID, name.c_str());
 		if (position == -1) {
-			std::cout << "Uniform: " << name << " doesn't exist" << std::endl;
+			std::cout << "Uniform: " << name << " doesn't exist in: " << this->name << std::endl;
 		}
 		uniformCache[name] = position;
 		return position;
