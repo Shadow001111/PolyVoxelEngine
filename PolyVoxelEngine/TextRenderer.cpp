@@ -168,8 +168,8 @@ void TextRenderer::renderText(const std::string& text, float x, float y, float s
 
         TextVertex vertices[4] =
         {
-            {posX, posY - h, 0.0f, 1.0f},
-            {posX + w, posY - h, 1.0f, 1.0f},
+            {posX, posY - textH, 0.0f, 1.0f},
+            {posX + w, posY - textH, 1.0f, 1.0f},
             {posX + w, posY, 1.0f, 0.0f},
             {posX, posY, 0.0f, 0.0f}
         };

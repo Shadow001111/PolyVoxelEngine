@@ -133,9 +133,7 @@ Player::Player(glm::vec3 position, float fov, float near, float far) :
 	uiVBO = VBO((const char*)uiVertices, sizeof(uiVertices), GL_STATIC_DRAW);
 	uiVAO.linkFloat(2, sizeof(UIVertex));
 	uiVAO.linkFloat(2, sizeof(UIVertex));
-
 	VAO::unbind();
-
 
 	glfwSetWindowUserPointer(GraphicController::window, (void*)this);
 	glfwSetKeyCallback(GraphicController::window, &globalKeyCallback);
