@@ -140,8 +140,7 @@ Player::Player(glm::vec3 position, float fov, float near, float far) :
 	glfwSetScrollCallback(GraphicController::window, &globalScrollCallback);
 	glfwSetMouseButtonCallback(GraphicController::window, &globalMouseButtonCallback);
 
-	glfwSetInputMode(GraphicController::window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
+	GraphicController::setCursorMode(GLFW_CURSOR_DISABLED);
 	//
 	for (size_t i = 0; i < (size_t)Block::Count - 2; i++)
 	{
@@ -370,12 +369,12 @@ void Player::keyCallback(int key, int scancode, int action, int mods)
 		inventoryOpened = !inventoryOpened;
 		if (inventoryOpened)
 		{
-			glfwSetInputMode(GraphicController::window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			GraphicController::setCursorMode(GLFW_CURSOR_NORMAL);
 		}
 		else
 		{
 			glfwSetCursorPos(GraphicController::window, GraphicController::width / 2, GraphicController::height / 2);
-			glfwSetInputMode(GraphicController::window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			GraphicController::setCursorMode(GLFW_CURSOR_DISABLED);
 		}
 	}
 	else if (key == GLFW_KEY_U)

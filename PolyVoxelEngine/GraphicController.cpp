@@ -113,6 +113,11 @@ void GraphicController::setWindowTitle(const char* title)
 	glfwSetWindowTitle(window, title);
 }
 
+void GraphicController::setCursorMode(int mode)
+{
+	glfwSetInputMode(window, GLFW_CURSOR, mode);
+}
+
 bool GraphicController::shouldWindowClose()
 {
 	return glfwWindowShouldClose(window);

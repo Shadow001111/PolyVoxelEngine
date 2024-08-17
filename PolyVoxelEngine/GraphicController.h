@@ -30,6 +30,7 @@ public:
 	static int init(int width, int height, bool vsync, int openglVersion);
 
 	static void setWindowTitle(const char* title);
+	static void setCursorMode(int mode);
 
 	static bool shouldWindowClose();
 	static bool isKeyPressed(int key);
