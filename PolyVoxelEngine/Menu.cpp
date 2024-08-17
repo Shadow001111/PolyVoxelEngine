@@ -18,9 +18,14 @@ void menuScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 	menu->scrollCallback(yoffset);
 }
 
-void onClick()
+void startGame()
 {
 	
+}
+
+void exitApp()
+{
+	GraphicController::closeWindow();
 }
 
 Menu::Menu()
@@ -43,8 +48,8 @@ void Menu::run()
 	glfwSetScrollCallback(GraphicController::window, &menuScrollCallback);
 	glfwSetMouseButtonCallback(GraphicController::window, &menuMouseButtonCallback);
 
-	buttons.emplace_back(0.0f, 0.25f, 0.5f, 0.25f, "START", onClick, AligmentX::Center, AligmentY::Center);
-	buttons.emplace_back(0.0f, -0.25f, 0.5f, 0.25f, "EXIT", onClick, AligmentX::Center, AligmentY::Center);
+	buttons.emplace_back(0.0f, 0.25f, 0.5f, 0.25f, "START", startGame, AligmentX::Center, AligmentY::Center);
+	buttons.emplace_back(0.0f, -0.25f, 0.5f, 0.25f, "EXIT", exitApp, AligmentX::Center, AligmentY::Center);
 
 	while (!GraphicController::shouldWindowClose())
 	{

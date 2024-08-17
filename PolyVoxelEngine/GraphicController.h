@@ -33,6 +33,8 @@ public:
 	static void setCursorMode(int mode);
 
 	static bool shouldWindowClose();
+	static void closeWindow();
+
 	static bool isKeyPressed(int key);
 	static bool isMouseButtonPressed(int button);
 

@@ -123,6 +123,11 @@ bool GraphicController::shouldWindowClose()
 	return glfwWindowShouldClose(window);
 }
 
+void GraphicController::closeWindow()
+{
+	glfwSetWindowShouldClose(window, 1);
+}
+
 bool GraphicController::isKeyPressed(int key)
 {
 	return glfwGetKey(window, key) == GLFW_PRESS;
