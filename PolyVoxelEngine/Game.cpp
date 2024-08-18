@@ -173,21 +173,21 @@ struct GUIData
 	size_t vram = 0;
 };
 
-void playerKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+void gameKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	Game* game = (Game*)glfwGetWindowUserPointer(window);
 	Player* player = game->player;
 	player->keyCallback(key, scancode, action, mods);
 }
 
-void playerMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+void gameMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
 	Game* game = (Game*)glfwGetWindowUserPointer(window);
 	Player* player = game->player;
 	player->mouseButtonCallback(button, action);
 }
 
-void playerScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+void gameScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	Game* game = (Game*)glfwGetWindowUserPointer(window);
 	Player* player = game->player;
@@ -206,9 +206,9 @@ void Game::run()
 
 	// callbacks
 	glfwSetWindowUserPointer(GraphicController::window, (void*)this);
-	glfwSetKeyCallback(GraphicController::window, &playerKeyCallback);
-	glfwSetScrollCallback(GraphicController::window, &playerScrollCallback);
-	glfwSetMouseButtonCallback(GraphicController::window, &playerMouseButtonCallback);
+	glfwSetKeyCallback(GraphicController::window, &gameKeyCallback);
+	glfwSetScrollCallback(GraphicController::window, &gameScrollCallback);
+	glfwSetMouseButtonCallback(GraphicController::window, &gameMouseButtonCallback);
 
 	// player, world
 	player = new Player({ 0.0f, 0.0f, 0.0f }, 80.0f, 0.1f, Settings::MAX_RENDER_DISTANCE);
