@@ -45,7 +45,15 @@ void Menu::run()
 	buttons.emplace_back(0.0f, 0.25f, 0.5f, 0.25f, "START", startGame, AligmentX::Center, AligmentY::Center);
 	buttons.emplace_back(0.0f, -0.25f, 0.5f, 0.25f, "EXIT", closeApp, AligmentX::Center, AligmentY::Center);
 
-	float frameDelay = 1.0f / Settings::MENU_MAX_FPS;
+	float frameDelay;
+	if (GraphicController::menuMaxFps < 1)
+	{
+		frameDelay = 1.0f / GraphicController::menuMaxFps;
+	}
+	else
+	{
+		frameDelay = 0.0f;
+	}
 
 	while (!GraphicController::shouldWindowClose())
 	{

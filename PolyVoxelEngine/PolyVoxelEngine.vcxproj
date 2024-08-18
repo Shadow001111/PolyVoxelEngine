@@ -156,6 +156,7 @@
     <ClCompile Include="Chunk.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="HardwareUsageInfo.cpp" />
+    <ClCompile Include="IniParser.cpp" />
     <ClCompile Include="Menu.cpp" />
     <ClCompile Include="PhysicEntity.cpp" />
     <ClCompile Include="SSBO.cpp" />
@@ -187,6 +188,7 @@
     <ClInclude Include="Chunk.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="HardwareUsageInfo.h" />
+    <ClInclude Include="IniParser.h" />
     <ClInclude Include="Menu.h" />
     <ClInclude Include="PhysicEntity.h" />
     <ClInclude Include="SSBO.h" />
@@ -209,6 +211,7 @@
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="settings.ini" />
     <None Include="Shaders\button.frag" />
     <None Include="Shaders\button.vert" />
     <None Include="Shaders\chunkSmooth.frag" />

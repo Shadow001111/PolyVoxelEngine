@@ -240,7 +240,15 @@ void Game::run()
 	//
 	GUIData guiData;
 
-	float frameDelay = 1.0f / Settings::GAME_MAX_FPS;
+	float frameDelay;
+	if (GraphicController::gameMaxFps < 1)
+	{
+		frameDelay = 1.0f / GraphicController::gameMaxFps;
+	}
+	else
+	{
+		frameDelay = 0.0f;
+	}
 
 	float previousTime = glfwGetTime();
 	while (!GraphicController::shouldWindowClose())

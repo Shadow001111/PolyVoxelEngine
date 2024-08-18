@@ -13,6 +13,8 @@ Shader* GraphicController::textProgram = nullptr;
 Shader* GraphicController::voxelGhostProgram = nullptr;
 Shader* GraphicController::hotbarProgram = nullptr;
 Shader* GraphicController::buttonProgram = nullptr;
+int GraphicController::menuMaxFps = 0;
+int GraphicController::gameMaxFps = 0;
 
 void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 {
@@ -40,11 +42,13 @@ void GraphicController::centerWindow()
 	glfwSetWindowPos(window, posX, posY);
 }
 
-int GraphicController::init(int width, int height, bool vsync, int openglVersion)
+int GraphicController::init(int openglVersion, int width, int height, bool vsync, bool fullcreen, int menuMaxFps, int gameMaxFps)
 {
 	GraphicController::width = width;
 	GraphicController::height = height;
 	GraphicController::aspectRatio = (float)width / (float)height;
+	GraphicController::menuMaxFps = menuMaxFps;
+	GraphicController::gameMaxFps = gameMaxFps;
 #pragma region opengl init
 	if (window != nullptr)
 	{
@@ -59,7 +63,7 @@ int GraphicController::init(int width, int height, bool vsync, int openglVersion
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// window
-	window = glfwCreateWindow(width, height, "PolyVoxelEngine", Settings::FULLSCREEN ? glfwGetPrimaryMonitor() : NULL, NULL);
+	window = glfwCreateWindow(width, height, "PolyVoxelEngine", fullcreen ? glfwGetPrimaryMonitor() : NULL, NULL);
 	if (window == NULL) 
 	{
 		std::cerr << "Failed to create window" << std::endl;

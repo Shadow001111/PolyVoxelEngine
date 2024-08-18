@@ -20,6 +20,9 @@ public:
 	static int width, height;
 	static float aspectRatio;
 
+	static int menuMaxFps;
+	static int gameMaxFps;
+
 	static GLFWwindow* window;
 	static Shader* chunkProgram;
 	static Shader* textProgram;
@@ -27,7 +30,7 @@ public:
 	static Shader* hotbarProgram;
 	static Shader* buttonProgram;
 
-	static int init(int width, int height, bool vsync, int openglVersion);
+	static int init(int openglVersion, int width, int height, bool vsync, bool fullcreen, int menuMaxFps, int gameMaxFps);
 
 	static void setWindowTitle(const char* title);
 	static void setCursorMode(int mode);

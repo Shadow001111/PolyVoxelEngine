@@ -1,4 +1,5 @@
 #include "Menu.h"
+#include "IniParser.h"
 
 int main()
 {
@@ -9,13 +10,19 @@ int main()
 
 	// init
 	{
-		int height = 800;
-		float ratio = 16.0f / 9.0f;
-		int width = height * ratio;
+		auto parser = IniParser("settings.ini");
+
+		int width = parser.Get<int>("VideoSettings", "Width");
+		int height = parser.Get<int>("VideoSettings", "Height");
+		bool vsync = parser.Get<bool>("VideoSettings", "VSync");
+		bool fullscreen = parser.Get<bool>("VideoSettings", "Fullscreen");
+
+		int menuMaxFps = parser.Get<int>("FPS", "menuMaxFps");
+		int gameMaxFps = parser.Get<int>("FPS", "gameMaxFps");
 
 		int result = GraphicController::init
 		(
-			width, height, false, 460
+			460, width, height, vsync, fullscreen, menuMaxFps, gameMaxFps
 		);
 		if (result != 0)
 		{
