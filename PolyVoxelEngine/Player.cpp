@@ -357,7 +357,7 @@ void Player::keyCallback(int key, int scancode, int action, int mods)
 		}
 		else
 		{
-			glfwSetCursorPos(GraphicController::window, GraphicController::width / 2, GraphicController::height / 2);
+			glfwSetCursorPos(GraphicController::window, GraphicController::width * 0.5f, GraphicController::height * 0.5f);
 			GraphicController::setCursorMode(GLFW_CURSOR_DISABLED);
 		}
 	}
