@@ -12,13 +12,13 @@ int main()
 	{
 		auto parser = IniParser("settings.ini");
 
-		int width = parser.Get<int>("VideoSettings", "Width");
-		int height = parser.Get<int>("VideoSettings", "Height");
-		bool vsync = parser.Get<bool>("VideoSettings", "VSync");
-		bool fullscreen = parser.Get<bool>("VideoSettings", "Fullscreen");
+		int width = parser.Get<int>("VideoSettings", "Width", 1200);
+		int height = parser.Get<int>("VideoSettings", "Height", 800);
+		bool vsync = parser.Get<bool>("VideoSettings", "VSync", 0);
+		bool fullscreen = parser.Get<bool>("VideoSettings", "Fullscreen", 0);
 
-		int menuMaxFps = parser.Get<int>("FPS", "menuMaxFps");
-		int gameMaxFps = parser.Get<int>("FPS", "gameMaxFps");
+		int menuMaxFps = parser.Get<int>("FPS", "MenuMaxFps", 20);
+		int gameMaxFps = parser.Get<int>("FPS", "GameMaxFps", 60);
 
 		int result = GraphicController::init
 		(
