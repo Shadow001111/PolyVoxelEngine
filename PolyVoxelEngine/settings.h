@@ -19,7 +19,7 @@ namespace Settings
 {
 	//
 	constexpr int MENU_MAX_FPS = 20;
-	constexpr int GAME_MAX_FPS = 60;
+	constexpr int GAME_MAX_FPS = 150;
 
 	// World
 	const std::string worldPath = "Worlds/Test";

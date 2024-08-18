@@ -45,14 +45,13 @@ void Menu::run()
 	buttons.emplace_back(0.0f, 0.25f, 0.5f, 0.25f, "START", startGame, AligmentX::Center, AligmentY::Center);
 	buttons.emplace_back(0.0f, -0.25f, 0.5f, 0.25f, "EXIT", closeApp, AligmentX::Center, AligmentY::Center);
 
-	float fpsLimit = 1.0f / (float)Settings::MENU_MAX_FPS;
-	std::chrono::milliseconds fpsLimitDuration(int(fpsLimit * 1000.0f));
+	float frameDelay = 1.0f / Settings::MENU_MAX_FPS;
 
 	while (!GraphicController::shouldWindowClose())
 	{
 		while (!closeMenu && !GraphicController::shouldWindowClose())
 		{
-			
+			float frameStart = glfwGetTime();
 			GraphicController::beforeRender();
 			{
 				GraphicController::buttonProgram->bind();
@@ -72,7 +71,13 @@ void Menu::run()
 			}
 			GraphicController::afterRender();
 			glfwPollEvents();
-			std::this_thread::sleep_for(fpsLimitDuration);
+			
+			float frameTime = glfwGetTime() - frameStart;
+			if (frameTime < frameDelay)
+			{
+				std::chrono::milliseconds duration(int((frameDelay - frameTime) * 1000.0f));
+				std::this_thread::sleep_for(duration);
+			}
 		}
 		closeMenu = false;
 		if (!GraphicController::shouldWindowClose())

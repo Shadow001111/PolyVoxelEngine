@@ -240,10 +240,12 @@ void Game::run()
 	//
 	GUIData guiData;
 
-	float previousTime = 0.0f;
+	float frameDelay = 1.0f / Settings::GAME_MAX_FPS;
+
+	float previousTime = glfwGetTime();
 	while (!GraphicController::shouldWindowClose())
 	{
-		float currentTime = (float)glfwGetTime();
+		float currentTime = glfwGetTime();
 		float deltaTime = currentTime - previousTime;
 		previousTime = currentTime;
 
@@ -314,6 +316,13 @@ void Game::run()
 		GraphicController::afterRender();
 
 		glfwPollEvents();
+
+		float frameTime = glfwGetTime() - currentTime;
+		if (frameTime < frameDelay)
+		{
+			std::chrono::milliseconds duration(int((frameDelay - frameTime) * 1000.0f));
+			std::this_thread::sleep_for(duration);
+		}
 	}
 
 	// save data
