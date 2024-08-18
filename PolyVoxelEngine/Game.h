@@ -12,8 +12,9 @@
 
 class Game
 {
-	Player* player = nullptr;
 public:
+	Player* player = nullptr;
+
 	Game();
 	void run();
 };

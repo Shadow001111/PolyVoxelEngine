@@ -10,25 +10,6 @@ constexpr int intCeil(float x_)
 
 constexpr int INVENTORY_ROWS_COUNT = intCeil((float)((size_t)Block::Count - 2) / (float)Settings::INVENTORY_ROW_SIZE);
 
-
-void playerKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-	Player* player = (Player*)glfwGetWindowUserPointer(window);
-	player->keyCallback(key, scancode,action, mods);
-}
-
-void playerMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-{
-	Player* player = (Player*)glfwGetWindowUserPointer(window);
-	player->mouseButtonCallback(button, action);
-}
-
-void playerScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
-{
-	Player* player = (Player*)glfwGetWindowUserPointer(window);
-	player->scrollCallback(yoffset);
-}
-
 struct VoxelGhostVertex
 {
 	glm::vec3 position;
@@ -134,11 +115,6 @@ Player::Player(glm::vec3 position, float fov, float near, float far) :
 	uiVAO.linkFloat(2, sizeof(UIVertex));
 	uiVAO.linkFloat(2, sizeof(UIVertex));
 	VAO::unbind();
-
-	glfwSetWindowUserPointer(GraphicController::window, (void*)this);
-	glfwSetKeyCallback(GraphicController::window, &playerKeyCallback);
-	glfwSetScrollCallback(GraphicController::window, &playerScrollCallback);
-	glfwSetMouseButtonCallback(GraphicController::window, &playerMouseButtonCallback);
 
 	GraphicController::setCursorMode(GLFW_CURSOR_DISABLED);
 	//

@@ -18,11 +18,6 @@ void menuScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 	menu->scrollCallback(yoffset);
 }
 
-void exitApp()
-{
-	GraphicController::closeWindow();
-}
-
 Menu::Menu()
 {}
 
@@ -42,8 +37,13 @@ void Menu::run()
 			closeMenu = true;
 		};
 
+	auto closeApp = []()
+		{
+			GraphicController::closeWindow();
+		};
+
 	buttons.emplace_back(0.0f, 0.25f, 0.5f, 0.25f, "START", startGame, AligmentX::Center, AligmentY::Center);
-	buttons.emplace_back(0.0f, -0.25f, 0.5f, 0.25f, "EXIT", exitApp, AligmentX::Center, AligmentY::Center);
+	buttons.emplace_back(0.0f, -0.25f, 0.5f, 0.25f, "EXIT", closeApp, AligmentX::Center, AligmentY::Center);
 
 	while (!GraphicController::shouldWindowClose())
 	{
