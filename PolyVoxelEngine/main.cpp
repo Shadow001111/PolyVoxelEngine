@@ -9,9 +9,13 @@ int main()
 
 	// init
 	{
+		int height = 800;
+		float ratio = 16.0f / 9.0f;
+		int width = height * ratio;
+
 		int result = GraphicController::init
 		(
-			1200, 800, false, 460
+			width, height, false, 460
 		);
 		if (result != 0)
 		{
