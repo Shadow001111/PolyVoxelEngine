@@ -45,7 +45,7 @@ void Menu::run()
 	buttons.emplace_back(0.0f, 0.25f, 0.5f, 0.25f, "START", startGame, AligmentX::Center, AligmentY::Center);
 	buttons.emplace_back(0.0f, -0.25f, 0.5f, 0.25f, "EXIT", closeApp, AligmentX::Center, AligmentY::Center);
 
-	float fpsLimit = 1.0f / 10.0f;
+	float fpsLimit = 1.0f / (float)Settings::MENU_MAX_FPS;
 	std::chrono::milliseconds fpsLimitDuration(int(fpsLimit * 1000.0f));
 
 	while (!GraphicController::shouldWindowClose())

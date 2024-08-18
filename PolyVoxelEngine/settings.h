@@ -17,6 +17,10 @@ float calculateFogDensity(float distance, float fogGradient);
 
 namespace Settings
 {
+	//
+	constexpr int MENU_MAX_FPS = 20;
+	constexpr int GAME_MAX_FPS = 60;
+
 	// World
 	const std::string worldPath = "Worlds/Test";
 	
