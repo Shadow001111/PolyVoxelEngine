@@ -17,7 +17,7 @@ class Player
 
 	Gamemode gamemode = Gamemode::Creative;
 
-	float sensitivity = 100.0f;
+	float sensitivity = 50.0f;
 	float moveSpeed = 20.0f, fastMoveSpeed = 40.0f,
 		airMoveSpeed = 5.0f,
 		flySpeed = 100.0f, fastFlySpeed = 200.0f;
