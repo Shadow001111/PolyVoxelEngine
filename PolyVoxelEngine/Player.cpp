@@ -555,8 +555,8 @@ void Player::Inputs(float dt, float time)
 		double mouseX, mouseY;
 		glfwGetCursorPos(GraphicController::window, &mouseX, &mouseY);
 
-		float rotX = sensitivity * 2.0f* ((float)mouseY / (float)GraphicController::height - 0.5f);
-		float rotY = sensitivity * 2.0f * ((float)mouseX / (float)GraphicController::width - 0.5f);
+		float rotX = sensitivity * ((float)mouseY / (float)GraphicController::height - 0.5f);
+		float rotY = sensitivity * ((float)mouseX / (float)GraphicController::width - 0.5f);
 
 		rotation.x += rotX;
 		rotation.y += rotY;
@@ -571,7 +571,7 @@ void Player::Inputs(float dt, float time)
 			rotation.x = -lim;
 		}
 
-		glfwSetCursorPos(GraphicController::window, GraphicController::width * 0.5f, GraphicController::height * 0.5f);
+		glfwSetCursorPos(GraphicController::window, GraphicController::width / 2, GraphicController::height / 2);
 	}
 
 	// MOUSE BUTTON
