@@ -59,7 +59,7 @@ int GraphicController::init(int width, int height, bool vsync, int openglVersion
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// window
-	window = glfwCreateWindow(width, height, "PolyVoxelEngine", NULL, NULL);
+	window = glfwCreateWindow(width, height, "PolyVoxelEngine", Settings::FULLSCREEN ? glfwGetPrimaryMonitor() : NULL, NULL);
 	if (window == NULL) 
 	{
 		std::cerr << "Failed to create window" << std::endl;
