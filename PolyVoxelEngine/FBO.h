@@ -13,11 +13,9 @@ class FBO
 	GLuint rboID = 0;
 public:
 	FBO(int width, int height);
-
+	void resize(int width, int height) const;
 	void draw() const;
-
 	void beforeRender() const;
-
 	void clean() const;
 };
 

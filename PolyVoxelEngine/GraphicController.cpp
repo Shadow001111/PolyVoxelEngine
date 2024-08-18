@@ -14,6 +14,11 @@ Shader* GraphicController::voxelGhostProgram = nullptr;
 Shader* GraphicController::hotbarProgram = nullptr;
 Shader* GraphicController::buttonProgram = nullptr;
 
+void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
+{
+	GraphicController::resizeWindow(width, height);
+}
+
 void GraphicController::centerWindow()
 {
 	GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
@@ -66,6 +71,8 @@ int GraphicController::init(int width, int height, bool vsync, int openglVersion
 	glfwSwapInterval(vsync);
 	centerWindow();
 
+	glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
+
 	// glad configures OpenGL
 	gladLoadGL();
 	glViewport(0, 0, width, height);
@@ -116,6 +123,24 @@ void GraphicController::setWindowTitle(const char* title)
 void GraphicController::setCursorMode(int mode)
 {
 	glfwSetInputMode(window, GLFW_CURSOR, mode);
+}
+
+void GraphicController::resizeWindow(int width, int height)
+{
+	GraphicController::width = width;
+	GraphicController::height = height;
+
+	// update aspectRatio
+	aspectRatio = (float)width / (float)height;
+
+	textProgram->bind();
+	textProgram->setUniformFloat("aspectRatio", aspectRatio);
+	buttonProgram->bind();
+	buttonProgram->setUniformFloat("aspectRatio", aspectRatio);
+
+	// glfw
+	glViewport(0, 0, width, height);
+	fbo->resize(width, height);
 }
 
 bool GraphicController::shouldWindowClose()

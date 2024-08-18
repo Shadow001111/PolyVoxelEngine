@@ -47,13 +47,24 @@ FBO::FBO(int width, int height) : width(width), height(height)
 	glBindRenderbuffer(GL_RENDERBUFFER, rboID);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rboID);
-
 	
 	auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
 	{
-		std::cout << "PP Framebuffer error: " << fboStatus << std::endl;
+		std::cerr << "PP Framebuffer error: " << fboStatus << std::endl;
 	}
+}
+
+void FBO::resize(int width, int height) const
+{
+	// texture
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+	// rbo
+	glBindRenderbuffer(GL_RENDERBUFFER, rboID);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+
 }
 
 void FBO::draw() const

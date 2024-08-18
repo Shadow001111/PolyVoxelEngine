@@ -31,6 +31,7 @@ public:
 
 	static void setWindowTitle(const char* title);
 	static void setCursorMode(int mode);
+	static void resizeWindow(int width, int height);
 
 	static bool shouldWindowClose();
 	static void closeWindow();
