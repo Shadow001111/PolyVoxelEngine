@@ -48,12 +48,13 @@ struct Int3
 struct WorldData
 {
 	glm::vec3 playerPosition = {0, INT_MIN, 0};
+	glm::vec2 playerRotation = { 0, 0 };
+
+	uint16_t worldTime = 12000;
 };
 
 class World
 {
-	size_t time = 24000 / 2;
-
 	Chunk** chunkPool = nullptr;
 	size_t chunkPoolIndex = 0;
 	glm::ivec3 lastPlayerLoadChunkPos;
@@ -98,6 +99,8 @@ class World
 
 	void calculateBlockColors();
 public:
+	uint16_t time = 0;
+
 	TextureArray blockTextures;
 	TextureArray numberTextures;
 

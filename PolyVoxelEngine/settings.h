@@ -19,6 +19,7 @@ namespace Settings
 {
 	// World
 	const std::string worldPath = "Worlds/Test";
+	const std::string WORLD_DATA_PATH = worldPath + "/data.bin";
 	
 	// Chunk
 	constexpr int CHUNK_LOAD_RADIUS = 8;
@@ -42,7 +43,6 @@ namespace Settings
 	// Player
 	constexpr float PLAYER_INTERACTION_DISTANCE = 16.0f;
 	constexpr int INVENTORY_ROW_SIZE = 9;
-	const std::string playerDataPath = worldPath + "/player.bin";
 
 	// Textures
 	constexpr int BLOCK_TEXTURE_SIZE = 16;

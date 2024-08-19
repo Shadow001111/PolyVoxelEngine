@@ -1466,35 +1466,30 @@ void World::calculateBlockColors()
 WorldData World::loadWorldData() const
 {
 	WorldData worldData;
-	if (!std::filesystem::exists(Settings::playerDataPath))
+	if (!std::filesystem::exists(Settings::WORLD_DATA_PATH))
 	{
 		return worldData;
 	}
-
-	std::ifstream file(Settings::playerDataPath, std::ios::binary);
+	std::ifstream file(Settings::WORLD_DATA_PATH, std::ios::binary);
 	if (!file.is_open())
 	{
 		std::cerr << "Failed to open player data file" << std::endl;
 		return worldData;
 	}
-
 	file.read(reinterpret_cast<char*>(&worldData), sizeof(WorldData));
-
 	file.close();
 	return worldData;
 }
 
 void World::saveWorldData(const WorldData& worldData) const
 {
-	std::ofstream file(Settings::playerDataPath, std::ios::binary | std::ios::trunc);
+	std::ofstream file(Settings::WORLD_DATA_PATH, std::ios::binary | std::ios::trunc);
 	if (!file.is_open())
 	{
 		std::cerr << "Failed to open player data file " << std::endl;
 		return;
 	}
-
 	file.write(reinterpret_cast<const char*>(&worldData), sizeof(WorldData));
-
 	file.close();
 }
 

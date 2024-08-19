@@ -116,7 +116,9 @@ Player::Player(glm::vec3 position, float fov, float near, float far) :
 	uiVAO.linkFloat(2, sizeof(UIVertex));
 	VAO::unbind();
 
+	glfwSetCursorPos(GraphicController::window, GraphicController::width / 2, GraphicController::height / 2);
 	GraphicController::setCursorMode(GLFW_CURSOR_DISABLED);
+
 	//
 	for (size_t i = 0; i < (size_t)Block::Count - 2; i++)
 	{

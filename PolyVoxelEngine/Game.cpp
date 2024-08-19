@@ -219,6 +219,10 @@ void Game::run()
 	{
 		WorldData worldData = world.loadWorldData();
 
+		// world
+		world.time = worldData.worldTime;
+
+		// player
 		auto& pos = player->physicEntity.position;
 		pos.x = worldData.playerPosition.x;
 		pos.z = worldData.playerPosition.z;
@@ -230,6 +234,9 @@ void Game::run()
 		{
 			pos.y = worldData.playerPosition.y;
 		}
+
+		player->rotation = worldData.playerRotation;
+		player->previousRotation = worldData.playerRotation;
 	}
 
 	// Ticks
@@ -335,7 +342,12 @@ void Game::run()
 
 	// save data
 	WorldData worldData;
+
+	worldData.worldTime - world.time;
+
 	worldData.playerPosition = player->physicEntity.position;
+	worldData.playerRotation = player->rotation;
+
 	world.saveWorldData(worldData);
 
 	player->clean(); delete player;

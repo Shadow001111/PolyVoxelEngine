@@ -10,8 +10,6 @@ enum class Gamemode : char
 
 class Player
 {
-	glm::vec2 rotation, previousRotation;
-
 	bool in_window = true;
 	bool isGrounded = false;
 
@@ -58,8 +56,9 @@ class Player
 	void Inputs(float dt, float time);
 	void Accelerate(const glm::vec3& vec);
 public:
-	Camera camera;
+	glm::vec2 rotation, previousRotation;
 	PhysicEntity physicEntity;
+	Camera camera;
 
 	Player(glm::vec3 position, float fov, float near, float far);
 	void clean() const;
