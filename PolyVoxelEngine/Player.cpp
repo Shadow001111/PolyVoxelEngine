@@ -117,6 +117,7 @@ Player::Player(glm::vec3 position, float fov, float near, float far) :
 	VAO::unbind();
 
 	glfwSetCursorPos(GraphicController::window, GraphicController::width / 2, GraphicController::height / 2);
+	glfwGetCursorPos(GraphicController::window, &previousMouseX, &previousMouseY);
 	GraphicController::setCursorMode(GLFW_CURSOR_DISABLED);
 
 	//
@@ -356,11 +357,13 @@ void Player::keyCallback(int key, int scancode, int action, int mods)
 		if (inventoryOpened)
 		{
 			GraphicController::setCursorMode(GLFW_CURSOR_NORMAL);
+			glfwSetCursorPos(GraphicController::window, GraphicController::width / 2, GraphicController::height / 2);
 		}
 		else
 		{
-			glfwSetCursorPos(GraphicController::window, GraphicController::width / 2, GraphicController::height / 2);
 			GraphicController::setCursorMode(GLFW_CURSOR_DISABLED);
+			glfwSetCursorPos(GraphicController::window, GraphicController::width / 2, GraphicController::height / 2);
+			glfwGetCursorPos(GraphicController::window, &previousMouseX, &previousMouseY);
 		}
 	}
 
@@ -377,40 +380,52 @@ void Player::keyCallback(int key, int scancode, int action, int mods)
 
 void Player::mouseButtonCallback(int button, int action)
 {
-	if (button == 0 && action == GLFW_PRESS && inventoryOpened)
+	if (action != GLFW_PRESS)
 	{
-		float inventoryLeft = -0.6f;
-		float inventoryTop = 0.9f;
-
-		float inventoryRight = fabsf(inventoryLeft);
-		float inventoryCellHeight = (inventoryRight - inventoryLeft) / Settings::INVENTORY_ROW_SIZE * GraphicController::aspectRatio;
-		float inventoryBottom = inventoryTop - INVENTORY_ROWS_COUNT * inventoryCellHeight;
-
-		double mouseX, mouseY;
-		glfwGetCursorPos(GraphicController::window, &mouseX, &mouseY);
-
-		mouseX = (mouseX / GraphicController::width) * 2.0f - 1.0f;
-		mouseY = -((mouseY / GraphicController::height) * 2.0f - 1.0f);
-
-		float xAxis = (mouseX - inventoryLeft) / (inventoryRight - inventoryLeft);
-		if (xAxis < 0.0f || xAxis >= 1.0f)
-		{
-			return;
-		}
-
-		float yAxis = 1.0f - (mouseY - inventoryBottom) / (inventoryTop - inventoryBottom);
-		if (yAxis < 0.0f || yAxis >= 1.0f)
-		{
-			return;
-		}
-
-		inventorySelectedPos.x = fminf(floorf(xAxis * Settings::INVENTORY_ROW_SIZE), Settings::INVENTORY_ROW_SIZE - 1);
-		inventorySelectedPos.y = fminf(floorf(yAxis * INVENTORY_ROWS_COUNT), INVENTORY_ROWS_COUNT - 1);
-
-		hotbar[selectedHotbatSlot] = playerInventory[inventorySelectedPos.x + inventorySelectedPos.y * Settings::INVENTORY_ROW_SIZE];
-		selectedHotbarBlock = hotbar[selectedHotbatSlot];
+		return;
 	}
-	else if (button == 2 && action == GLFW_PRESS && lastRaycastHit.hit)
+	if (button == 0)
+	{
+		if (!in_window)
+		{
+			glfwSetInputMode(GraphicController::window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			in_window = true;
+		}
+		else if (inventoryOpened)
+		{
+			float inventoryLeft = -0.6f;
+			float inventoryTop = 0.9f;
+
+			float inventoryRight = fabsf(inventoryLeft);
+			float inventoryCellHeight = (inventoryRight - inventoryLeft) / Settings::INVENTORY_ROW_SIZE * GraphicController::aspectRatio;
+			float inventoryBottom = inventoryTop - INVENTORY_ROWS_COUNT * inventoryCellHeight;
+
+			double mouseX, mouseY;
+			glfwGetCursorPos(GraphicController::window, &mouseX, &mouseY);
+
+			mouseX = (mouseX / GraphicController::width) * 2.0f - 1.0f;
+			mouseY = -((mouseY / GraphicController::height) * 2.0f - 1.0f);
+
+			float xAxis = (mouseX - inventoryLeft) / (inventoryRight - inventoryLeft);
+			if (xAxis < 0.0f || xAxis >= 1.0f)
+			{
+				return;
+			}
+
+			float yAxis = 1.0f - (mouseY - inventoryBottom) / (inventoryTop - inventoryBottom);
+			if (yAxis < 0.0f || yAxis >= 1.0f)
+			{
+				return;
+			}
+
+			inventorySelectedPos.x = fminf(floorf(xAxis * Settings::INVENTORY_ROW_SIZE), Settings::INVENTORY_ROW_SIZE - 1);
+			inventorySelectedPos.y = fminf(floorf(yAxis * INVENTORY_ROWS_COUNT), INVENTORY_ROWS_COUNT - 1);
+
+			hotbar[selectedHotbatSlot] = playerInventory[inventorySelectedPos.x + inventorySelectedPos.y * Settings::INVENTORY_ROW_SIZE];
+			selectedHotbarBlock = hotbar[selectedHotbatSlot];
+		}
+	}
+	else if (button == 2 && lastRaycastHit.hit)
 	{
 		bool hotbarAlreadyContainsBlock = false;
 		for (size_t i = 0; i < 9; i++)
@@ -551,8 +566,11 @@ void Player::Inputs(float dt, float time)
 		glfwGetCursorPos(GraphicController::window, &mouseX, &mouseY);
 
 		float sensitivity = GraphicController::gameSettings.sensitivity;
-		float rotX = sensitivity * 2.0f * ((float)mouseY / (float)GraphicController::height - 0.5f);
-		float rotY = sensitivity * 2.0f * ((float)mouseX / (float)GraphicController::width - 0.5f);
+		float rotX = sensitivity * (mouseY - previousMouseY);
+		float rotY = sensitivity * (mouseX - previousMouseX);
+
+		previousMouseX = mouseX;
+		previousMouseY = mouseY;
 
 		rotation.x += rotX;
 		rotation.y += rotY;
@@ -566,8 +584,6 @@ void Player::Inputs(float dt, float time)
 		{
 			rotation.x = -lim;
 		}
-
-		glfwSetCursorPos(GraphicController::window, GraphicController::width / 2, GraphicController::height / 2);
 	}
 
 	// MOUSE BUTTON
@@ -579,52 +595,36 @@ void Player::Inputs(float dt, float time)
 		voxelMarkerPos = hit.globalPos;
 	}
 
-	if (!inventoryOpened && time > worldEditNextTime)
+	if (in_window && !inventoryOpened && time > worldEditNextTime)
 	{
 		if (GraphicController::isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT))
 		{
-			if (in_window)
-			{
-				if (selectedHotbarBlock != Block::Void)
-				{
-					worldEditNextTime = time + 0.1f;
-					if (hit.hit)
-					{
-						physicEntity.world->setBlockAt(
-							hit.globalPos.x + hit.normal.x,
-							hit.globalPos.y + hit.normal.y,
-							hit.globalPos.z + hit.normal.z,
-							selectedHotbarBlock
-						);
-					}
-				}
-			}
-			else
-			{
-				in_window = true;
-				glfwSetInputMode(GraphicController::window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-			}
-		}
-
-		if (GraphicController::isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT))
-		{
-			if (in_window)
+			if (selectedHotbarBlock != Block::Void)
 			{
 				worldEditNextTime = time + 0.1f;
 				if (hit.hit)
 				{
 					physicEntity.world->setBlockAt(
-						hit.globalPos.x,
-						hit.globalPos.y,
-						hit.globalPos.z,
-						Block::Air
+						hit.globalPos.x + hit.normal.x,
+						hit.globalPos.y + hit.normal.y,
+						hit.globalPos.z + hit.normal.z,
+						selectedHotbarBlock
 					);
 				}
 			}
-			else
+		}
+
+		if (GraphicController::isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT))
+		{
+			worldEditNextTime = time + 0.1f;
+			if (hit.hit)
 			{
-				in_window = true;
-				glfwSetInputMode(GraphicController::window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+				physicEntity.world->setBlockAt(
+					hit.globalPos.x,
+					hit.globalPos.y,
+					hit.globalPos.z,
+					Block::Air
+				);
 			}
 		}
 	}
