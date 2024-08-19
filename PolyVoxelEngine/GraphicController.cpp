@@ -16,6 +16,8 @@ Shader* GraphicController::buttonProgram = nullptr;
 int GraphicController::menuMaxFps = 0;
 int GraphicController::gameMaxFps = 0;
 
+GameSettings GraphicController::gameSettings;
+
 void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 {
 	GraphicController::resizeWindow(width, height);
@@ -42,13 +44,16 @@ void GraphicController::centerWindow()
 	glfwSetWindowPos(window, posX, posY);
 }
 
-int GraphicController::init(int openglVersion, int width, int height, bool vsync, bool fullcreen, int menuMaxFps, int gameMaxFps)
+int GraphicController::init(const GraphicSettings& graphicSettings, const GameSettings& gameSettings)
 {
-	GraphicController::width = width;
-	GraphicController::height = height;
-	GraphicController::aspectRatio = (float)width / (float)height;
-	GraphicController::menuMaxFps = menuMaxFps;
-	GraphicController::gameMaxFps = gameMaxFps;
+	GraphicController::gameSettings = gameSettings;
+
+	width = graphicSettings.width;
+	height = graphicSettings.height;
+	aspectRatio = (float)width / (float)height;
+
+	menuMaxFps = graphicSettings.menuMaxFps;
+	gameMaxFps = graphicSettings.gameMaxFps;
 #pragma region opengl init
 	if (window != nullptr)
 	{
@@ -58,12 +63,12 @@ int GraphicController::init(int openglVersion, int width, int height, bool vsync
 
 	// GLFW init
 	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, (openglVersion / 100) % 10);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, (openglVersion / 10) % 10);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, (graphicSettings.openglVersion / 100) % 10);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, (graphicSettings.openglVersion / 10) % 10);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// window
-	window = glfwCreateWindow(width, height, "PolyVoxelEngine", fullcreen ? glfwGetPrimaryMonitor() : NULL, NULL);
+	window = glfwCreateWindow(width, height, "PolyVoxelEngine", graphicSettings.fullcreen ? glfwGetPrimaryMonitor() : NULL, NULL);
 	if (window == NULL) 
 	{
 		std::cerr << "Failed to create window" << std::endl;
@@ -72,7 +77,7 @@ int GraphicController::init(int openglVersion, int width, int height, bool vsync
 	}
 
 	glfwMakeContextCurrent(window);
-	glfwSwapInterval(vsync);
+	glfwSwapInterval(graphicSettings.vsync);
 	centerWindow();
 
 	glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
@@ -86,6 +91,11 @@ int GraphicController::init(int openglVersion, int width, int height, bool vsync
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	if (gameSettings.rawMouseInput && glfwRawMouseMotionSupported()) 
+	{
+		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+	}
 
 	// programs
 #if ENABLE_SMOOTH_LIGHTING

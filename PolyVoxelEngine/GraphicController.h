@@ -4,10 +4,22 @@
 
 #include<GLFW/glfw3.h>
 
-struct GraphicData
+struct GraphicSettings
 {
-	int width, height;
-	float aspectRatio;
+	int openglVersion;
+	int width;
+	int height;
+	bool vsync;
+	bool fullcreen;
+
+	int menuMaxFps;
+	int gameMaxFps;
+};
+
+struct GameSettings
+{
+	float sensitivity;
+	bool rawMouseInput;
 };
 
 class GraphicController
@@ -23,6 +35,8 @@ public:
 	static int menuMaxFps;
 	static int gameMaxFps;
 
+	static GameSettings gameSettings;
+
 	static GLFWwindow* window;
 	static Shader* chunkProgram;
 	static Shader* textProgram;
@@ -30,7 +44,7 @@ public:
 	static Shader* hotbarProgram;
 	static Shader* buttonProgram;
 
-	static int init(int openglVersion, int width, int height, bool vsync, bool fullcreen, int menuMaxFps, int gameMaxFps);
+	static int init(const GraphicSettings& graphicSettings, const GameSettings& gameSettings);
 
 	static void setWindowTitle(const char* title);
 	static void setCursorMode(int mode);

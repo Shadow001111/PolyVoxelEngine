@@ -12,17 +12,26 @@ int main()
 	{
 		auto parser = IniParser("settings.ini");
 
-		int width = parser.Get<int>("VideoSettings", "Width", 1200);
-		int height = parser.Get<int>("VideoSettings", "Height", 800);
-		bool vsync = parser.Get<bool>("VideoSettings", "VSync", 0);
-		bool fullscreen = parser.Get<bool>("VideoSettings", "Fullscreen", 0);
+		GraphicSettings graphicSettings =
+		{
+			460,
+			parser.Get<int>("VideoSettings", "Width", 1200),
+			parser.Get<int>("VideoSettings", "Height", 800),
+			parser.Get<bool>("VideoSettings", "VSync", 0),
+			parser.Get<bool>("VideoSettings", "Fullscreen", 0),
+			parser.Get<int>("FPS", "MenuMaxFps", 20),
+			parser.Get<int>("FPS", "GameMaxFps", 60)
+		};
 
-		int menuMaxFps = parser.Get<int>("FPS", "MenuMaxFps", 20);
-		int gameMaxFps = parser.Get<int>("FPS", "GameMaxFps", 60);
+		GameSettings gameSettings =
+		{
+			parser.Get<float>("Mouse", "Sensitivity", 50),
+			parser.Get<bool>("Mouse", "RawMouseInput", false),
+		};
 
 		int result = GraphicController::init
 		(
-			460, width, height, vsync, fullscreen, menuMaxFps, gameMaxFps
+			graphicSettings, gameSettings
 		);
 		if (result != 0)
 		{

@@ -550,6 +550,7 @@ void Player::Inputs(float dt, float time)
 		double mouseX, mouseY;
 		glfwGetCursorPos(GraphicController::window, &mouseX, &mouseY);
 
+		float sensitivity = GraphicController::gameSettings.sensitivity;
 		float rotX = sensitivity * 2.0f * ((float)mouseY / (float)GraphicController::height - 0.5f);
 		float rotY = sensitivity * 2.0f * ((float)mouseX / (float)GraphicController::width - 0.5f);
 
