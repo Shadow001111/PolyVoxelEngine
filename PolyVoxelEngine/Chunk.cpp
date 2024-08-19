@@ -238,10 +238,10 @@ void Chunk::generateFaces()
 					if (faceBlock != Block::Void && faceBlock != block && ALL_BLOCK_DATA[(size_t)faceBlock].transparent)
 					{
 						char ao = 255;
-						/*if (blockData.lightPower == 0)
+						if (blockData.lightPower == 0)
 						{
 							ao = getAO(x + offsets[0], y + offsets[1], z + offsets[2], sidePlane[planeIndex], aoPackOffsets[normalID]);
-						}*/
+						}
 
 						auto& face = facesData[normalID + (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6];
 						face.none = false;
@@ -340,50 +340,97 @@ char Chunk::getAO(int x, int y, int z, char side, const char* packOffsets) const
 
 void Chunk::getSmoothLighting(int x, int y, int z, char side, const char* packOffsets, uint8_t* result) const
 {
-	uint8_t a{}, b{}, c{}, d{}, e{}, f{}, g{}, h{};
-	uint8_t center = getLightingAt(x, y, z);
+	bool ba{}, bb{}, bc{}, bd{}, be{}, bf{}, bg{}, bh{};
+	uint8_t la{}, lb{}, lc{}, ld{}, le{}, lf{}, lg{}, lh{};
+
+	bool bcenter = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z)].transparent;
+	uint8_t lcenter = getLightingAt(x, y, z);
 	switch (side)
 	{
 	case 'X':
-		a = getLightingAt(x, y, z - 1);
-		b = getLightingAt(x, y - 1, z - 1);
-		c = getLightingAt(x, y - 1, z);
-		d = getLightingAt(x, y - 1, z + 1);
-		e = getLightingAt(x, y, z + 1);
-		f = getLightingAt(x, y + 1, z + 1);
-		g = getLightingAt(x, y + 1, z);
-		h = getLightingAt(x, y + 1, z - 1);
+		la = getLightingAt(x, y, z - 1);
+		lb = getLightingAt(x, y - 1, z - 1);
+		lc = getLightingAt(x, y - 1, z);
+		ld = getLightingAt(x, y - 1, z + 1);
+		le = getLightingAt(x, y, z + 1);
+		lf = getLightingAt(x, y + 1, z + 1);
+		lg = getLightingAt(x, y + 1, z);
+		lh = getLightingAt(x, y + 1, z - 1);
 		break;
 	case 'Y':
-		a = getLightingAt(x, y, z - 1);
-		b = getLightingAt(x - 1, y, z - 1);
-		c = getLightingAt(x - 1, y, z);
-		d = getLightingAt(x - 1, y, z + 1);
-		e = getLightingAt(x, y, z + 1);
-		f = getLightingAt(x + 1, y, z + 1);
-		g = getLightingAt(x + 1, y, z);
-		h = getLightingAt(x + 1, y, z - 1);
+		la = getLightingAt(x, y, z - 1);
+		lb = getLightingAt(x - 1, y, z - 1);
+		lc = getLightingAt(x - 1, y, z);
+		ld = getLightingAt(x - 1, y, z + 1);
+		le = getLightingAt(x, y, z + 1);
+		lf = getLightingAt(x + 1, y, z + 1);
+		lg = getLightingAt(x + 1, y, z);
+		lh = getLightingAt(x + 1, y, z - 1);
 		break;
 	case 'Z':
-		a = getLightingAt(x - 1, y, z);
-		b = getLightingAt(x - 1, y - 1, z);
-		c = getLightingAt(x, y - 1, z);
-		d = getLightingAt(x + 1, y - 1, z);
-		e = getLightingAt(x + 1, y, z);
-		f = getLightingAt(x + 1, y + 1, z);
-		g = getLightingAt(x, y + 1, z);
-		h = getLightingAt(x - 1, y + 1, z);
+		la = getLightingAt(x - 1, y, z);
+		lb = getLightingAt(x - 1, y - 1, z);
+		lc = getLightingAt(x, y - 1, z);
+		ld = getLightingAt(x + 1, y - 1, z);
+		le = getLightingAt(x + 1, y, z);
+		lf = getLightingAt(x + 1, y + 1, z);
+		lg = getLightingAt(x, y + 1, z);
+		lh = getLightingAt(x - 1, y + 1, z);
 		break;
 	}
-	uint8_t bl0 = ((center & 15) + (a & 15) + (b & 15) + (c & 15)) / 4;
-	uint8_t bl1 = ((center & 15) + (g & 15) + (h & 15) + (a & 15)) / 4;
-	uint8_t bl2 = ((center & 15) + (e & 15) + (f & 15) + (g & 15)) / 4;
-	uint8_t bl3 = ((center & 15) + (c & 15) + (d & 15) + (e & 15)) / 4;
+	switch (side)
+	{
+	case 'X':
+		ba = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z - 1)].transparent;
+		bb = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z - 1)].transparent;
+		bc = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z)].transparent;
+		bd = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z + 1)].transparent;
+		be = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z + 1)].transparent;
+		bf = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z + 1)].transparent;
+		bg = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z)].transparent;
+		bh = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z - 1)].transparent;
+		break;
+	case 'Y':
+		ba = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z - 1)].transparent;
+		bb = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z - 1)].transparent;
+		bc = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z)].transparent;
+		bd = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z + 1)].transparent;
+		be = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z + 1)].transparent;
+		bf = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z + 1)].transparent;
+		bg = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z)].transparent;
+		bh = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z - 1)].transparent;
+		break;
+	case 'Z':
+		ba = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z)].transparent;
+		bb = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y - 1, z)].transparent;
+		bc = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z)].transparent;
+		bd = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y - 1, z)].transparent;
+		be = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z)].transparent;
+		bf = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y + 1, z)].transparent;
+		bg = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z)].transparent;
+		bh = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y + 1, z)].transparent;
+		break;
+	}
 
-	uint8_t sl0 = ((center >> 4) + (a >> 4) + (b >> 4) + (c >> 4)) / 4;
-	uint8_t sl1 = ((center >> 4) + (g >> 4) + (h >> 4) + (a >> 4)) / 4;
-	uint8_t sl2 = ((center >> 4) + (e >> 4) + (f >> 4) + (g >> 4)) / 4;
-	uint8_t sl3 = ((center >> 4) + (c >> 4) + (d >> 4) + (e >> 4)) / 4;
+	uint8_t sum0 = (bcenter + ba + bb + bc);
+	uint8_t sum1 = (bcenter + bg + bh + ba);
+	uint8_t sum2 = (bcenter + be + bf + bg);
+	uint8_t sum3 = (bcenter + bc + bd + be);
+
+	sum0 = sum0 == 0 ? 16 : sum0;
+	sum1 = sum1 == 0 ? 16 : sum1;
+	sum2 = sum2 == 0 ? 16 : sum2;
+	sum3 = sum3 == 0 ? 16 : sum3;
+
+	uint8_t bl0 = ((lcenter & 15) + (la & 15) + (lb & 15) + (lc & 15)) / sum0;
+	uint8_t bl1 = ((lcenter & 15) + (lg & 15) + (lh & 15) + (la & 15)) / sum1;
+	uint8_t bl2 = ((lcenter & 15) + (le & 15) + (lf & 15) + (lg & 15)) / sum2;
+	uint8_t bl3 = ((lcenter & 15) + (lc & 15) + (ld & 15) + (le & 15)) / sum3;
+
+	uint8_t sl0 = ((lcenter >> 4) + (la >> 4) + (lb >> 4) + (lc >> 4)) / sum0;
+	uint8_t sl1 = ((lcenter >> 4) + (lg >> 4) + (lh >> 4) + (la >> 4)) / sum1;
+	uint8_t sl2 = ((lcenter >> 4) + (le >> 4) + (lf >> 4) + (lg >> 4)) / sum2;
+	uint8_t sl3 = ((lcenter >> 4) + (lc >> 4) + (ld >> 4) + (le >> 4)) / sum3;
 
 	result[packOffsets[0]] = (sl0 << 4) | bl0;
 	result[packOffsets[1]] = (sl1 << 4) | bl1;

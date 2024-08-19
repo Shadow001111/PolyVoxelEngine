@@ -52,7 +52,7 @@ struct WorldData
 
 class World
 {
-	size_t time = 24000 / 2;
+	size_t time = 0;// 24000 / 2;
 
 	Chunk** chunkPool = nullptr;
 	size_t chunkPoolIndex = 0;
