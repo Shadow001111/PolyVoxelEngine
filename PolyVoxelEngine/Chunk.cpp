@@ -190,19 +190,7 @@ void Chunk::generateFaces()
 	// generate
 	int offsets[3] = { 0, 0, 0 };
 
-	const char sidePlane[3] = { 'X', 'Y', 'Z' };
-	const char aoPackOffsets[6][4] =
-	{
-		// offset = (3 * 2) - order * 2
-		{2, 4, 6, 0},
-		{0, 6, 4, 2},
-		{6, 4, 2, 0},
-		{0, 2, 4, 6},
-		{0, 6, 4, 2},
-		{2, 4, 6, 0}
-	};
-
-	const char smoothLightingPackOffsets[6][4] =
+	const char packOffsets[6][4] =
 	{
 		// offset = 3 - order
 		{1, 2, 3, 0},
@@ -237,23 +225,27 @@ void Chunk::generateFaces()
 					Block faceBlock = getBlockAtSideCheck(x + offsets[0], y + offsets[1], z + offsets[2], normalID);
 					if (faceBlock != Block::Void && faceBlock != block && ALL_BLOCK_DATA[(size_t)faceBlock].transparent)
 					{
+						auto& face = facesData[normalID + (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6];
+
+#if ENABLE_SMOOTH_LIGHTING
+						char ao = getAOandSmoothLighting(x + offsets[0], y + offsets[1], z + offsets[2], planeIndex, packOffsets[normalID], face.smoothLighting);
+						if (blockData.lightPower > 0)
+						{
+							ao = 255;
+						}
+#else
 						char ao = 255;
 						if (blockData.lightPower == 0)
 						{
-							ao = getAO(x + offsets[0], y + offsets[1], z + offsets[2], sidePlane[planeIndex], aoPackOffsets[normalID]);
+							ao = getAO(x + offsets[0], y + offsets[1], z + offsets[2], planeIndex, packOffsets[normalID]);
 						}
+#endif
 
-						auto& face = facesData[normalID + (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6];
 						face.none = false;
 						face.transparent = blockData.transparent;
 						face.ao = ao;
 						face.textureID = textures[normalID];
 						face.lighting = getLightingAtSideCheck(x + offsets[0], y + offsets[1], z + offsets[2], normalID);
-
-#if ENABLE_SMOOTH_LIGHTING
-						getSmoothLighting(x + offsets[0], y + offsets[1], z + offsets[2], sidePlane[planeIndex], smoothLightingPackOffsets[normalID], face.smoothLighting);
-
-#endif
 					}
 					offsets[planeIndex] = 0;
 				}
@@ -293,7 +285,7 @@ Chunk* Chunk::getChunkAt(int x, int y, int z)
 
 char Chunk::getAO(int x, int y, int z, char side, const char* packOffsets) const
 {
-	bool a{}, b{}, c{}, d{}, e{}, f{}, g{}, h{};
+	bool a, b, c, d, e, f, g, h;
 	switch (side)
 	{
 	case 'X':
@@ -331,111 +323,11 @@ char Chunk::getAO(int x, int y, int z, char side, const char* packOffsets) const
 	char ao1 = g + h + a;
 	char ao2 = e + f + g;
 	char ao3 = c + d + e;
-
-	return  (ao0 << packOffsets[0]) |
-			(ao1 << packOffsets[1]) |
-			(ao2 << packOffsets[2]) |
-			(ao3 << packOffsets[3]);
-}
-
-void Chunk::getSmoothLighting(int x, int y, int z, char side, const char* packOffsets, uint8_t* result) const
-{
-	bool ba{}, bb{}, bc{}, bd{}, be{}, bf{}, bg{}, bh{};
-	uint8_t la{}, lb{}, lc{}, ld{}, le{}, lf{}, lg{}, lh{};
-
-	bool bcenter = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z)].transparent;
-	uint8_t lcenter = getLightingAt(x, y, z);
-	switch (side)
-	{
-	case 'X':
-		la = getLightingAt(x, y, z - 1);
-		lb = getLightingAt(x, y - 1, z - 1);
-		lc = getLightingAt(x, y - 1, z);
-		ld = getLightingAt(x, y - 1, z + 1);
-		le = getLightingAt(x, y, z + 1);
-		lf = getLightingAt(x, y + 1, z + 1);
-		lg = getLightingAt(x, y + 1, z);
-		lh = getLightingAt(x, y + 1, z - 1);
-		break;
-	case 'Y':
-		la = getLightingAt(x, y, z - 1);
-		lb = getLightingAt(x - 1, y, z - 1);
-		lc = getLightingAt(x - 1, y, z);
-		ld = getLightingAt(x - 1, y, z + 1);
-		le = getLightingAt(x, y, z + 1);
-		lf = getLightingAt(x + 1, y, z + 1);
-		lg = getLightingAt(x + 1, y, z);
-		lh = getLightingAt(x + 1, y, z - 1);
-		break;
-	case 'Z':
-		la = getLightingAt(x - 1, y, z);
-		lb = getLightingAt(x - 1, y - 1, z);
-		lc = getLightingAt(x, y - 1, z);
-		ld = getLightingAt(x + 1, y - 1, z);
-		le = getLightingAt(x + 1, y, z);
-		lf = getLightingAt(x + 1, y + 1, z);
-		lg = getLightingAt(x, y + 1, z);
-		lh = getLightingAt(x - 1, y + 1, z);
-		break;
-	}
-	switch (side)
-	{
-	case 'X':
-		ba = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z - 1)].transparent;
-		bb = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z - 1)].transparent;
-		bc = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z)].transparent;
-		bd = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z + 1)].transparent;
-		be = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z + 1)].transparent;
-		bf = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z + 1)].transparent;
-		bg = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z)].transparent;
-		bh = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z - 1)].transparent;
-		break;
-	case 'Y':
-		ba = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z - 1)].transparent;
-		bb = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z - 1)].transparent;
-		bc = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z)].transparent;
-		bd = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z + 1)].transparent;
-		be = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z + 1)].transparent;
-		bf = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z + 1)].transparent;
-		bg = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z)].transparent;
-		bh = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z - 1)].transparent;
-		break;
-	case 'Z':
-		ba = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z)].transparent;
-		bb = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y - 1, z)].transparent;
-		bc = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z)].transparent;
-		bd = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y - 1, z)].transparent;
-		be = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z)].transparent;
-		bf = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y + 1, z)].transparent;
-		bg = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z)].transparent;
-		bh = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y + 1, z)].transparent;
-		break;
-	}
-
-	uint8_t sum0 = (bcenter + ba + bb + bc);
-	uint8_t sum1 = (bcenter + bg + bh + ba);
-	uint8_t sum2 = (bcenter + be + bf + bg);
-	uint8_t sum3 = (bcenter + bc + bd + be);
-
-	sum0 = sum0 == 0 ? 16 : sum0;
-	sum1 = sum1 == 0 ? 16 : sum1;
-	sum2 = sum2 == 0 ? 16 : sum2;
-	sum3 = sum3 == 0 ? 16 : sum3;
-
-	uint8_t bl0 = ((lcenter & 15) + (la & 15) + (lb & 15) + (lc & 15)) / sum0;
-	uint8_t bl1 = ((lcenter & 15) + (lg & 15) + (lh & 15) + (la & 15)) / sum1;
-	uint8_t bl2 = ((lcenter & 15) + (le & 15) + (lf & 15) + (lg & 15)) / sum2;
-	uint8_t bl3 = ((lcenter & 15) + (lc & 15) + (ld & 15) + (le & 15)) / sum3;
-
-	uint8_t sl0 = ((lcenter >> 4) + (la >> 4) + (lb >> 4) + (lc >> 4)) / sum0;
-	uint8_t sl1 = ((lcenter >> 4) + (lg >> 4) + (lh >> 4) + (la >> 4)) / sum1;
-	uint8_t sl2 = ((lcenter >> 4) + (le >> 4) + (lf >> 4) + (lg >> 4)) / sum2;
-	uint8_t sl3 = ((lcenter >> 4) + (lc >> 4) + (ld >> 4) + (le >> 4)) / sum3;
-
-	result[packOffsets[0]] = (sl0 << 4) | bl0;
-	result[packOffsets[1]] = (sl1 << 4) | bl1;
-	result[packOffsets[2]] = (sl2 << 4) | bl2;
-	result[packOffsets[3]] = (sl3 << 4) | bl3;
+	return  
+		(ao0 << (packOffsets[0] << 1)) |
+		(ao1 << (packOffsets[1] << 1)) |
+		(ao2 << (packOffsets[2] << 1)) |
+		(ao3 << (packOffsets[3] << 1));
 }
 
 size_t Chunk::getIndex(size_t x, size_t y, size_t z)
@@ -450,6 +342,106 @@ SizeT3 Chunk::getCoordinatesByIndex(size_t index)
 	size_t y = index_xy / Settings::CHUNK_SIZE;
 	size_t x = index_xy - y * Settings::CHUNK_SIZE;
 	return SizeT3(x, y, z);
+}
+
+char Chunk::getAOandSmoothLighting(int x, int y, int z, size_t side, const char* packOffsets, uint8_t* smoothLighting) const
+{
+	bool bcenter, ba, bb, bc, bd, be, bf, bg, bh;
+	uint8_t lcenter, la, lb, lc, ld, le, lf, lg, lh;
+
+	bcenter = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z)].transparent;
+	lcenter = getLightingAt(x, y, z);
+
+	switch (side)
+	{
+	case 0:
+		la = getLightingAt(x, y, z - 1);
+		lb = getLightingAt(x, y - 1, z - 1);
+		lc = getLightingAt(x, y - 1, z);
+		ld = getLightingAt(x, y - 1, z + 1);
+		le = getLightingAt(x, y, z + 1);
+		lf = getLightingAt(x, y + 1, z + 1);
+		lg = getLightingAt(x, y + 1, z);
+		lh = getLightingAt(x, y + 1, z - 1);
+
+		ba = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z - 1)].transparent;
+		bb = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z - 1)].transparent;
+		bc = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z)].transparent;
+		bd = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z + 1)].transparent;
+		be = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z + 1)].transparent;
+		bf = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z + 1)].transparent;
+		bg = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z)].transparent;
+		bh = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z - 1)].transparent;
+		break;
+	case 1:
+		la = getLightingAt(x, y, z - 1);
+		lb = getLightingAt(x - 1, y, z - 1);
+		lc = getLightingAt(x - 1, y, z);
+		ld = getLightingAt(x - 1, y, z + 1);
+		le = getLightingAt(x, y, z + 1);
+		lf = getLightingAt(x + 1, y, z + 1);
+		lg = getLightingAt(x + 1, y, z);
+		lh = getLightingAt(x + 1, y, z - 1);
+
+		ba = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z - 1)].transparent;
+		bb = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z - 1)].transparent;
+		bc = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z)].transparent;
+		bd = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z + 1)].transparent;
+		be = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z + 1)].transparent;
+		bf = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z + 1)].transparent;
+		bg = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z)].transparent;
+		bh = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z - 1)].transparent;
+		break;
+	case 2:
+		la = getLightingAt(x - 1, y, z);
+		lb = getLightingAt(x - 1, y - 1, z);
+		lc = getLightingAt(x, y - 1, z);
+		ld = getLightingAt(x + 1, y - 1, z);
+		le = getLightingAt(x + 1, y, z);
+		lf = getLightingAt(x + 1, y + 1, z);
+		lg = getLightingAt(x, y + 1, z);
+		lh = getLightingAt(x - 1, y + 1, z);
+
+		ba = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z)].transparent;
+		bb = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y - 1, z)].transparent;
+		bc = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z)].transparent;
+		bd = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y - 1, z)].transparent;
+		be = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z)].transparent;
+		bf = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y + 1, z)].transparent;
+		bg = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z)].transparent;
+		bh = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y + 1, z)].transparent;
+		break;
+	}
+
+	uint8_t sum0 = bcenter + ba + bb + bc;
+	uint8_t sum1 = bcenter + bg + bh + ba;
+	uint8_t sum2 = bcenter + be + bf + bg;
+	uint8_t sum3 = bcenter + bc + bd + be;
+
+	uint8_t bl0 = ((lcenter & 15) + (la & 15) + (lb & 15) + (lc & 15)) / sum0;
+	uint8_t bl1 = ((lcenter & 15) + (lg & 15) + (lh & 15) + (la & 15)) / sum1;
+	uint8_t bl2 = ((lcenter & 15) + (le & 15) + (lf & 15) + (lg & 15)) / sum2;
+	uint8_t bl3 = ((lcenter & 15) + (lc & 15) + (ld & 15) + (le & 15)) / sum3;
+
+	uint8_t sl0 = ((lcenter >> 4) + (la >> 4) + (lb >> 4) + (lc >> 4)) / sum0;
+	uint8_t sl1 = ((lcenter >> 4) + (lg >> 4) + (lh >> 4) + (la >> 4)) / sum1;
+	uint8_t sl2 = ((lcenter >> 4) + (le >> 4) + (lf >> 4) + (lg >> 4)) / sum2;
+	uint8_t sl3 = ((lcenter >> 4) + (lc >> 4) + (ld >> 4) + (le >> 4)) / sum3;
+
+	smoothLighting[packOffsets[0]] = (sl0 << 4) | bl0;
+	smoothLighting[packOffsets[1]] = (sl1 << 4) | bl1;
+	smoothLighting[packOffsets[2]] = (sl2 << 4) | bl2;
+	smoothLighting[packOffsets[3]] = (sl3 << 4) | bl3;
+
+	char ao0 = ba + bb + bc;
+	char ao1 = bg + bh + ba;
+	char ao2 = be + bf + bg;
+	char ao3 = bc + bd + be;
+	return  
+		(ao0 << (packOffsets[0] << 1)) |
+		(ao1 << (packOffsets[1] << 1)) |
+		(ao2 << (packOffsets[2] << 1)) |
+		(ao3 << (packOffsets[3] << 1));
 }
 
 void Chunk::setBlockByIndexNoSave(size_t index, Block block)

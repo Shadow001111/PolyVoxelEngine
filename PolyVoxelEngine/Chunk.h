@@ -91,7 +91,7 @@ class Chunk
 	std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_SIZE_CUBED>> blockChanges;
 
 	char getAO(int x, int y, int z, char side, const char* packOffsets) const;
-	void getSmoothLighting(int x, int y, int z, char side, const char* packOffsets, uint8_t* result) const;
+	char getAOandSmoothLighting(int x, int y, int z, size_t side, const char* packOffsets, uint8_t* smoothLighting) const;
 
 	void setBlockByIndexNoSave(size_t index, Block block);
 	void setBlockAtNoSave(size_t x, size_t y, size_t z, Block block);
