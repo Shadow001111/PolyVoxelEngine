@@ -15,6 +15,8 @@ int main()
 		GraphicSettings graphicSettings =
 		{
 			460,
+			"PolyVoxelEngine.png",
+
 			parser.Get<int>("VideoSettings", "Width", 1200),
 			parser.Get<int>("VideoSettings", "Height", 800),
 			parser.Get<bool>("VideoSettings", "VSync", 0),

@@ -1,5 +1,6 @@
 #include "GraphicController.h"
 #include "settings.h"
+#include <stb/stb_image.h>
 
 int GraphicController::width = 0;
 int GraphicController::height = 0;
@@ -95,6 +96,24 @@ int GraphicController::init(const GraphicSettings& graphicSettings, const GameSe
 	if (gameSettings.rawMouseInput && glfwRawMouseMotionSupported()) 
 	{
 		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+	}
+
+	{
+		int width, height, channels;
+		unsigned char* pixels = stbi_load(graphicSettings.iconPath.c_str(), &width, &height, &channels, 4);
+		if (pixels == NULL)
+		{
+			std::cerr << "Failed to load icon image" << std::endl;
+		}
+		else
+		{
+			GLFWimage icon;
+			icon.width = width;
+			icon.height = height;
+			icon.pixels = pixels;
+			glfwSetWindowIcon(window, 1, &icon);
+			stbi_image_free(pixels);
+		}
 	}
 
 	// programs

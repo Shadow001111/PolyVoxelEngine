@@ -7,6 +7,8 @@
 struct GraphicSettings
 {
 	int openglVersion;
+	std::string iconPath;
+
 	int width;
 	int height;
 	bool vsync;
