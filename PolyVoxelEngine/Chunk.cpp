@@ -288,7 +288,7 @@ char Chunk::getAO(int x, int y, int z, char side, const char* packOffsets) const
 	bool a, b, c, d, e, f, g, h;
 	switch (side)
 	{
-	case 'X':
+	case 0:
 		a = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z - 1)].transparent;
 		b = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z - 1)].transparent;
 		c = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z)].transparent;
@@ -298,7 +298,7 @@ char Chunk::getAO(int x, int y, int z, char side, const char* packOffsets) const
 		g = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z)].transparent;
 		h = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z - 1)].transparent;
 		break;
-	case 'Y':
+	case 1:
 		a = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z - 1)].transparent;
 		b = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z - 1)].transparent;
 		c = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z)].transparent;
@@ -308,7 +308,7 @@ char Chunk::getAO(int x, int y, int z, char side, const char* packOffsets) const
 		g = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z)].transparent;
 		h = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z - 1)].transparent;
 		break;
-	case 'Z':
+	case 2:
 		a = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z)].transparent;
 		b = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y - 1, z)].transparent;
 		c = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z)].transparent;
