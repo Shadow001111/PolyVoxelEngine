@@ -357,16 +357,9 @@ void Player::keyCallback(int key, int scancode, int action, int mods)
 		}
 		else
 		{
-			glfwSetCursorPos(GraphicController::window, GraphicController::width * 0.5f, GraphicController::height * 0.5f);
+			glfwSetCursorPos(GraphicController::window, GraphicController::width / 2, GraphicController::height / 2);
 			GraphicController::setCursorMode(GLFW_CURSOR_DISABLED);
 		}
-	}
-	else if (key == GLFW_KEY_U)
-	{
-		int div = 10;
-		int w = 1365 / div;
-		int h = 2048 / div;
-		physicEntity.world->buildImage(0, 100, 0, w, h, 0, 1, "PlayerContent/negr.png");
 	}
 
 	// NUMPAD
@@ -555,8 +548,8 @@ void Player::Inputs(float dt, float time)
 		double mouseX, mouseY;
 		glfwGetCursorPos(GraphicController::window, &mouseX, &mouseY);
 
-		float rotX = sensitivity * ((float)mouseY / (float)GraphicController::height - 0.5f);
-		float rotY = sensitivity * ((float)mouseX / (float)GraphicController::width - 0.5f);
+		float rotX = sensitivity * 2.0f * ((float)mouseY / (float)GraphicController::height - 0.5f);
+		float rotY = sensitivity * 2.0f * ((float)mouseX / (float)GraphicController::width - 0.5f);
 
 		rotation.x += rotX;
 		rotation.y += rotY;
