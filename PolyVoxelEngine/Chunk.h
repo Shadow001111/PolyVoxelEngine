@@ -84,6 +84,12 @@ struct TransparentSortFaceData
 	uint8_t dataWH;
 };
 
+struct BlockAndLighting
+{
+	Block block;
+	uint8_t lighting;
+};
+
 class Chunk
 {
 	Block blocks[Settings::CHUNK_SIZE_CUBED];
@@ -132,14 +138,19 @@ public:
 	bool setBlockAtInBoundaries(size_t x, size_t y, size_t z, Block block);
 	Block getBlockAt(int x, int y, int z) const;
 	Block getBlockAtSideCheck(int x, int y, int z, size_t side) const;
-	static Chunk* getChunkAt(int x, int y, int z);
-	bool canSideBeSeen(const Camera& camera, size_t side) const;
 
 	uint8_t getLightingAtInBoundaries(size_t x, size_t y, size_t z) const;
+	void setLightingAtInBoundaries(size_t x, size_t y, size_t z, uint8_t lightPower, bool lightOrSky);
 	uint8_t getLightingAt(int x, int y, int z) const;
 	uint8_t getLightingAtSideCheck(int x, int y, int z, size_t side) const;
-	void setLightingAtInBoundaries(size_t x, size_t y, size_t z, uint8_t lightPower, bool lightOrSky);
 	void setLightingAt(int x, int y, int z, uint8_t lightPower, bool lightOrSky);
+
+	BlockAndLighting getBlockAndLightingAtInBoundaries(size_t x, size_t y, size_t z) const;
+	BlockAndLighting getBlockAndLightingAt(int x, int y, int z) const;
+	BlockAndLighting getBlockAndLightingAtSideCheck(int x, int y, int z, size_t side) const;
+	
+	static Chunk* getChunkAt(int x, int y, int z);
+	bool canSideBeSeen(const Camera& camera, size_t side) const;
 
 	int posHash() const;
 	static size_t getIndex(size_t x, size_t y, size_t z);

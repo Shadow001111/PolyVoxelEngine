@@ -144,9 +144,12 @@ void Chunk::generateBlocks()
 							15, true
 						);
 					}
+					lightingMap[getIndex(x, y, z)] = 240;
 				}
-
-				lightingMap[getIndex(x, y, z)] = 240;
+				else
+				{
+					lightingMap[getIndex(x, y, z)] = 0;
+				}
 			}
 		}
 	}
@@ -346,72 +349,66 @@ SizeT3 Chunk::getCoordinatesByIndex(size_t index)
 
 char Chunk::getAOandSmoothLighting(int x, int y, int z, size_t side, const char* packOffsets, uint8_t* smoothLighting) const
 {
-	bool bcenter, ba, bb, bc, bd, be, bf, bg, bh;
-	uint8_t lcenter, la, lb, lc, ld, le, lf, lg, lh;
+	BlockAndLighting center, a, b, c, d, e, f, g, h;
 
-	bcenter = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z)].transparent;
-	lcenter = getLightingAt(x, y, z);
+	center = getBlockAndLightingAt(x, y, z);
 
 	switch (side)
 	{
 	case 0:
-		la = getLightingAt(x, y, z - 1);
-		lb = getLightingAt(x, y - 1, z - 1);
-		lc = getLightingAt(x, y - 1, z);
-		ld = getLightingAt(x, y - 1, z + 1);
-		le = getLightingAt(x, y, z + 1);
-		lf = getLightingAt(x, y + 1, z + 1);
-		lg = getLightingAt(x, y + 1, z);
-		lh = getLightingAt(x, y + 1, z - 1);
-
-		ba = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z - 1)].transparent;
-		bb = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z - 1)].transparent;
-		bc = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z)].transparent;
-		bd = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z + 1)].transparent;
-		be = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z + 1)].transparent;
-		bf = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z + 1)].transparent;
-		bg = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z)].transparent;
-		bh = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z - 1)].transparent;
+		a = getBlockAndLightingAt(x, y, z - 1);
+		b = getBlockAndLightingAt(x, y - 1, z - 1);
+		c = getBlockAndLightingAt(x, y - 1, z);
+		d = getBlockAndLightingAt(x, y - 1, z + 1);
+		e = getBlockAndLightingAt(x, y, z + 1);
+		f = getBlockAndLightingAt(x, y + 1, z + 1);
+		g = getBlockAndLightingAt(x, y + 1, z);
+		h = getBlockAndLightingAt(x, y + 1, z - 1);
 		break;
 	case 1:
-		la = getLightingAt(x, y, z - 1);
-		lb = getLightingAt(x - 1, y, z - 1);
-		lc = getLightingAt(x - 1, y, z);
-		ld = getLightingAt(x - 1, y, z + 1);
-		le = getLightingAt(x, y, z + 1);
-		lf = getLightingAt(x + 1, y, z + 1);
-		lg = getLightingAt(x + 1, y, z);
-		lh = getLightingAt(x + 1, y, z - 1);
-
-		ba = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z - 1)].transparent;
-		bb = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z - 1)].transparent;
-		bc = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z)].transparent;
-		bd = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z + 1)].transparent;
-		be = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y, z + 1)].transparent;
-		bf = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z + 1)].transparent;
-		bg = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z)].transparent;
-		bh = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z - 1)].transparent;
+		a = getBlockAndLightingAt(x, y, z - 1);
+		b = getBlockAndLightingAt(x - 1, y, z - 1);
+		c = getBlockAndLightingAt(x - 1, y, z);
+		d = getBlockAndLightingAt(x - 1, y, z + 1);
+		e = getBlockAndLightingAt(x, y, z + 1);
+		f = getBlockAndLightingAt(x + 1, y, z + 1);
+		g = getBlockAndLightingAt(x + 1, y, z);
+		h = getBlockAndLightingAt(x + 1, y, z - 1);
 		break;
 	case 2:
-		la = getLightingAt(x - 1, y, z);
-		lb = getLightingAt(x - 1, y - 1, z);
-		lc = getLightingAt(x, y - 1, z);
-		ld = getLightingAt(x + 1, y - 1, z);
-		le = getLightingAt(x + 1, y, z);
-		lf = getLightingAt(x + 1, y + 1, z);
-		lg = getLightingAt(x, y + 1, z);
-		lh = getLightingAt(x - 1, y + 1, z);
-
-		ba = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y, z)].transparent;
-		bb = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y - 1, z)].transparent;
-		bc = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y - 1, z)].transparent;
-		bd = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y - 1, z)].transparent;
-		be = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y, z)].transparent;
-		bf = ALL_BLOCK_DATA[(size_t)getBlockAt(x + 1, y + 1, z)].transparent;
-		bg = ALL_BLOCK_DATA[(size_t)getBlockAt(x, y + 1, z)].transparent;
-		bh = ALL_BLOCK_DATA[(size_t)getBlockAt(x - 1, y + 1, z)].transparent;
+		a = getBlockAndLightingAt(x - 1, y, z);
+		b = getBlockAndLightingAt(x - 1, y - 1, z);
+		c = getBlockAndLightingAt(x, y - 1, z);
+		d = getBlockAndLightingAt(x + 1, y - 1, z);
+		e = getBlockAndLightingAt(x + 1, y, z);
+		f = getBlockAndLightingAt(x + 1, y + 1, z);
+		g = getBlockAndLightingAt(x, y + 1, z);
+		h = getBlockAndLightingAt(x - 1, y + 1, z);
 		break;
 	}
+
+	bool bcenter, ba, bb, bc, bd, be, bf, bg, bh;
+	uint8_t lcenter, la, lb, lc, ld, le, lf, lg, lh;
+
+	bcenter = ALL_BLOCK_DATA[(size_t)center.block].transparent;
+	ba = ALL_BLOCK_DATA[(size_t)a.block].transparent;
+	bb = ALL_BLOCK_DATA[(size_t)b.block].transparent;
+	bc = ALL_BLOCK_DATA[(size_t)c.block].transparent;
+	bd = ALL_BLOCK_DATA[(size_t)d.block].transparent;
+	be = ALL_BLOCK_DATA[(size_t)e.block].transparent;
+	bf = ALL_BLOCK_DATA[(size_t)f.block].transparent;
+	bg = ALL_BLOCK_DATA[(size_t)g.block].transparent;
+	bh = ALL_BLOCK_DATA[(size_t)h.block].transparent;
+
+	lcenter = center.lighting;
+	la = a.lighting;
+	lb = b.lighting;
+	lc = c.lighting;
+	ld = d.lighting;
+	le = e.lighting;
+	lf = f.lighting;
+	lg = g.lighting;
+	lh = h.lighting;
 
 	uint8_t sum0 = bcenter + ba + bb + bc;
 	uint8_t sum1 = bcenter + bg + bh + ba;
@@ -1092,6 +1089,84 @@ void Chunk::setLightingAt(int x, int y, int z, uint8_t lightPower, bool lightOrS
 	y &= Settings::CHUNK_SIZE - 1;
 	z &= Settings::CHUNK_SIZE - 1;
 	chunk->setLightingAtInBoundaries(x, y, z, lightPower, lightOrSky);
+}
+
+BlockAndLighting Chunk::getBlockAndLightingAtInBoundaries(size_t x, size_t y, size_t z) const
+{
+	size_t index = getIndex(x, y, z);
+	return {blocks[index], lightingMap[index]};
+}
+
+BlockAndLighting Chunk::getBlockAndLightingAt(int x, int y, int z) const
+{
+	if (
+		x >= 0 && x < Settings::CHUNK_SIZE &&
+		y >= 0 && y < Settings::CHUNK_SIZE &&
+		z >= 0 && z < Settings::CHUNK_SIZE
+		)
+	{
+		return getBlockAndLightingAtInBoundaries(x, y, z);
+	}
+
+	int chX = X;
+	int chY = Y;
+	int chZ = Z;
+
+	if (x < 0)
+	{
+		chX--;
+	}
+	else if (x >= Settings::CHUNK_SIZE)
+	{
+		chX++;
+	}
+	if (y < 0)
+	{
+		chY--;
+	}
+	else if (y >= Settings::CHUNK_SIZE)
+	{
+		chY++;
+	}
+	if (z < 0)
+	{
+		chZ--;
+	}
+	else if (z >= Settings::CHUNK_SIZE)
+	{
+		chZ++;
+	}
+
+	const Chunk* chunk = getChunkAt(chX, chY, chZ);
+	if (!chunk)
+	{
+		return {Block::Void, 0};
+	}
+	x &= Settings::CHUNK_SIZE - 1;
+	y &= Settings::CHUNK_SIZE - 1;
+	z &= Settings::CHUNK_SIZE - 1;
+	return chunk->getBlockAndLightingAtInBoundaries(x, y, z);
+}
+
+BlockAndLighting Chunk::getBlockAndLightingAtSideCheck(int x, int y, int z, size_t side) const
+{
+	if (
+		x >= 0 && x < Settings::CHUNK_SIZE &&
+		y >= 0 && y < Settings::CHUNK_SIZE &&
+		z >= 0 && z < Settings::CHUNK_SIZE
+		)
+	{
+		return getBlockAndLightingAtInBoundaries(x, y, z);
+	}
+	const Chunk* chunk = neighbours[side];
+	if (!chunk)
+	{
+		return {Block::Void, 0};
+	}
+	x &= Settings::CHUNK_SIZE - 1;
+	y &= Settings::CHUNK_SIZE - 1;
+	z &= Settings::CHUNK_SIZE - 1;
+	return chunk->getBlockAndLightingAtInBoundaries(x, y, z);
 }
 
 Block Chunk::getBlockAtSideCheck(int x, int y, int z, size_t side) const
