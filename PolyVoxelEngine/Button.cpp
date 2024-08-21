@@ -9,41 +9,44 @@ struct ButtonVertex
 	{}
 };
 
-const ButtonVertex buttonVertexes[4] =
-{
-	{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}
-};
-
 Button::Button()
 {}
 
-Button::Button(float x, float y, float width, float height, const std::string& label, std::function<void()> onClick, AligmentX aligmentX, AligmentY aligmentY) :
+Button::Button(float x_, float y_, float width, float height, const std::string& label, std::function<void()> onClick, AligmentX aligmentX, AligmentY aligmentY) :
 	width(width), height(height), label(label), onClick(onClick)
 {
 	if (aligmentX == AligmentX::Left)
 	{
-		this->x = x;
+		x = x_;
 	}
 	else if (aligmentX == AligmentX::Right)
 	{
-		this->x = x - width;
+		x = x_ - width;
 	}
 	else
 	{
-		this->x = x - width * 0.5f;
+		x = x_ - width * 0.5f;
 	}
 	if (aligmentY == AligmentY::Bottom)
 	{
-		this->y = y;
+		y = y_;
 	}
 	else if (aligmentY == AligmentY::Top)
 	{
-		this->y = y - height;
+		y = y_ - height;
 	}
 	else
 	{
-		this->y = y - height * 0.5f;
+		y = y_ - height * 0.5f;
 	}
+
+	const ButtonVertex buttonVertexes[4] =
+	{
+		{x, y},
+		{x + width, y},
+		{x + width, y + height},
+		{x, y + height}
+	};
 
 	vao = new VAO();
 	vbo = new VBO((const char*)buttonVertexes, sizeof(buttonVertexes), GL_STATIC_DRAW);
@@ -78,8 +81,8 @@ Button::~Button()
 
 void Button::draw() const
 {
-	GraphicController::buttonProgram->setUniformFloat2("position", x, y);
-	GraphicController::buttonProgram->setUniformFloat2("scale", width, height);
+	//GraphicController::buttonProgram->setUniformFloat2("position", x, y);
+	//GraphicController::buttonProgram->setUniformFloat2("scale", width, height);
 	vao->bind();
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }

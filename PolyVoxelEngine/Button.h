@@ -15,7 +15,7 @@ class Button
 	VBO* vbo = nullptr;
 public:
 	Button();
-	Button(float x, float y, float width, float height, const std::string& label, std::function<void()> onClick, AligmentX aligmentX, AligmentY aligmentY);
+	Button(float x_, float y_, float width, float height, const std::string& label, std::function<void()> onClick, AligmentX aligmentX, AligmentY aligmentY);
 	Button(Button&& other) noexcept;
 	~Button();
 

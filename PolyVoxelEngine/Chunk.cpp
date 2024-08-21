@@ -229,7 +229,10 @@ void Chunk::generateFaces()
 					if (faceBlock != Block::Void && faceBlock != block && ALL_BLOCK_DATA[(size_t)faceBlock].transparent)
 					{
 						auto& face = facesData[normalID + (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6];
-
+						face.none = false;
+						face.transparent = blockData.transparent;
+						face.textureID = textures[normalID];
+						face.lighting = getLightingAtSideCheck(x + offsets[0], y + offsets[1], z + offsets[2], normalID);
 #if ENABLE_SMOOTH_LIGHTING
 						char ao = getAOandSmoothLighting(x + offsets[0], y + offsets[1], z + offsets[2], planeIndex, packOffsets[normalID], face.smoothLighting);
 						if (blockData.lightPower > 0)
@@ -243,12 +246,7 @@ void Chunk::generateFaces()
 							ao = getAO(x + offsets[0], y + offsets[1], z + offsets[2], planeIndex, packOffsets[normalID]);
 						}
 #endif
-
-						face.none = false;
-						face.transparent = blockData.transparent;
 						face.ao = ao;
-						face.textureID = textures[normalID];
-						face.lighting = getLightingAtSideCheck(x + offsets[0], y + offsets[1], z + offsets[2], normalID);
 					}
 					offsets[planeIndex] = 0;
 				}
@@ -387,28 +385,25 @@ char Chunk::getAOandSmoothLighting(int x, int y, int z, size_t side, const char*
 		break;
 	}
 
-	bool bcenter, ba, bb, bc, bd, be, bf, bg, bh;
-	uint8_t lcenter, la, lb, lc, ld, le, lf, lg, lh;
+	bool bcenter = ALL_BLOCK_DATA[(size_t)center.block].transparent;
+	bool ba = ALL_BLOCK_DATA[(size_t)a.block].transparent;
+	bool bb = ALL_BLOCK_DATA[(size_t)b.block].transparent;
+	bool bc = ALL_BLOCK_DATA[(size_t)c.block].transparent;
+	bool bd = ALL_BLOCK_DATA[(size_t)d.block].transparent;
+	bool be = ALL_BLOCK_DATA[(size_t)e.block].transparent;
+	bool bf = ALL_BLOCK_DATA[(size_t)f.block].transparent;
+	bool bg = ALL_BLOCK_DATA[(size_t)g.block].transparent;
+	bool bh = ALL_BLOCK_DATA[(size_t)h.block].transparent;
 
-	bcenter = ALL_BLOCK_DATA[(size_t)center.block].transparent;
-	ba = ALL_BLOCK_DATA[(size_t)a.block].transparent;
-	bb = ALL_BLOCK_DATA[(size_t)b.block].transparent;
-	bc = ALL_BLOCK_DATA[(size_t)c.block].transparent;
-	bd = ALL_BLOCK_DATA[(size_t)d.block].transparent;
-	be = ALL_BLOCK_DATA[(size_t)e.block].transparent;
-	bf = ALL_BLOCK_DATA[(size_t)f.block].transparent;
-	bg = ALL_BLOCK_DATA[(size_t)g.block].transparent;
-	bh = ALL_BLOCK_DATA[(size_t)h.block].transparent;
-
-	lcenter = center.lighting;
-	la = a.lighting;
-	lb = b.lighting;
-	lc = c.lighting;
-	ld = d.lighting;
-	le = e.lighting;
-	lf = f.lighting;
-	lg = g.lighting;
-	lh = h.lighting;
+	uint8_t lcenter = center.lighting;
+	uint8_t la = a.lighting;
+	uint8_t lb = b.lighting;
+	uint8_t lc = c.lighting;
+	uint8_t ld = d.lighting;
+	uint8_t le = e.lighting;
+	uint8_t lf = f.lighting;
+	uint8_t lg = g.lighting;
+	uint8_t lh = h.lighting;
 
 	uint8_t sum0 = bcenter + ba + bb + bc;
 	uint8_t sum1 = bcenter + bg + bh + ba;

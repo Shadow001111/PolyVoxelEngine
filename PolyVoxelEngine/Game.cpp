@@ -250,11 +250,11 @@ void Game::run()
 	float frameDelay;
 	if (GraphicController::gameMaxFps < 1)
 	{
-		frameDelay = 1.0f / GraphicController::gameMaxFps;
+		frameDelay = 0.0f;
 	}
 	else
 	{
-		frameDelay = 0.0f;
+		frameDelay = 1.0f / GraphicController::gameMaxFps;
 	}
 
 	float previousTime = glfwGetTime();

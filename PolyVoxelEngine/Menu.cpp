@@ -48,11 +48,11 @@ void Menu::run()
 	float frameDelay;
 	if (GraphicController::menuMaxFps < 1)
 	{
-		frameDelay = 1.0f / GraphicController::menuMaxFps;
+		frameDelay = 0.0f;
 	}
 	else
 	{
-		frameDelay = 0.0f;
+		frameDelay = 1.0f / GraphicController::menuMaxFps;
 	}
 
 	while (!GraphicController::shouldWindowClose())

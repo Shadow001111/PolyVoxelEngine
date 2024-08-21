@@ -31,5 +31,5 @@ const BlockData ALL_BLOCK_DATA[(size_t)Block::Count] =
 	{true, false, true, {29, 29, 29, 29, 29, 29}, 0},    // Skin color concrete
 
 	{true, false, true, {30, 30, 30, 30, 30, 30}, 0},    // Wooden planks
-	{true, false, true, {31, 31, 31, 31, 31, 31}, 15},    // Wooden planks
+	{true, false, true, {31, 31, 31, 31, 31, 31}, 15},   // Lamp
 };
