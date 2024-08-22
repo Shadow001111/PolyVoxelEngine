@@ -129,19 +129,11 @@ void TextRenderer::renderText(const std::string& text, float x_, float y_, float
     // get width and height
     float textW = 0.0f;
     float textH = 0.0f;
-    size_t textLength = text.size();
-    for (size_t i = 0; i < textLength; i++)
+    for (char c : text)
     {
-        Character& ch = characters[text[i]];
+        const Character& ch = characters[c];
+        textW += ch.size.x;
         textH = fmaxf(textH, ch.size.y);
-        if (i == textLength - 1)
-        {
-            textW += ch.size.x;
-        }
-        else
-        {
-            textW += ch.advance >> 6;
-        }
     }
     textW *= scale;
     textH *= scale;
