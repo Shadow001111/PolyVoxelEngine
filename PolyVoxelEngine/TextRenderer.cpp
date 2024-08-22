@@ -121,7 +121,7 @@ void TextRenderer::afterTextRender()
     glEnable(GL_DEPTH_TEST);
 }
 
-void TextRenderer::renderText(const std::string& text, float x, float y, float scale, glm::vec3 color, AligmentX aligmentX, AligmentY aligmentY)
+void TextRenderer::renderText(const std::string& text, float x_, float y_, float scale, glm::vec3 color, AligmentX aligmentX, AligmentY aligmentY)
 {
     textShader->setUniformFloat3("textColor", color.r, color.g, color.b);
     scale *= 2.0f / fontSize;
@@ -129,56 +129,67 @@ void TextRenderer::renderText(const std::string& text, float x, float y, float s
     // get width and height
     float textW = 0.0f;
     float textH = 0.0f;
-    for (char c : text)
+    size_t textLength = text.size();
+    for (size_t i = 0; i < textLength; i++)
     {
-        const Character& ch = characters[c];
-        textW += ch.size.x;
+        Character& ch = characters[text[i]];
         textH = fmaxf(textH, ch.size.y);
+        if (i == textLength - 1)
+        {
+            textW += ch.size.x;
+        }
+        else
+        {
+            textW += ch.advance >> 6;
+        }
     }
     textW *= scale;
     textH *= scale;
 
     if (aligmentX == AligmentX::Right)
     {
-        x -= textW;
+        x_ -= textW;
     }
     else if (aligmentX == AligmentX::Center)
     {
-        x -= textW * 0.5f;
+        x_ -= textW * 0.5f;
     }
     if (aligmentY == AligmentY::Bottom)
     {
-        y += textH;
+        y_ += textH;
     }
     else if (aligmentY == AligmentY::Center)
     {
-        y += textH * 0.5f;
+        y_ += textH * 0.5f;
     }
 
     // render
-    for (char c : text)
     {
-        const Character& ch = characters[c];
-
-        float posX = x + ch.bearing.x * scale;
-        float posY = y -(ch.size.y - ch.bearing.y) * scale;
-
-        float w = ch.size.x * scale;
-        float h = ch.size.y * scale;
-
-        TextVertex vertices[4] =
+        float x = x_;
+        for (char c : text)
         {
-            {posX, posY - textH, 0.0f, 1.0f},
-            {posX + w, posY - textH, 1.0f, 1.0f},
-            {posX + w, posY, 1.0f, 0.0f},
-            {posX, posY, 0.0f, 0.0f}
-        };
+            const Character& ch = characters[c];
 
-        glBindTexture(GL_TEXTURE_2D, ch.textureID);
-        textVBO->setData((const char*)vertices, sizeof(vertices));
+            float posX = x + ch.bearing.x * scale;
+            float posY = y_ - (ch.size.y - ch.bearing.y) * scale;
 
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+            float w = ch.size.x * scale;
+            float h = ch.size.y * scale;
 
-        x += (ch.advance >> 6) * scale;
+            TextVertex vertices[4] =
+            {
+                {posX, posY - textH, 0.0f, 1.0f},
+                {posX + w, posY - textH, 1.0f, 1.0f},
+                {posX + w, posY, 1.0f, 0.0f},
+                {posX, posY, 0.0f, 0.0f}
+            };
+
+            glBindTexture(GL_TEXTURE_2D, ch.textureID);
+            textVBO->setData((const char*)vertices, sizeof(vertices));
+
+            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+            x += (ch.advance >> 6) * scale;
+        }
     }
 }
