@@ -76,7 +76,7 @@ int TextRenderer::init(Shader* textShader)
             texture,
             glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
             glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-            static_cast<unsigned int>(face->glyph->advance.x)
+            static_cast<unsigned int>(face->glyph->advance.x) >> 6,
         };
         characters[c] = character;
     }
@@ -137,7 +137,7 @@ void TextRenderer::renderText(const std::string& text, float x_, float y_, float
 
         if (i == 0)
         {
-            textW += (ch.advance >> 6) - ch.bearing.x;
+            textW += ch.advance - ch.bearing.x;
         }
         else if (i == textLength - 1)
         {
@@ -145,7 +145,7 @@ void TextRenderer::renderText(const std::string& text, float x_, float y_, float
         }
         else
         {
-            textW += ch.advance >> 6;
+            textW += ch.advance;
         }
 
         textMinY = std::min(textMinY, ch.bearing.y - ch.size.y);
@@ -172,31 +172,29 @@ void TextRenderer::renderText(const std::string& text, float x_, float y_, float
     }
 
     // render
+    float x = x_;
+    for (char c : text)
     {
-        float x = x_;
-        for (char c : text)
+        const Character& ch = characters[c];
+
+        float posX = x + ch.bearing.x * scale;
+        float posY = y_ - (ch.size.y - ch.bearing.y) * scale;
+
+        float w = ch.size.x * scale;
+
+        TextVertex vertices[4] =
         {
-            const Character& ch = characters[c];
+            {posX,      posY - textH, 0.0f, 1.0f},
+            {posX + w,  posY - textH, 1.0f, 1.0f},
+            {posX + w,  posY,         1.0f, 0.0f},
+            {posX,      posY,         0.0f, 0.0f}
+        };
 
-            float posX = x + ch.bearing.x * scale;
-            float posY = y_ - (ch.size.y - ch.bearing.y) * scale;
+        glBindTexture(GL_TEXTURE_2D, ch.textureID);
+        textVBO->setData((const char*)vertices, sizeof(vertices));
 
-            float w = ch.size.x * scale;
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
-            TextVertex vertices[4] =
-            {
-                {posX,      posY - textH, 0.0f, 1.0f},
-                {posX + w,  posY - textH, 1.0f, 1.0f},
-                {posX + w,  posY,         1.0f, 0.0f},
-                {posX,      posY,         0.0f, 0.0f}
-            };
-
-            glBindTexture(GL_TEXTURE_2D, ch.textureID);
-            textVBO->setData((const char*)vertices, sizeof(vertices));
-
-            glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-            x += (ch.advance >> 6) * scale;
-        }
+        x += ch.advance * scale;
     }
 }
