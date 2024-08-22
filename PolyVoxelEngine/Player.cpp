@@ -180,11 +180,13 @@ void Player::BeforeRender()
 	GraphicController::chunkProgram->bind();
 	camera.passMatrixToShader(GraphicController::chunkProgram, "camMatrix");
 	camera.passPositionToShader(GraphicController::chunkProgram, "camPos");
-
-	GraphicController::deferredChunkProgram->bind();
-	camera.passMatrixToShader(GraphicController::deferredChunkProgram, "camMatrix");
-
 	GraphicController::chunkProgram->setUniformInt("debugViewMode", debugViewMode);
+
+	if (GraphicController::deferredRendering)
+	{
+		GraphicController::deferredChunkProgram->bind();
+		camera.passMatrixToShader(GraphicController::deferredChunkProgram, "camMatrix");
+	}
 }
 
 void Player::draw() const

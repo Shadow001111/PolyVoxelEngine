@@ -23,22 +23,6 @@ vec3 normals[6] = vec3[6]
 	vec3(0.0, 0.0, -1.0) // back
 );
 
-const mat4 rotY180 = mat4
-(
-	-1.0, 0.0, 0.0, 0.0,
-	0.0, 1.0, 0.0, 0.0,
-	0.0, 0.0, -1.0, 0.0,
-	0.0, 0.0, 0.0, 1.0
-);
-
-const mat4 rotZ180 = mat4
-(
-	-1.0, 0.0, 0.0, 0.0,
-	0.0, -1.0, 0.0, 0.0,
-	0.0, 0.0, 1.0, 0.0,
-	0.0, 0.0, 0.0, 1.0
-);
-
 uniform mat4 camMatrix;
 
 void main()
@@ -64,33 +48,37 @@ void main()
 	
 	if (normalID == 0) // right
 	{
-		localPos.xy = localPos.yx;
+		localPos.y = localPos.x;
 		localPos.x = 1.0;
-		const vec3 center = vec3(1.0, unpackedSize * 0.5);
-		localPos = center + vec3(rotY180 * vec4(localPos - center, 1.0));
+		localPos.z = unpackedSize.y - localPos.z;
+		uv = uv.yx;
 	}
 	else if (normalID == 1) // left
 	{
 		localPos.xy = localPos.yx;
+		uv = uv.yx;
 	}
 	else if (normalID == 2) // up
 	{
 		localPos.y = 1.0;
+		uv.y = unpackedSize.y - uv.y;
 	}
 	else if (normalID == 3) // down
 	{
-		const vec3 center = vec3(unpackedSize.x * 0.5f, 0.0, unpackedSize.y * 0.5);
+		localPos.x = unpackedSize.x - localPos.x;
+		uv.x = unpackedSize.x - uv.x;
 	}
 	else if (normalID == 4) // front
 	{
-		localPos.xzy = localPos.xyz;
+		localPos.y = localPos.z;
 		localPos.z = 1.0;
-		const vec3 center = vec3(unpackedSize * 0.5, 1.0);
-		localPos = center + vec3(rotY180 * vec4(localPos - center, 1.0));
+		localPos.x = unpackedSize.x - localPos.x;
+		uv.x = unpackedSize.x - uv.x;
 	}
 	else // back
 	{
-		localPos.xzy = localPos.xyz;
+		localPos.zy = localPos.yz;
+		uv.x = unpackedSize.x - uv.x;
 	}
 
 	const uint posIndex = chunkPositionIndexes[gl_DrawID] * 3;
