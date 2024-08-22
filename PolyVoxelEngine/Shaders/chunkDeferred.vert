@@ -51,34 +51,28 @@ void main()
 		localPos.y = localPos.x;
 		localPos.x = 1.0;
 		localPos.z = unpackedSize.y - localPos.z;
-		uv = uv.yx;
 	}
 	else if (normalID == 1) // left
 	{
 		localPos.xy = localPos.yx;
-		uv = uv.yx;
 	}
 	else if (normalID == 2) // up
 	{
 		localPos.y = 1.0;
-		uv.y = unpackedSize.y - uv.y;
 	}
 	else if (normalID == 3) // down
 	{
 		localPos.x = unpackedSize.x - localPos.x;
-		uv.x = unpackedSize.x - uv.x;
 	}
 	else if (normalID == 4) // front
 	{
 		localPos.y = localPos.z;
 		localPos.z = 1.0;
 		localPos.x = unpackedSize.x - localPos.x;
-		uv.x = unpackedSize.x - uv.x;
 	}
 	else // back
 	{
 		localPos.zy = localPos.yz;
-		uv.x = unpackedSize.x - uv.x;
 	}
 
 	const uint posIndex = chunkPositionIndexes[gl_DrawID] * 3;
