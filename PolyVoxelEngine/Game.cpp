@@ -247,6 +247,11 @@ void Game::run()
 	//
 	GUIData guiData;
 
+	const std::string debugViewModeNames[2] =
+	{
+		"Light", "Polygon"
+	};
+
 	float frameDelay;
 	if (GraphicController::gameMaxFps < 1)
 	{
@@ -306,25 +311,42 @@ void Game::run()
 
 			TextRenderer::beforeTextRender();
 			{
-				std::string FPS = "FPS: " + std::to_string(guiData.fps);
-				std::string CPU = "CPU: " + std::to_string(guiData.cpu);
-				std::string RAM = "RAM: " + std::to_string(guiData.ram);
-				std::string GPU = "GPU: " + std::to_string(guiData.gpu);
-				std::string VRAM = "VRAM: " + std::to_string(guiData.vram) + " mb";
+				{
+					std::string FPS = "FPS: " + std::to_string(guiData.fps);
+					std::string CPU = "CPU: " + std::to_string(guiData.cpu);
+					std::string RAM = "RAM: " + std::to_string(guiData.ram);
+					std::string GPU = "GPU: " + std::to_string(guiData.gpu);
+					std::string VRAM = "VRAM: " + std::to_string(guiData.vram) + " mb";
 
-				const float offsetX = 0.02f;
-				const float offsetY = offsetX;
+					float offsetX = 0.02f;
+					float offsetY = offsetX;
 
-				float scale = 0.05f;
-				float offsetYPerText = scale * 2.0f;
+					float scale = 0.05f;
+					float offsetYPerText = scale * 2.0f;
 
-				float x = -1.0f * GraphicController::aspectRatio + offsetX;
+					float x = -1.0f * GraphicController::aspectRatio + offsetX;
 
-				TextRenderer::renderText(FPS, x, 1.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
-				TextRenderer::renderText(CPU, x, 1.0f - offsetYPerText - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
-				TextRenderer::renderText(RAM, x, 1.0f - offsetYPerText * 2.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
-				TextRenderer::renderText(GPU, x, 1.0f - offsetYPerText * 3.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
-				TextRenderer::renderText(VRAM, x, 1.0f - offsetYPerText * 4.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
+					TextRenderer::renderText(FPS, x, 1.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
+					TextRenderer::renderText(CPU, x, 1.0f - offsetYPerText - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
+					TextRenderer::renderText(RAM, x, 1.0f - offsetYPerText * 2.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
+					TextRenderer::renderText(GPU, x, 1.0f - offsetYPerText * 3.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
+					TextRenderer::renderText(VRAM, x, 1.0f - offsetYPerText * 4.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
+				}
+				{
+					float offsetX = 0.02f;
+					float offsetY = offsetX;
+
+					float scale = 0.05f;
+					float offsetYPerText = scale * 2.0f;
+
+					float x = 1.0f * GraphicController::aspectRatio - offsetX;
+					float y = 1.0f - offsetY;
+
+					if (player->debugViewMode > 0)
+					{
+						TextRenderer::renderText("ViewMode: " + debugViewModeNames[player->debugViewMode - 1], x, y, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Right, AligmentY::Top);
+					}
+				}
 			}
 			TextRenderer::afterTextRender();
 		}

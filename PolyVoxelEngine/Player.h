@@ -52,7 +52,6 @@ class Player
 	RaycastHit lastRaycastHit;
 
 	Chunk* debugChunk = nullptr;
-	int debugViewMode = 0;
 
 	void Inputs(float dt, float time);
 	void Accelerate(const glm::vec3& vec);
@@ -60,6 +59,8 @@ public:
 	glm::vec2 rotation, previousRotation;
 	PhysicEntity physicEntity;
 	Camera camera;
+
+	int debugViewMode = 0;
 
 	Player(glm::vec3 position, float fov, float near, float far);
 	void clean() const;
