@@ -128,13 +128,18 @@ void TextRenderer::renderText(const std::string& text, float x_, float y_, float
 
     // get width and height
     float textW = 0.0f;
-    float textH = 0.0f;
+    int textMinY = INT_MAX;
+    int textMaxY = INT_MIN;
     size_t textLength = text.size();
     for (size_t i = 0; i < textLength; i++)
     {
         Character& ch = characters[text[i]];
-        textH = fmaxf(textH, ch.size.y);
-        if (i == textLength - 1)
+
+        if (i == 0)
+        {
+            textW += (ch.advance >> 6) - ch.bearing.x;
+        }
+        else if (i == textLength - 1)
         {
             textW += ch.size.x;
         }
@@ -142,9 +147,12 @@ void TextRenderer::renderText(const std::string& text, float x_, float y_, float
         {
             textW += ch.advance >> 6;
         }
+
+        textMinY = std::min(textMinY, ch.bearing.y - ch.size.y);
+        textMaxY = std::max(textMaxY, ch.bearing.y);
     }
     textW *= scale;
-    textH *= scale;
+    float textH = (textMaxY - textMinY) * scale;
 
     if (aligmentX == AligmentX::Right)
     {
@@ -174,14 +182,13 @@ void TextRenderer::renderText(const std::string& text, float x_, float y_, float
             float posY = y_ - (ch.size.y - ch.bearing.y) * scale;
 
             float w = ch.size.x * scale;
-            float h = ch.size.y * scale;
 
             TextVertex vertices[4] =
             {
-                {posX, posY - textH, 0.0f, 1.0f},
-                {posX + w, posY - textH, 1.0f, 1.0f},
-                {posX + w, posY, 1.0f, 0.0f},
-                {posX, posY, 0.0f, 0.0f}
+                {posX,      posY - textH, 0.0f, 1.0f},
+                {posX + w,  posY - textH, 1.0f, 1.0f},
+                {posX + w,  posY,         1.0f, 0.0f},
+                {posX,      posY,         0.0f, 0.0f}
             };
 
             glBindTexture(GL_TEXTURE_2D, ch.textureID);
