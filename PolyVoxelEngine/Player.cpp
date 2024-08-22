@@ -181,6 +181,9 @@ void Player::BeforeRender()
 	camera.passMatrixToShader(GraphicController::chunkProgram, "camMatrix");
 	camera.passPositionToShader(GraphicController::chunkProgram, "camPos");
 
+	GraphicController::deferredChunkProgram->bind();
+	camera.passMatrixToShader(GraphicController::deferredChunkProgram, "camMatrix");
+
 	GraphicController::chunkProgram->setUniformInt("debugViewMode", debugViewMode);
 }
 
@@ -365,6 +368,10 @@ void Player::keyCallback(int key, int scancode, int action, int mods)
 			glfwSetCursorPos(GraphicController::window, GraphicController::width / 2, GraphicController::height / 2);
 			glfwGetCursorPos(GraphicController::window, &previousMouseX, &previousMouseY);
 		}
+	}
+	else if (key == GLFW_KEY_P)
+	{
+		GraphicController::deferredRendering ^= 1;
 	}
 
 	// NUMPAD

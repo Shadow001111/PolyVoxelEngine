@@ -33,14 +33,15 @@ class GraphicController
 public:
 	static int width, height;
 	static float aspectRatio;
-
 	static int menuMaxFps;
 	static int gameMaxFps;
-
 	static GameSettings gameSettings;
+
+	static bool deferredRendering;
 
 	static GLFWwindow* window;
 	static Shader* chunkProgram;
+	static Shader* deferredChunkProgram;
 	static Shader* textProgram;
 	static Shader* voxelGhostProgram;
 	static Shader* hotbarProgram;

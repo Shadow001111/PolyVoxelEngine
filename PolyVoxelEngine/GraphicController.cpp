@@ -10,14 +10,15 @@ FBO* GraphicController::fbo = nullptr;
 Shader* GraphicController::framebufferProgram = nullptr;
 GLFWwindow* GraphicController::window = nullptr;
 Shader* GraphicController::chunkProgram = nullptr;
+Shader* GraphicController::deferredChunkProgram = nullptr;
 Shader* GraphicController::textProgram = nullptr;
 Shader* GraphicController::voxelGhostProgram = nullptr;
 Shader* GraphicController::hotbarProgram = nullptr;
 Shader* GraphicController::buttonProgram = nullptr;
 int GraphicController::menuMaxFps = 0;
 int GraphicController::gameMaxFps = 0;
-
 GameSettings GraphicController::gameSettings;
+bool GraphicController::deferredRendering = false;
 
 void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 {
@@ -127,6 +128,8 @@ int GraphicController::init(const GraphicSettings& graphicSettings, const GameSe
 	chunkProgram->setUniformFloat("fogDensity", Settings::fogDensity);
 	chunkProgram->setUniformFloat("fogGradient", Settings::fogGradient);
 
+	deferredChunkProgram = new Shader("chunkDeferred");
+
 	framebufferProgram = new Shader("frameBuffer");
 	framebufferProgram->bind();
 	framebufferProgram->setUniformInt("screenTexture", 0);
@@ -216,6 +219,7 @@ void GraphicController::clean()
 	fbo->clean(); delete fbo;
 	framebufferProgram->clean(); delete framebufferProgram;
 	chunkProgram->clean(); delete chunkProgram;
+	deferredChunkProgram->clean(); delete deferredChunkProgram;
 	textProgram->clean(); delete textProgram;
 	voxelGhostProgram->clean(); delete voxelGhostProgram;
 	hotbarProgram->clean(); delete hotbarProgram;

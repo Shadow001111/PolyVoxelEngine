@@ -214,6 +214,8 @@
     <None Include="settings.ini" />
     <None Include="Shaders\button.frag" />
     <None Include="Shaders\button.vert" />
+    <None Include="Shaders\chunkDeferred.frag" />
+    <None Include="Shaders\chunkDeferred.vert" />
     <None Include="Shaders\chunkSmooth.frag" />
     <None Include="Shaders\chunkSmooth.vert" />
     <None Include="Shaders\frameBuffer.frag" />

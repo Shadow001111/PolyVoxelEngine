@@ -81,8 +81,6 @@ Button::~Button()
 
 void Button::draw() const
 {
-	//GraphicController::buttonProgram->setUniformFloat2("position", x, y);
-	//GraphicController::buttonProgram->setUniformFloat2("scale", width, height);
 	vao->bind();
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }

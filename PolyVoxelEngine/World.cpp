@@ -645,9 +645,27 @@ void World::draw(const Camera& camera)
 		quadInstanceVAO.bind();
 
 		glEnable(GL_CULL_FACE);
-		glMultiDrawArraysIndirect(GL_TRIANGLE_FAN, nullptr, commandsCount, 0);
-	}
 
+		if (GraphicController::deferredRendering)
+		{
+			GraphicController::deferredChunkProgram->bind();
+			glEnable(GL_RASTERIZER_DISCARD);
+			glDepthFunc(GL_LESS);
+			glMultiDrawArraysIndirect(GL_TRIANGLE_FAN, nullptr, commandsCount, 0);
+
+			GraphicController::chunkProgram->bind();
+			glDisable(GL_RASTERIZER_DISCARD);
+			glDepthFunc(GL_LEQUAL);
+			glMultiDrawArraysIndirect(GL_TRIANGLE_FAN, nullptr, commandsCount, 0);
+		}
+		else
+		{
+			glDepthFunc(GL_LESS);
+			GraphicController::chunkProgram->bind();
+			glMultiDrawArraysIndirect(GL_TRIANGLE_FAN, nullptr, commandsCount, 0);
+		}
+	}
+	
 	// draw transparent
 	std::reverse(renderChunks.begin(), renderChunks.end());
 	getDrawCommands(renderChunks, camera, commandsCount, chunkPositionsCount, true);
@@ -702,16 +720,27 @@ void World::draw(const Camera& camera)
 		quadInstanceVAO.bind();
 	
 		glDisable(GL_CULL_FACE);
-		
-		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+		if (GraphicController::deferredRendering)
+		{
+			GraphicController::deferredChunkProgram->bind();
+		}
+		else
+		{
+			GraphicController::chunkProgram->bind();
+		}
+		glEnable(GL_RASTERIZER_DISCARD);
+		glDepthFunc(GL_LESS);
 		glMultiDrawArraysIndirect(GL_TRIANGLE_FAN, nullptr, commandsCount, 0);
-	
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+		if (GraphicController::deferredRendering)
+		{
+			GraphicController::chunkProgram->bind();
+		}
+		glDisable(GL_RASTERIZER_DISCARD);
 		glDepthFunc(GL_LEQUAL);
-	
 		glEnable(GL_BLEND);
 		glMultiDrawArraysIndirect(GL_TRIANGLE_FAN, nullptr, commandsCount, 0);
-		glDepthFunc(GL_LESS);
 	}
 }
 
