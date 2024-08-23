@@ -1,11 +1,12 @@
 #pragma once
 #include <chrono>
 #include <unordered_map>
+#include <cstdint>
 
 struct ProfilerData
 {
 	std::chrono::steady_clock::time_point lastTimeSample;
-	float time = 0.0f;
+	uint16_t time = 0;
 };
 
 class Profiler
@@ -14,7 +15,7 @@ class Profiler
 public:
 	static void start(const std::string& name);
 	static void end(const std::string& name);
-	static float get(const std::string& name);
+	static uint16_t get(const std::string& name);
 	static void clean();
 };
 

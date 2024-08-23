@@ -1,6 +1,6 @@
 #include "Profiler.h"
 
-static std::unordered_map<std::string, ProfilerData> dataMap;
+std::unordered_map<std::string, ProfilerData> Profiler::dataMap;
 
 void Profiler::start(const std::string& name)
 {
@@ -22,15 +22,14 @@ void Profiler::end(const std::string& name)
 	data.lastTimeSample = end;
 }
 
-float Profiler::get(const std::string& name)
+uint16_t Profiler::get(const std::string& name)
 {
-	auto it = dataMap.find(name);
+	const auto& it = dataMap.find(name);
 	if (it == dataMap.end())
 	{
-		return 0.0f;
+		return 0;
 	}
-	ProfilerData& data = it->second;
-	return data.time;
+	return it->second.time;
 }
 
 void Profiler::clean()

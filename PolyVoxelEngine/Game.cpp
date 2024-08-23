@@ -3,6 +3,7 @@
 #include "Camera.h"
 #include "World.h"
 #include "TerrainGenerator.h"
+#include "Profiler.h"
 
 float ceilTo(float value, int n)
 {
@@ -300,6 +301,27 @@ void Game::run()
 
 			guiData.gpu = gpu->gpu;
 			guiData.vram = vram->used >> 20;
+
+			std::string dataNames[3] = 
+			{
+				"BlockGeneration",
+				"LightUpdate",
+				"MeshGeneration"
+			};
+			bool any = false;
+			for (const auto& name : dataNames)
+			{
+				auto time = Profiler::get(name);
+				if (time > 0)
+				{
+					any = true;
+					std::cout << name << ": " << time << std::endl;
+				}
+			}
+			if (any)
+			{
+				std::cout << "=================" << std::endl;
+			}
 		}
 
 		GraphicController::beforeRender();
@@ -373,4 +395,6 @@ void Game::run()
 	world.saveWorldData(worldData);
 
 	player->clean(); delete player;
+
+	Profiler::clean();
 }

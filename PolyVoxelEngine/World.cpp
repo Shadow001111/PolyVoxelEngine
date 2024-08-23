@@ -6,6 +6,7 @@
 #include "GraphicController.h"
 #include "TimeMeasurer.h"
 #include "TerrainGenerator.h"
+#include "Profiler.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -207,15 +208,24 @@ void World::update(const glm::vec3& pos, bool isMoving)
 	// load chunks
 	auto loadChunksPos = glm::ivec3(pos / (float)Settings::CHUNK_SIZE);
 	loadChunks(loadChunksPos.x, loadChunksPos.y, loadChunksPos.z, false);
+	
+	// generate blocks
+	Profiler::start("BlockGeneration");
 	generateChunksBlocks(pos, isMoving);
+	Profiler::end("BlockGeneration");
 
 	// update lighting
+	Profiler::start("LightUpdate");
 	updateLighting();
+	Profiler::end("LightUpdate");
+
 	darknessFloodFill();
 	lightingFloodFill();
 
 	// generate faces
+	Profiler::start("MeshGeneration");
 	generateChunksFaces();
+	Profiler::end("MeshGeneration");
 
 	// day night cycle
 	time++;
