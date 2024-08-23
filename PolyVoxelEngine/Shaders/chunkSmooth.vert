@@ -13,7 +13,7 @@ layout(binding = 1) buffer ChunkPositionIndexSSBO
 	uint chunkPositionIndexes[];
 };
 
-vec3 normals[6] = vec3[6]
+const vec3 normals[6] = vec3[6]
 (
 	vec3(1.0, 0.0, 0.0), // right
 	vec3(-1.0, 0.0, 0.0), // left
@@ -27,6 +27,8 @@ const float aoValues[4] = float[4]
 (
 	0.1, 0.25, 0.75, 1.0
 );
+
+const float extending = 1.001;
 
 uniform mat4 camMatrix;
 uniform vec3 camPos;
@@ -83,21 +85,33 @@ void main()
 		localPos.x = 1.0;
 		localPos.z = unpackedSize.y - localPos.z;
 		uv = uv.yx;
+
+		const vec2 center = unpackedSize * 0.5f;
+		localPos.yz = (localPos.yz - center) * extending + center;
 	}
 	else if (normalID == 1) // left
 	{
 		localPos.xy = localPos.yx;
 		uv = uv.yx;
+
+		const vec2 center = unpackedSize * 0.5f;
+		localPos.yz = (localPos.yz - center) * extending + center;
 	}
 	else if (normalID == 2) // up
 	{
 		localPos.y = 1.0;
 		uv.y = unpackedSize.y - uv.y;
+
+		const vec2 center = unpackedSize * 0.5f;
+		localPos.xz = (localPos.xz - center) * extending + center;
 	}
 	else if (normalID == 3) // down
 	{
 		localPos.x = unpackedSize.x - localPos.x;
 		uv.x = unpackedSize.x - uv.x;
+
+		const vec2 center = unpackedSize * 0.5f;
+		localPos.xz = (localPos.xz - center) * extending + center;
 	}
 	else if (normalID == 4) // front
 	{
@@ -105,11 +119,17 @@ void main()
 		localPos.z = 1.0;
 		localPos.x = unpackedSize.x - localPos.x;
 		uv.x = unpackedSize.x - uv.x;
+
+		const vec2 center = unpackedSize * 0.5f;
+		localPos.xy = (localPos.xy - center) * extending + center;
 	}
 	else // back
 	{
 		localPos.zy = localPos.yz;
 		uv.x = unpackedSize.x - uv.x;
+
+		const vec2 center = unpackedSize * 0.5f;
+		localPos.xy = (localPos.xy - center) * extending + center;
 	}
 
 	gottenAOValues[0] = aoValues[ao & 3];
