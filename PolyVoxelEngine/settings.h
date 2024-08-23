@@ -61,7 +61,7 @@ namespace Settings
 
 	const std::string chunkSavesPath = worldPath + "/Chunks/";
 
-	const float MAX_RENDER_DISTANCE = (CHUNK_LOAD_RADIUS - 0.5f) * CHUNK_SIZE;
+	const float MAX_RENDER_DISTANCE = (CHUNK_LOAD_RADIUS - 1) * CHUNK_SIZE;
 	const float fogDensity = calculateFogDensity(MAX_RENDER_DISTANCE, fogGradient);
 
 	constexpr size_t BLOCK_TEXTURE_SIZE_IN_BYTES = BLOCK_TEXTURE_SIZE * BLOCK_TEXTURE_SIZE * BLOCK_TEXTURES_NUM_CHANNELS;

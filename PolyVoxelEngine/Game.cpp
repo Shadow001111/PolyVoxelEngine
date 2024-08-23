@@ -321,7 +321,7 @@ void Game::run()
 					float offsetX = 0.02f;
 					float offsetY = offsetX;
 
-					float scale = 0.05f;
+					float scale = 0.03f;
 					float offsetYPerText = scale * 2.0f;
 
 					float x = -1.0f * GraphicController::aspectRatio + offsetX;
