@@ -238,6 +238,10 @@
     <Font Include="fonts\Minecraft.ttf" />
     <Font Include="fonts\RusEngMinecraft.ttf" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="Numbers.png" />
+    <Image Include="PolyVoxelEngine.png" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

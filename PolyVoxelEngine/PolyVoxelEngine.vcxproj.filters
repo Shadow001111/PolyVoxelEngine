@@ -224,4 +224,12 @@
     <Font Include="fonts\Minecraft.ttf" />
     <Font Include="fonts\RusEngMinecraft.ttf" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="PolyVoxelEngine.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+    <Image Include="Numbers.png">
+      <Filter>Файлы ресурсов</Filter>
+    </Image>
+  </ItemGroup>
 </Project>

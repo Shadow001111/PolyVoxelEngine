@@ -8,6 +8,7 @@ struct ProfilerData
 {
 	std::chrono::steady_clock::time_point lastTimeSample;
 	uint16_t time = 0;
+	uint16_t samplesTaken = 0;
 };
 
 constexpr size_t PROFILER_MEMORY_TABLE_SIZE = 20;
@@ -33,7 +34,6 @@ public:
 	static void start(const std::string& name);
 	static void end(const std::string& name);
 	static void reset(const std::string& name);
-	static uint16_t get(const std::string& name);
 	static void clean();
 
 	static void saveToMemory();

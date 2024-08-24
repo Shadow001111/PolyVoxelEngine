@@ -39,7 +39,8 @@ void Profiler::end(const std::string& name)
 	ProfilerData& data = it->second;
 	auto end = std::chrono::steady_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - data.lastTimeSample);
-	data.time = duration.count();
+	data.time += duration.count();
+	data.samplesTaken++;
 	data.lastTimeSample = end;
 }
 
@@ -53,17 +54,6 @@ void Profiler::reset(const std::string& name)
 	it->second.time = 0.0f;
 }
 
-uint16_t Profiler::get(const std::string& name)
-{
-	const auto& it = dataMap.find(name);
-	if (it == dataMap.end())
-	{
-		std::cerr << "PROFILER::get: " << name << " doesn't exist" << std::endl;
-		return 0;
-	}
-	return it->second.time;
-}
-
 void Profiler::clean()
 {
 	dataMap.clear();
@@ -74,7 +64,14 @@ void Profiler::saveToMemory()
 	uint16_t timeSum = 0;
 	for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
 	{
-		auto time = Profiler::get(profilerSamplesNames[i]);
+		auto it = dataMap.find(profilerSamplesNames[i]);
+		if (it == dataMap.end())
+		{
+			continue;
+		}
+		auto time = it->second.time / it->second.samplesTaken;
+		it->second.time = 0;
+		it->second.samplesTaken = 0;
 		memoryTable[memoryTableIndex][i] = time;
 		timeSum += time;
 	}
