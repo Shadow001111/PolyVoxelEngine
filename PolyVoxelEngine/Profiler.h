@@ -11,7 +11,7 @@ struct ProfilerData
 };
 
 constexpr size_t PROFILER_MEMORY_TABLE_SIZE = 20;
-constexpr size_t PROFILER_SAMPLES_COUNT = 3;
+constexpr size_t PROFILER_SAMPLES_COUNT = 4;
 
 constexpr float PROFILER_DRAW_WIDTH = 0.5f;
 constexpr float PROFILER_DRAW_HEIGHT = 0.5f;
@@ -32,6 +32,7 @@ public:
 
 	static void start(const std::string& name);
 	static void end(const std::string& name);
+	static void reset(const std::string& name);
 	static uint16_t get(const std::string& name);
 	static void clean();
 

@@ -568,6 +568,8 @@ bool World::loadChunks(int x, int y, int z, bool forced)
 		z == lastPlayerLoadChunkPos.z
 	)
 	{
+		Profiler::reset("UnloadChunks");
+		Profiler::reset("LoadChunks");
 		return false;
 	}
 	lastPlayerLoadChunkPos = glm::ivec3(x, y, z);
@@ -575,7 +577,7 @@ bool World::loadChunks(int x, int y, int z, bool forced)
 	// unload chunks
 	int radius = Settings::CHUNK_LOAD_RADIUS;
 	int rsq = radius * radius;
-
+	Profiler::start("UnloadChunks");
 	for (auto it = Chunk::chunkMap.begin(); it != Chunk::chunkMap.end();)
 	{
 		Chunk* chunk = it->second;
@@ -600,7 +602,9 @@ bool World::loadChunks(int x, int y, int z, bool forced)
 			it++;
 		}
 	}
+	Profiler::end("UnloadChunks");
 
+	Profiler::start("LoadChunks");
 	// load chunks
 	for (int dx = -radius; dx <= radius; dx++)
 	{
@@ -625,6 +629,7 @@ bool World::loadChunks(int x, int y, int z, bool forced)
 			}
 		} 
 	}
+	Profiler::end("LoadChunks");
 	return true;
 }
 

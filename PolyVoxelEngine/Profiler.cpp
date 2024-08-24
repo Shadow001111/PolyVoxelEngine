@@ -1,4 +1,5 @@
 #include "Profiler.h"
+#include <iostream>
 
 std::unordered_map<std::string, ProfilerData> Profiler::dataMap;
 uint16_t Profiler::memoryTable[PROFILER_MEMORY_TABLE_SIZE][PROFILER_SAMPLES_COUNT] = {};
@@ -10,14 +11,16 @@ const std::string profilerSamplesNames[PROFILER_SAMPLES_COUNT] =
 {
 	"BlockGeneration",
 	"LightUpdate",
-	"MeshGeneration"
+	"MeshGeneration",
+	"LoadChunks",
 };
 
 const glm::vec3 profilerSamplesColors[PROFILER_SAMPLES_COUNT] =
 {
 	{1.0f, 0.0f, 0.0f},
 	{0.0f, 1.0f, 0.0f},
-	{0.0f, 0.0f, 1.0f}
+	{0.0f, 0.0f, 1.0f},
+	{1.0f, 1.0f, 0.0f},
 };
 
 void Profiler::start(const std::string& name)
@@ -40,11 +43,22 @@ void Profiler::end(const std::string& name)
 	data.lastTimeSample = end;
 }
 
+void Profiler::reset(const std::string& name)
+{
+	auto it = dataMap.find(name);
+	if (it == dataMap.end())
+	{
+		return;
+	}
+	it->second.time = 0.0f;
+}
+
 uint16_t Profiler::get(const std::string& name)
 {
 	const auto& it = dataMap.find(name);
 	if (it == dataMap.end())
 	{
+		std::cerr << "PROFILER::get: " << name << " doesn't exist" << std::endl;
 		return 0;
 	}
 	return it->second.time;
