@@ -244,6 +244,7 @@ void Game::run()
 	Tick worldTick(20);
 	Tick playerTick(40);
 	Tick guiTick(10);
+	Tick profilerTick(20);
 
 	//
 	GUIData guiData;
@@ -263,6 +264,36 @@ void Game::run()
 		frameDelay = 1.0f / GraphicController::gameMaxFps;
 	}
 
+	glm::vec2 rectangleVertices[4] =
+	{
+		{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}
+	};
+	VAO rectangleVAO;
+	VBO rectangleVBO((const char*)rectangleVertices, sizeof(rectangleVertices), GL_STATIC_DRAW);
+	rectangleVAO.linkFloat(2, sizeof(glm::vec2));
+	VAO::unbind();
+
+	constexpr int PROFILER_SAMPLES_COUNT = 3;
+	std::string profilerSamplesNames[PROFILER_SAMPLES_COUNT] =
+	{
+		"BlockGeneration",
+		"LightUpdate",
+		"MeshGeneration"
+	};
+
+	glm::vec3 profilerSamplesColors[PROFILER_SAMPLES_COUNT] =
+	{
+		{1.0f, 0.0f, 0.0f},
+		{0.0f, 1.0f, 0.0f},
+		{0.0f, 0.0f, 1.0f}
+	};
+
+	constexpr size_t PROFILER_BARS_COUNT = 20;
+	uint16_t profilerSamplesTable[PROFILER_BARS_COUNT][PROFILER_SAMPLES_COUNT] = {};
+	uint16_t profilerMaxTimeTable[PROFILER_BARS_COUNT] = {};
+	size_t profilerSamplesTableIndex = 0;
+	uint16_t profilerMaxTime = 0;
+
 	float previousTime = glfwGetTime();
 	while (!GraphicController::shouldWindowClose())
 	{
@@ -276,6 +307,7 @@ void Game::run()
 			playerTick.add(deltaTime);
 		}
 		guiTick.add(deltaTime);
+		profilerTick.add(deltaTime);
 
 		while (playerTick.checkLoop())
 		{
@@ -301,26 +333,29 @@ void Game::run()
 
 			guiData.gpu = gpu->gpu;
 			guiData.vram = vram->used >> 20;
+		}
 
-			std::string dataNames[3] = 
+		if (profilerTick.checkOnce())
+		{
+			uint16_t timeSum = 0;
+			for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
 			{
-				"BlockGeneration",
-				"LightUpdate",
-				"MeshGeneration"
-			};
-			bool any = false;
-			for (const auto& name : dataNames)
-			{
-				auto time = Profiler::get(name);
-				if (time > 0)
-				{
-					any = true;
-					std::cout << name << ": " << time << std::endl;
-				}
+				auto time = Profiler::get(profilerSamplesNames[i]);
+				profilerSamplesTable[profilerSamplesTableIndex][i] = time;
+				timeSum += time;
 			}
-			if (any)
+			profilerMaxTimeTable[profilerSamplesTableIndex] = timeSum;
+
+			profilerMaxTime = 0;
+			for (size_t i = 0; i < PROFILER_BARS_COUNT; i++)
 			{
-				std::cout << "=================" << std::endl;
+				profilerMaxTime = std::max(profilerMaxTime, profilerMaxTimeTable[i]);
+			}
+
+			profilerSamplesTableIndex++;
+			if (profilerSamplesTableIndex >= PROFILER_BARS_COUNT)
+			{
+				profilerSamplesTableIndex = 0;
 			}
 		}
 
@@ -331,6 +366,62 @@ void Game::run()
 			world.draw(player->camera);
 			player->draw();
 
+			// profiler
+			rectangleVAO.bind();
+			rectangleVBO.bind();
+			GraphicController::rectangleProgram->bind();
+			{
+				const float profilerWidth = 0.5f;
+				const float profilerHeight = 0.5f;
+				const float barWidth = profilerWidth / PROFILER_BARS_COUNT;
+
+				const float left = -GraphicController::aspectRatio;
+				const float bottom = -1.0f;
+
+				// background
+				GraphicController::rectangleProgram->setUniformFloat2("position", left, bottom);
+				GraphicController::rectangleProgram->setUniformFloat2("scale", profilerWidth, profilerHeight);
+				GraphicController::rectangleProgram->setUniformFloat3("color", 0.0f, 0.0f, 0.0f);
+				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+				// bars
+				if (profilerMaxTime > 0)
+				{
+					for (size_t barIndex = 0; barIndex < PROFILER_BARS_COUNT; barIndex++)
+					{
+						size_t tableIndex = profilerSamplesTableIndex + barIndex;
+						if (tableIndex >= PROFILER_BARS_COUNT)
+						{
+							tableIndex -= PROFILER_BARS_COUNT;
+						}
+						float yProgress = 0.0f;
+						for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
+						{
+							float time = (float)profilerSamplesTable[tableIndex][i] / profilerMaxTime;
+							const auto& color = profilerSamplesColors[i];
+							GraphicController::rectangleProgram->setUniformFloat2("position", left + barIndex * barWidth, bottom + yProgress * profilerHeight);
+							GraphicController::rectangleProgram->setUniformFloat2("scale", barWidth, profilerHeight * time);
+							GraphicController::rectangleProgram->setUniformFloat3("color", color.x, color.y, color.z);
+							glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+							yProgress += time;
+						}
+					}
+				}
+
+				// colors
+				const float colorRectSize = 0.05f;
+				const float colorRectYOffset = 0.02f;
+				GraphicController::rectangleProgram->setUniformFloat2("scale", colorRectSize, colorRectSize);
+				for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
+				{
+					const auto& color = profilerSamplesColors[i];
+					GraphicController::rectangleProgram->setUniformFloat2("position", left, bottom + profilerHeight + 0.01f + i * (colorRectYOffset + colorRectSize));
+					GraphicController::rectangleProgram->setUniformFloat3("color", color.x, color.y, color.z);
+					glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+				}
+			}
+
+			// text
 			TextRenderer::beforeTextRender();
 			{
 				{
@@ -367,6 +458,25 @@ void Game::run()
 					if (player->debugViewMode > 0)
 					{
 						TextRenderer::renderText("ViewMode: " + debugViewModeNames[player->debugViewMode - 1], x, y, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Right, AligmentY::Top);
+					}
+				}
+				// profiler
+				{
+					const float profilerHeight = 0.5f;
+					const float left = -GraphicController::aspectRatio;
+					const float bottom = -1.0f;
+					const float colorRectSize = 0.05f;
+					const float colorRectYOffset = 0.02f;
+					for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
+					{
+						TextRenderer::renderText(profilerSamplesNames[i],
+							left + colorRectSize + 0.01f,
+							bottom + profilerHeight + 0.01f + i * (colorRectYOffset + colorRectSize) + colorRectSize,
+							colorRectSize * 0.5f,
+							{ 1.0f, 1.0f, 1.0f },
+							AligmentX::Left,
+							AligmentY::Top
+						);
 					}
 				}
 			}

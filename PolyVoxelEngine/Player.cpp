@@ -182,7 +182,7 @@ void Player::BeforeRender()
 	camera.passPositionToShader(GraphicController::chunkProgram, "camPos");
 	GraphicController::chunkProgram->setUniformInt("debugViewMode", debugViewMode);
 
-	if (GraphicController::deferredRendering)
+	if (GraphicController::zPrePass)
 	{
 		GraphicController::deferredChunkProgram->bind();
 		camera.passMatrixToShader(GraphicController::deferredChunkProgram, "camMatrix");
@@ -373,7 +373,7 @@ void Player::keyCallback(int key, int scancode, int action, int mods)
 	}
 	else if (key == GLFW_KEY_P)
 	{
-		GraphicController::deferredRendering ^= 1;
+		GraphicController::zPrePass ^= 1;
 	}
 
 	// NUMPAD

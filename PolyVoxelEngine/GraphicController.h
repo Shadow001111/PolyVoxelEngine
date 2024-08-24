@@ -37,7 +37,7 @@ public:
 	static int gameMaxFps;
 	static GameSettings gameSettings;
 
-	static bool deferredRendering;
+	static bool zPrePass;
 
 	static GLFWwindow* window;
 	static Shader* chunkProgram;
@@ -46,6 +46,7 @@ public:
 	static Shader* voxelGhostProgram;
 	static Shader* hotbarProgram;
 	static Shader* buttonProgram;
+	static Shader* rectangleProgram;
 
 	static int init(const GraphicSettings& graphicSettings, const GameSettings& gameSettings);
 

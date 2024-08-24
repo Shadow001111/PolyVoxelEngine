@@ -226,10 +226,17 @@
     <None Include="Shaders\chunk.vert" />
     <None Include="Shaders\hotbar.frag" />
     <None Include="Shaders\hotbar.vert" />
+    <None Include="Shaders\rectangle.frag" />
+    <None Include="Shaders\rectangle.vert" />
     <None Include="Shaders\text.frag" />
     <None Include="Shaders\text.vert" />
     <None Include="Shaders\voxelGhost.frag" />
     <None Include="Shaders\voxelGhost.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="fonts\comic.ttf" />
+    <Font Include="fonts\Minecraft.ttf" />
+    <Font Include="fonts\RusEngMinecraft.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

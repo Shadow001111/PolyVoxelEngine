@@ -217,10 +217,9 @@ void World::update(const glm::vec3& pos, bool isMoving)
 	// update lighting
 	Profiler::start("LightUpdate");
 	updateLighting();
-	Profiler::end("LightUpdate");
-
 	darknessFloodFill();
 	lightingFloodFill();
+	Profiler::end("LightUpdate");
 
 	// generate faces
 	Profiler::start("MeshGeneration");
@@ -656,7 +655,7 @@ void World::draw(const Camera& camera)
 
 		glEnable(GL_CULL_FACE);
 
-		if (GraphicController::deferredRendering)
+		if (GraphicController::zPrePass)
 		{
 			GraphicController::deferredChunkProgram->bind();
 			glEnable(GL_RASTERIZER_DISCARD);
@@ -679,6 +678,7 @@ void World::draw(const Camera& camera)
 	// draw transparent
 	std::reverse(renderChunks.begin(), renderChunks.end());
 	getDrawCommands(renderChunks, camera, commandsCount, chunkPositionsCount, true);
+	glDisable(GL_CULL_FACE);
 	if (commandsCount > 0)
 	{
 		/*struct FaceDistance
@@ -728,10 +728,9 @@ void World::draw(const Camera& camera)
 		indirectBuffer.setData(drawCommands, commandsCount);
 	
 		quadInstanceVAO.bind();
-	
-		glDisable(GL_CULL_FACE);
 
-		if (GraphicController::deferredRendering)
+
+		if (GraphicController::zPrePass)
 		{
 			GraphicController::deferredChunkProgram->bind();
 		}
@@ -743,7 +742,7 @@ void World::draw(const Camera& camera)
 		glDepthFunc(GL_LESS);
 		glMultiDrawArraysIndirect(GL_TRIANGLE_FAN, nullptr, commandsCount, 0);
 
-		if (GraphicController::deferredRendering)
+		if (GraphicController::zPrePass)
 		{
 			GraphicController::chunkProgram->bind();
 		}

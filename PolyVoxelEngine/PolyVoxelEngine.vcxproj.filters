@@ -216,5 +216,12 @@
     <None Include="settings.ini" />
     <None Include="Shaders\chunkDeferred.frag" />
     <None Include="Shaders\chunkDeferred.vert" />
+    <None Include="Shaders\rectangle.frag" />
+    <None Include="Shaders\rectangle.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="fonts\comic.ttf" />
+    <Font Include="fonts\Minecraft.ttf" />
+    <Font Include="fonts\RusEngMinecraft.ttf" />
   </ItemGroup>
 </Project>

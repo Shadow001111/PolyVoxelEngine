@@ -15,10 +15,11 @@ Shader* GraphicController::textProgram = nullptr;
 Shader* GraphicController::voxelGhostProgram = nullptr;
 Shader* GraphicController::hotbarProgram = nullptr;
 Shader* GraphicController::buttonProgram = nullptr;
+Shader* GraphicController::rectangleProgram = nullptr;
 int GraphicController::menuMaxFps = 0;
 int GraphicController::gameMaxFps = 0;
 GameSettings GraphicController::gameSettings;
-bool GraphicController::deferredRendering = false;
+bool GraphicController::zPrePass = false;
 
 void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 {
@@ -145,6 +146,10 @@ int GraphicController::init(const GraphicSettings& graphicSettings, const GameSe
 	buttonProgram = new Shader("button");
 	buttonProgram->bind();
 	buttonProgram->setUniformFloat("aspectRatio", aspectRatio);
+
+	rectangleProgram = new Shader("rectangle");
+	rectangleProgram->bind();
+	rectangleProgram->setUniformFloat("aspectRatio", aspectRatio);
 	
 	// fbo
 	fbo = new FBO(width, height);
@@ -171,8 +176,12 @@ void GraphicController::resizeWindow(int width, int height)
 
 	textProgram->bind();
 	textProgram->setUniformFloat("aspectRatio", aspectRatio);
+
 	buttonProgram->bind();
 	buttonProgram->setUniformFloat("aspectRatio", aspectRatio);
+
+	rectangleProgram->bind();
+	rectangleProgram->setUniformFloat("aspectRatio", aspectRatio);
 
 	// glfw
 	glViewport(0, 0, width, height);
