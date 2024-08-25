@@ -69,7 +69,7 @@ void Profiler::saveToMemory()
 		{
 			continue;
 		}
-		auto time = it->second.time / it->second.samplesTaken;
+		uint16_t time = it->second.time / it->second.samplesTaken;
 		it->second.time = 0;
 		it->second.samplesTaken = 0;
 		memoryTable[memoryTableIndex][i] = time;

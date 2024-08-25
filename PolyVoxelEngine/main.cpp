@@ -1,5 +1,6 @@
 #include "Menu.h"
 #include "IniParser.h"
+#include "SoundEngine.h"
 
 int main()
 {
@@ -54,6 +55,15 @@ int main()
 			GraphicController::clean();
 			return result;
 		}
+
+		result = SoundEngine::init();
+		if (result != 0)
+		{
+			HardwareUsageInfo::destroy();
+			GraphicController::clean();
+			TextRenderer::destroy();
+			return result;
+		}
 	}
 
 	// menu
@@ -63,5 +73,6 @@ int main()
 	GraphicController::clean();
 	HardwareUsageInfo::destroy();
 	TextRenderer::destroy();
+	SoundEngine::clean();
 	return 0;
 }

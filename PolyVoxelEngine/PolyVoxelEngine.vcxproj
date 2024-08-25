@@ -122,7 +122,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Libraries\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;nvml.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;nvml.lib;freetype.lib;OpenAl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
@@ -144,7 +144,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Libraries\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;nvml.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;nvml.lib;freetype.lib;OpenAl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
@@ -160,6 +160,7 @@
     <ClCompile Include="Menu.cpp" />
     <ClCompile Include="PhysicEntity.cpp" />
     <ClCompile Include="Profiler.cpp" />
+    <ClCompile Include="SoundEngine.cpp" />
     <ClCompile Include="SSBO.cpp" />
     <ClCompile Include="FBO.cpp" />
     <ClCompile Include="glad.c" />
@@ -193,6 +194,7 @@
     <ClInclude Include="Menu.h" />
     <ClInclude Include="PhysicEntity.h" />
     <ClInclude Include="Profiler.h" />
+    <ClInclude Include="SoundEngine.h" />
     <ClInclude Include="SSBO.h" />
     <ClInclude Include="FBO.h" />
     <ClInclude Include="GraphicController.h" />
