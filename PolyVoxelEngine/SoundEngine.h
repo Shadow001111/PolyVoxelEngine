@@ -6,11 +6,11 @@
 
 class SoundSource
 {
-	ALuint source, buffer;
+	ALuint alSource, alBuffer;
 public:
-	float deleteTime;
-
-	SoundSource(ALuint source, ALuint buffer, float duration);
+	SoundSource();
+	void load(const std::string& path);
+	void play();
 	void clean() const;
 };
 
@@ -18,14 +18,8 @@ class SoundEngine
 {
 	static ALCdevice* device;
 	static ALCcontext* context;
-
-	static std::vector<SoundSource> soundSources;
 public:
 	static int init();
 	static void clean();
-
-	static void playSound(const std::string& path);
-
-	static void removeEndedSoundSources();
 };
 

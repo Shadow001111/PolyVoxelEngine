@@ -4,7 +4,6 @@
 #include "World.h"
 #include "TerrainGenerator.h"
 #include "Profiler.h"
-#include "SoundEngine.h"
 
 float ceilTo(float value, int n)
 {
@@ -436,8 +435,6 @@ void Game::run()
 			TextRenderer::afterTextRender();
 		}
 		GraphicController::afterRender();
-
-		SoundEngine::removeEndedSoundSources();
 
 		glfwPollEvents();
 

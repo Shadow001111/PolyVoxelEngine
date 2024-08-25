@@ -1,5 +1,6 @@
 #pragma once
 #include "PhysicEntity.h"
+#include "SoundEngine.h"
 
 enum class Gamemode : char
 {
@@ -52,6 +53,8 @@ class Player
 	RaycastHit lastRaycastHit;
 
 	Chunk* debugChunk = nullptr;
+
+	SoundSource soundSource;
 
 	void Inputs(float dt, float time);
 	void Accelerate(const glm::vec3& vec);

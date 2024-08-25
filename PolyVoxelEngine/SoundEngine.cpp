@@ -4,10 +4,50 @@
 #include <chrono>
 #include <GLFW/glfw3.h>
 
-
 ALCdevice* SoundEngine::device = nullptr;
 ALCcontext* SoundEngine::context = nullptr;
-std::vector<SoundSource> SoundEngine::soundSources;
+
+SoundSource::SoundSource() : alSource(0), alBuffer(0)
+{}
+
+void SoundSource::load(const std::string& path)
+{
+    SF_INFO sfInfo;
+    SNDFILE* sndFile = sf_open(path.c_str(), SFM_READ, &sfInfo);
+    if (!sndFile)
+    {
+        std::cerr << "Failed to open sound file: " << path << std::endl;
+        return;
+    }
+
+    size_t bufferSize = sfInfo.frames * sfInfo.channels;
+    short* buffer = new short[bufferSize];
+    sf_read_short(sndFile, buffer, bufferSize);
+    sf_close(sndFile);
+
+    alGenBuffers(1, &alBuffer);
+    ALenum format = (sfInfo.channels == 1) ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
+    alBufferData(alBuffer, format, buffer, bufferSize * sizeof(short), sfInfo.samplerate);
+    delete[] buffer;
+
+    alGenSources(1, &alSource);
+    alSourcei(alSource, AL_BUFFER, alBuffer);
+
+    float duration = (float)sfInfo.frames / (float)sfInfo.samplerate;
+}
+
+void SoundSource::play()
+{
+    alSourcePlay(alSource);
+}
+
+void SoundSource::clean() const
+{
+    alSourceStop(alSource);
+    alDeleteSources(1, &alSource);
+    alDeleteBuffers(1, &alBuffer);
+}
+
 
 int SoundEngine::init()
 {
@@ -41,62 +81,4 @@ void SoundEngine::clean()
     alcMakeContextCurrent(nullptr);
     alcDestroyContext(context);
     alcCloseDevice(device); device = nullptr;
-}
-
-void SoundEngine::playSound(const std::string& path)
-{
-    SF_INFO sfInfo;
-    SNDFILE* sndFile = sf_open(path.c_str(), SFM_READ, &sfInfo);
-    if (!sndFile)
-    {
-        std::cerr << "Failed to open sound file: " << path << std::endl;
-        return;
-    }
-
-    size_t bufferSize = sfInfo.frames * sfInfo.channels;
-    short* buffer = new short[bufferSize];
-    sf_read_short(sndFile, buffer, bufferSize);
-    sf_close(sndFile);
-
-    ALuint alBuffer;
-    alGenBuffers(1, &alBuffer);
-    ALenum format = (sfInfo.channels == 1) ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
-    alBufferData(alBuffer, format, buffer, bufferSize * sizeof(short), sfInfo.samplerate);
-    delete[] buffer;
-
-    ALuint alSource;
-    alGenSources(1, &alSource);
-    alSourcei(alSource, AL_BUFFER, alBuffer);
-
-    float duration = (float)sfInfo.frames / (float)sfInfo.samplerate;
-    soundSources.emplace_back(alSource, alBuffer, duration);
-}
-
-void SoundEngine::removeEndedSoundSources()
-{
-    float time = glfwGetTime();
-
-    auto new_end = std::remove_if(soundSources.begin(), soundSources.end(), [time](SoundSource& obj) {
-        if (time >= obj.deleteTime) 
-        {
-            obj.clean();
-            return true;
-        }
-        return false;
-        });
-
-    soundSources.erase(new_end, soundSources.end());
-}
-
-SoundSource::SoundSource(ALuint source, ALuint buffer, float duration) : source(source), buffer(buffer)
-{
-    deleteTime = (float)glfwGetTime() + duration;
-    alSourcePlay(source);
-}
-
-void SoundSource::clean() const
-{
-    alSourceStop(source);
-    alDeleteSources(1, &source);
-    alDeleteBuffers(1, &buffer);
 }
