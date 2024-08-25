@@ -129,7 +129,8 @@ Player::Player(glm::vec3 position, float fov, float near, float far) :
 
 	flyMode = gamemode == Gamemode::Creative;
 
-	soundSource.load("Sounds/coin.wav");
+	blockPlaceSoundSource.load("Sounds/block place.wav");
+	blockBreakSoundSource.load("Sounds/block break.wav");
 }
 
 void Player::clean()
@@ -138,7 +139,8 @@ void Player::clean()
 	voxelGhostVBO.clean();
 	uiVAO.clean();
 	uiVBO.clean();
-	soundSource.clean();
+	blockPlaceSoundSource.clean();
+	blockBreakSoundSource.clean();
 }
 
 void Player::physicUpdate(float dt, float time)
@@ -623,6 +625,7 @@ void Player::Inputs(float dt, float time)
 						hit.globalPos.z + hit.normal.z,
 						selectedHotbarBlock
 					);
+					blockPlaceSoundSource.play();
 				}
 			}
 		}
@@ -638,6 +641,7 @@ void Player::Inputs(float dt, float time)
 					hit.globalPos.z,
 					Block::Air
 				);
+				blockBreakSoundSource.play();
 			}
 		}
 	}

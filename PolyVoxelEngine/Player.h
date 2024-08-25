@@ -54,7 +54,8 @@ class Player
 
 	Chunk* debugChunk = nullptr;
 
-	SoundSource soundSource;
+	SoundSource blockPlaceSoundSource;
+	SoundSource blockBreakSoundSource;
 
 	void Inputs(float dt, float time);
 	void Accelerate(const glm::vec3& vec);
