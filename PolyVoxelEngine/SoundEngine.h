@@ -6,9 +6,15 @@
 
 class SoundSource
 {
+	friend class SoundEngine;
+
+	static std::vector<SoundSource*> soundSources;
+
 	ALuint alSource = 0, alBuffer = 0;
 public:
 	SoundSource();
+	~SoundSource();
+
 	void load(const std::string& path);
 	void play() const;
 	void stop() const;
@@ -43,5 +49,7 @@ class SoundEngine
 public:
 	static int init();
 	static void clean();
+
+	static void stopAllSounds();
 };
 

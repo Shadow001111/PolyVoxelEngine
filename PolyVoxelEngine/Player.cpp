@@ -132,7 +132,7 @@ Player::Player(glm::vec3 position, float fov, float near, float far) :
 	soundSource.load("Sounds/coin.wav");
 }
 
-void Player::clean() const
+void Player::clean()
 {
 	voxelGhostVAO.clean();
 	voxelGhostVBO.clean();
@@ -612,7 +612,6 @@ void Player::Inputs(float dt, float time)
 	{
 		if (GraphicController::isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT))
 		{
-			soundSource.play();
 			if (selectedHotbarBlock != Block::Void)
 			{
 				worldEditNextTime = time + 0.1f;

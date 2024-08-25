@@ -66,7 +66,7 @@ public:
 	int debugViewMode = 0;
 
 	Player(glm::vec3 position, float fov, float near, float far);
-	void clean() const;
+	void clean();
 
 	void physicUpdate(float dt, float time);
 	void update(float intelpolation);

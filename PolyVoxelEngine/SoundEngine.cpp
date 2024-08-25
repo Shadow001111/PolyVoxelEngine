@@ -4,12 +4,26 @@
 #include <chrono>
 #include <GLFW/glfw3.h>
 
-ALCdevice* SoundEngine::device = nullptr;
-ALCcontext* SoundEngine::context = nullptr;
+std::vector<SoundSource*> SoundSource::soundSources;
 
 SoundSource::SoundSource() : alSource(0), alBuffer(0)
 {
     alGenSources(1, &alSource);
+    soundSources.push_back(this);
+}
+
+SoundSource::~SoundSource()
+{
+    auto it = std::find(soundSources.begin(), soundSources.end(), this);
+    if (it == soundSources.end())
+    {
+        std::cerr << "SoundSource wasn't in vector" << std::endl;
+    }
+    else
+    {
+        soundSources.erase(it);
+    }
+    clean();
 }
 
 void SoundSource::load(const std::string& path)
@@ -163,6 +177,9 @@ ALenum SoundSource::getState() const
 }
 
 
+ALCdevice* SoundEngine::device = nullptr;
+ALCcontext* SoundEngine::context = nullptr;
+
 int SoundEngine::init()
 {
     if (device)
@@ -199,4 +216,12 @@ void SoundEngine::clean()
     alcMakeContextCurrent(nullptr);
     alcDestroyContext(context);
     alcCloseDevice(device); device = nullptr;
+}
+
+void SoundEngine::stopAllSounds()
+{
+    for (const SoundSource* soundSource : SoundSource::soundSources)
+    {
+        soundSource->stop();
+    }
 }
