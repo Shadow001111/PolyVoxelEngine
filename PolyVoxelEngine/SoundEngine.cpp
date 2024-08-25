@@ -2,10 +2,12 @@
 #include <sndfile.h>
 #include <thread>
 #include <chrono>
+#include <GLFW/glfw3.h>
 
 
 ALCdevice* SoundEngine::device = nullptr;
 ALCcontext* SoundEngine::context = nullptr;
+std::vector<SoundSource> SoundEngine::soundSources;
 
 int SoundEngine::init()
 {
@@ -60,16 +62,41 @@ void SoundEngine::playSound(const std::string& path)
     alGenBuffers(1, &alBuffer);
     ALenum format = (sfInfo.channels == 1) ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
     alBufferData(alBuffer, format, buffer, bufferSize * sizeof(short), sfInfo.samplerate);
+    delete[] buffer;
 
     ALuint alSource;
     alGenSources(1, &alSource);
     alSourcei(alSource, AL_BUFFER, alBuffer);
 
-    alSourcePlay(alSource);
+    float duration = (float)sfInfo.frames / (float)sfInfo.samplerate;
+    soundSources.emplace_back(alSource, alBuffer, duration);
+}
 
-    int durationMs = ceilf(((double)sfInfo.frames / sfInfo.samplerate) * 1000);
-    std::this_thread::sleep_for(std::chrono::milliseconds(durationMs));
+void SoundEngine::removeEndedSoundSources()
+{
+    float time = glfwGetTime();
 
-    alDeleteSources(1, &alSource);
-    alDeleteBuffers(1, &alBuffer);
+    auto new_end = std::remove_if(soundSources.begin(), soundSources.end(), [time](SoundSource& obj) {
+        if (time >= obj.deleteTime) 
+        {
+            obj.clean();
+            return true;
+        }
+        return false;
+        });
+
+    soundSources.erase(new_end, soundSources.end());
+}
+
+SoundSource::SoundSource(ALuint source, ALuint buffer, float duration) : source(source), buffer(buffer)
+{
+    deleteTime = (float)glfwGetTime() + duration;
+    alSourcePlay(source);
+}
+
+void SoundSource::clean() const
+{
+    alSourceStop(source);
+    alDeleteSources(1, &source);
+    alDeleteBuffers(1, &buffer);
 }

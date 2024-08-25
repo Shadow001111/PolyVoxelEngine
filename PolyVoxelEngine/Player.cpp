@@ -1,6 +1,7 @@
 #include "Player.h"
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtx/compatibility.hpp>
+#include "SoundEngine.h"
 
 constexpr int intCeil(float x_)
 {
