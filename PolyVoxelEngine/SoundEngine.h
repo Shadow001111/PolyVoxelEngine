@@ -32,6 +32,8 @@ public:
 	void setConeOuterAngle(float angle) const;
 	void setConeOuterGain(float gain) const;
 	void setDopplerFactor(float factor) const;
+
+	ALenum getState() const;
 };
 
 class SoundEngine

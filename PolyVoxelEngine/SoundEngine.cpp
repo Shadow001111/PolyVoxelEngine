@@ -155,6 +155,13 @@ void SoundSource::setDopplerFactor(float factor) const
     alSourcef(alSource, AL_DOPPLER_FACTOR, factor);
 }
 
+ALenum SoundSource::getState() const
+{
+    ALenum state;
+    alGetSourcei(alSource, AL_SOURCE_STATE, &state);
+    return state;
+}
+
 
 int SoundEngine::init()
 {
@@ -180,6 +187,10 @@ int SoundEngine::init()
     }
 
     alcMakeContextCurrent(context);
+
+    // settings
+    alDopplerVelocity(343.0f); // Speed of sound in air in this environment
+
     return 0;
 }
 
