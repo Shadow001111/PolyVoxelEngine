@@ -51,5 +51,9 @@ public:
 	static void clean();
 
 	static void stopAllSounds();
+
+	static void setListenerPosition(float x, float y, float z);
+	static void setListenerVelocity(float x, float y, float z);
+	static void setListenerOrientation(float forwardX, float forwardY, float forwardZ, float upX, float upY, float upZ);
 };
 

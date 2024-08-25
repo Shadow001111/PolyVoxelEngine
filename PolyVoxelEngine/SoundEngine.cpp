@@ -225,3 +225,19 @@ void SoundEngine::stopAllSounds()
         soundSource->stop();
     }
 }
+
+void SoundEngine::setListenerPosition(float x, float y, float z)
+{
+    alListener3f(AL_POSITION, x, y, z);
+}
+
+void SoundEngine::setListenerVelocity(float x, float y, float z)
+{
+    alListener3f(AL_VELOCITY, x, y, z);
+}
+
+void SoundEngine::setListenerOrientation(float forwardX, float forwardY, float forwardZ, float upX, float upY, float upZ)
+{
+    ALfloat orientation[] = { forwardX, forwardY, forwardZ, upX, upY, upZ };
+    alListenerfv(AL_ORIENTATION, orientation);
+}
