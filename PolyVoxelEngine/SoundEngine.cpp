@@ -8,7 +8,9 @@ ALCdevice* SoundEngine::device = nullptr;
 ALCcontext* SoundEngine::context = nullptr;
 
 SoundSource::SoundSource() : alSource(0), alBuffer(0)
-{}
+{
+    alGenSources(1, &alSource);
+}
 
 void SoundSource::load(const std::string& path)
 {
@@ -25,27 +27,52 @@ void SoundSource::load(const std::string& path)
     sf_read_short(sndFile, buffer, bufferSize);
     sf_close(sndFile);
 
+    if (alBuffer != 0)
+    {
+        alDeleteBuffers(1, &alBuffer);
+    }
     alGenBuffers(1, &alBuffer);
     ALenum format = (sfInfo.channels == 1) ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
     alBufferData(alBuffer, format, buffer, bufferSize * sizeof(short), sfInfo.samplerate);
     delete[] buffer;
 
-    alGenSources(1, &alSource);
+    if (alSource == 0)
+    {
+        alGenSources(1, &alSource);
+    }
     alSourcei(alSource, AL_BUFFER, alBuffer);
 
     float duration = (float)sfInfo.frames / (float)sfInfo.samplerate;
 }
 
-void SoundSource::play()
+void SoundSource::play() const
 {
     alSourcePlay(alSource);
 }
 
-void SoundSource::clean() const
+void SoundSource::stop() const
+{
+    alSourceStop(alSource);
+}
+
+void SoundSource::pause() const
+{
+    alSourcePause(alSource);
+}
+
+void SoundSource::rewind() const
+{
+    alSourceRewind(alSource);
+}
+
+void SoundSource::clean()
 {
     alSourceStop(alSource);
     alDeleteSources(1, &alSource);
     alDeleteBuffers(1, &alBuffer);
+
+    alSource = 0;
+    alBuffer = 0;
 }
 
 

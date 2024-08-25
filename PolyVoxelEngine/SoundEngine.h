@@ -6,12 +6,15 @@
 
 class SoundSource
 {
-	ALuint alSource, alBuffer;
+	ALuint alSource = 0, alBuffer = 0;
 public:
 	SoundSource();
 	void load(const std::string& path);
-	void play();
-	void clean() const;
+	void play() const;
+	void stop() const;
+	void pause() const;
+	void rewind() const;
+	void clean();
 };
 
 class SoundEngine
