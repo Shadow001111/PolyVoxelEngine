@@ -15,6 +15,23 @@ public:
 	void pause() const;
 	void rewind() const;
 	void clean();
+
+	void setPosition(float x, float y, float z) const;
+	void setVelocity(float x, float y, float z) const;
+	void setDirection(float x, float y, float z) const;
+	void setVolume(float volume) const;
+	void setPitch(float pitch) const;
+	void setLooping(bool looping) const;
+	void setReferenceDistance(float distance) const;
+	void setRolloffFactor(float factor) const;
+	void setMaxDistance(float distance) const;
+	void setMinGain(float gain) const;
+	void setMaxGain(float gain) const;
+	void setRelativeMode(bool relative) const;
+	void setConeInnerAngle(float angle) const;
+	void setConeOuterAngle(float angle) const;
+	void setConeOuterGain(float gain) const;
+	void setDopplerFactor(float factor) const;
 };
 
 class SoundEngine

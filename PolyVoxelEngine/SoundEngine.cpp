@@ -75,6 +75,86 @@ void SoundSource::clean()
     alBuffer = 0;
 }
 
+void SoundSource::setPosition(float x, float y, float z) const
+{
+    alSource3f(alSource, AL_POSITION, x, y, z);
+}
+
+void SoundSource::setVelocity(float x, float y, float z) const
+{
+    alSource3f(alSource, AL_VELOCITY, x, y, z);
+}
+
+void SoundSource::setDirection(float x, float y, float z) const
+{
+    alSource3f(alSource, AL_DIRECTION, x, y, z);
+}
+
+void SoundSource::setVolume(float volume) const
+{
+    alSourcef(alSource, AL_GAIN, volume);
+}
+
+void SoundSource::setPitch(float pitch) const
+{
+    alSourcef(alSource, AL_PITCH, pitch);
+}
+
+void SoundSource::setLooping(bool looping) const
+{
+    alSourcei(alSource, AL_LOOPING, looping ? AL_TRUE : AL_FALSE);
+}
+
+void SoundSource::setReferenceDistance(float distance) const
+{
+    alSourcef(alSource, AL_REFERENCE_DISTANCE, distance);
+}
+
+void SoundSource::setRolloffFactor(float factor) const
+{
+    alSourcef(alSource, AL_ROLLOFF_FACTOR, factor);
+}
+
+void SoundSource::setMaxDistance(float distance) const
+{
+    alSourcef(alSource, AL_MAX_DISTANCE, distance);
+}
+
+void SoundSource::setMinGain(float gain) const
+{
+    alSourcef(alSource, AL_MIN_GAIN, gain);
+}
+
+void SoundSource::setMaxGain(float gain) const
+{
+    alSourcef(alSource, AL_MAX_GAIN, gain);
+}
+
+void SoundSource::setRelativeMode(bool relative) const
+{
+    alSourcei(alSource, AL_SOURCE_RELATIVE, relative ? AL_TRUE : AL_FALSE);
+}
+
+void SoundSource::setConeInnerAngle(float angle) const
+{
+    alSourcef(alSource, AL_CONE_INNER_ANGLE, angle);
+}
+
+void SoundSource::setConeOuterAngle(float angle) const
+{
+    alSourcef(alSource, AL_CONE_OUTER_ANGLE, angle);
+}
+
+void SoundSource::setConeOuterGain(float gain) const
+{
+    alSourcef(alSource, AL_CONE_OUTER_GAIN, gain);
+}
+
+void SoundSource::setDopplerFactor(float factor) const
+{
+    alSourcef(alSource, AL_DOPPLER_FACTOR, factor);
+}
+
 
 int SoundEngine::init()
 {
