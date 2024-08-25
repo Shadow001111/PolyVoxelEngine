@@ -430,6 +430,13 @@ void Game::run()
 							AligmentY::Top
 						);
 					}
+
+					TextRenderer::renderText(std::to_string(Profiler::maxTime) + " ms",
+						left + PROFILER_DRAW_WIDTH + 0.01f,
+						bottom + PROFILER_DRAW_HEIGHT,
+						0.025f,
+						{ 1.0f, 1.0f, 1.0f },
+						AligmentX::Left, AligmentY::Center);
 				}
 			}
 			TextRenderer::afterTextRender();
