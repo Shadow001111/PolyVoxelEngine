@@ -25,8 +25,7 @@ const glm::vec3 profilerSamplesColors[PROFILER_SAMPLES_COUNT] =
 
 void Profiler::start(const std::string& name)
 {
-	auto start = std::chrono::steady_clock::now();
-	dataMap[name].lastTimeSample = start;
+	dataMap[name].lastTimeSample = std::chrono::steady_clock::now();
 }
 
 void Profiler::end(const std::string& name)
@@ -51,7 +50,7 @@ void Profiler::reset(const std::string& name)
 	{
 		return;
 	}
-	it->second.time = 0.0f;
+	it->second.time = 0;
 }
 
 void Profiler::clean()
@@ -70,8 +69,8 @@ void Profiler::saveToMemory()
 			continue;
 		}
 		uint16_t time = it->second.time / it->second.samplesTaken;
-		it->second.time = 0;
 		it->second.samplesTaken = 0;
+		it->second.time = 0;
 		memoryTable[memoryTableIndex][i] = time;
 		timeSum += time;
 	}
