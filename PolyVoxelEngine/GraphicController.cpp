@@ -234,6 +234,6 @@ void GraphicController::clean()
 	hotbarProgram->clean(); delete hotbarProgram;
 	buttonProgram->clean(); delete buttonProgram;
 
-	glfwDestroyWindow(window);
+	glfwDestroyWindow(window); window = nullptr;
 	glfwTerminate();
 }
