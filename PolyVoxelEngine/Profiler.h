@@ -8,10 +8,9 @@ struct ProfilerData
 {
 	std::chrono::steady_clock::time_point lastTimeSample;
 	uint16_t time = 0;
-	uint16_t samplesTaken = 0;
 };
 
-constexpr size_t PROFILER_MEMORY_TABLE_SIZE = 20;
+constexpr size_t PROFILER_MEMORY_TABLE_SIZE = 50;
 constexpr size_t PROFILER_SAMPLES_COUNT = 4;
 
 constexpr float PROFILER_DRAW_WIDTH = 0.5f;

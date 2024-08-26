@@ -244,7 +244,7 @@ void Game::run()
 	Tick worldTick(20);
 	Tick playerTick(40);
 	Tick guiTick(10);
-	Tick profilerTick(20);
+	Tick profilerTick(40);
 
 	//
 	GUIData guiData;

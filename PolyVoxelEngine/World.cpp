@@ -821,6 +821,14 @@ void World::buildImage(int x, int y, int z, int w, int h, int xAxis, int yAxis, 
 	stbi_image_free(bytes);
 }
 
+void World::regenerateChunks()
+{
+	for (const auto& pair : Chunk::chunkMap)
+	{
+		chunkGenerateQueue.push(pair.second);
+	}
+}
+
 void World::getRenderChunks(std::vector<ChunkDistance>& renderChunks, const Camera& camera) const
 {
 	Box chunkShape(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(Settings::HALF_CHUNK_SIZE));

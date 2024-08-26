@@ -123,5 +123,6 @@ public:
 
 	//
 	void buildImage(int x, int y, int z, int w, int h, int xAxis, int yAxis, const char* imagePath);
+	void regenerateChunks();
 };
 

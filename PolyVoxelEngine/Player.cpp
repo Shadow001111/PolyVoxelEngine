@@ -381,6 +381,10 @@ void Player::keyCallback(int key, int scancode, int action, int mods)
 	{
 		GraphicController::zPrePass ^= 1;
 	}
+	else if (key == GLFW_KEY_U)
+	{
+		physicEntity.world->regenerateChunks();
+	}
 
 	// NUMPAD
 	for (int i = 0; i < 3; i++)

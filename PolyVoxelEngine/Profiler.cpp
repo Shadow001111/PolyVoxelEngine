@@ -33,13 +33,13 @@ void Profiler::end(const std::string& name)
 	auto it = dataMap.find(name);
 	if (it == dataMap.end())
 	{
+		std::cerr << "Profiler: name isn't in dataMap" << std::endl;
 		return;
 	}
 	ProfilerData& data = it->second;
 	auto end = std::chrono::steady_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - data.lastTimeSample);
 	data.time += duration.count();
-	data.samplesTaken++;
 	data.lastTimeSample = end;
 }
 
@@ -68,8 +68,7 @@ void Profiler::saveToMemory()
 		{
 			continue;
 		}
-		uint16_t time = it->second.time / it->second.samplesTaken;
-		it->second.samplesTaken = 0;
+		uint16_t time = it->second.time;
 		it->second.time = 0;
 		memoryTable[memoryTableIndex][i] = time;
 		timeSum += time;
