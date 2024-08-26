@@ -1,5 +1,19 @@
 #include "Shader.h"
 #include <glm/gtc/type_ptr.hpp>
+#include <sstream>
+
+std::vector<std::string> splitString(const std::string& input, char delimiter = ' ')
+{
+	std::vector<std::string> result;
+	std::istringstream iss(input);
+	std::string writeString;
+	while (getline(iss, writeString, delimiter))
+	{
+		result.push_back(writeString);
+	}
+	std::cout << std::endl;
+	return result;
+}
 
 std::string ReadFile(const char* filepath)
 {

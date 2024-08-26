@@ -7,8 +7,9 @@
 #include <unordered_map>
 #include <glm/glm.hpp>
 
-std::string ReadFile(const char* filepath);
+std::vector<std::string> splitString(const std::string& input, char delimiter);
 
+std::string ReadFile(const char* filepath);
 GLuint CreateShader(GLuint type, const char* filepath);
 
 class Shader
