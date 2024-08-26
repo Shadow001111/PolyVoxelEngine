@@ -1,7 +1,7 @@
 #include "Profiler.h"
 #include <iostream>
 
-std::unordered_map<std::string, ProfilerData> Profiler::dataMap;
+ProfilerData Profiler::profilerData[PROFILER_SAMPLES_COUNT];
 uint16_t Profiler::memoryTable[PROFILER_MEMORY_TABLE_SIZE][PROFILER_SAMPLES_COUNT] = {};
 size_t Profiler::memoryTableIndex = 0;
 uint16_t Profiler::maxTimeTable[PROFILER_MEMORY_TABLE_SIZE] = {};
@@ -13,7 +13,7 @@ const std::string profilerSamplesNames[PROFILER_SAMPLES_COUNT] =
 	"BlockLightUpdate",
 	"SkyLightUpdate",
 	"MeshGeneration",
-	"LoadChunks",
+	"LoadChunks"
 };
 
 const glm::vec3 profilerSamplesColors[PROFILER_SAMPLES_COUNT] =
@@ -22,42 +22,39 @@ const glm::vec3 profilerSamplesColors[PROFILER_SAMPLES_COUNT] =
 	{0.0f, 1.0f, 0.0f},
 	{0.0f, 0.0f, 1.0f},
 	{1.0f, 1.0f, 0.0f},
-	{0.0f, 1.0f, 1.0f},
+	{0.0f, 1.0f, 1.0f}
 };
 
-void Profiler::start(const std::string& name)
+void Profiler::start(size_t index)
 {
-	dataMap[name].lastTimeSample = std::chrono::steady_clock::now();
+	profilerData[index].lastTimeSample = std::chrono::steady_clock::now();
 }
 
-void Profiler::end(const std::string& name)
+void Profiler::end(size_t index)
 {
-	auto it = dataMap.find(name);
-	if (it == dataMap.end())
+	auto end = std::chrono::steady_clock::now();
+	if (index >= PROFILER_SAMPLES_COUNT)
 	{
-		std::cerr << "Profiler: name isn't in dataMap" << std::endl;
 		return;
 	}
-	ProfilerData& data = it->second;
-	auto end = std::chrono::steady_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - data.lastTimeSample);
-	data.time += duration.count();
+	ProfilerData& data = profilerData[index];
+	auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - data.lastTimeSample);
+	data.timeNS += duration.count();
 	data.lastTimeSample = end;
 }
 
-void Profiler::reset(const std::string& name)
+void Profiler::reset(size_t index)
 {
-	auto it = dataMap.find(name);
-	if (it == dataMap.end())
+	if (index >= PROFILER_SAMPLES_COUNT)
 	{
 		return;
 	}
-	it->second.time = 0;
+	profilerData[index].timeNS = 0.0f;
 }
 
 void Profiler::clean()
 {
-	dataMap.clear();
+	
 }
 
 void Profiler::saveToMemory()
@@ -65,13 +62,9 @@ void Profiler::saveToMemory()
 	uint16_t timeSum = 0;
 	for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
 	{
-		auto it = dataMap.find(profilerSamplesNames[i]);
-		if (it == dataMap.end())
-		{
-			continue;
-		}
-		uint16_t time = it->second.time;
-		it->second.time = 0;
+		ProfilerData& data = profilerData[i];
+		uint16_t time = data.timeNS / 1000000;
+		data.timeNS = 0;
 		memoryTable[memoryTableIndex][i] = time;
 		timeSum += time;
 	}

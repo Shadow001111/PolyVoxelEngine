@@ -207,9 +207,9 @@ void World::update(const glm::vec3& pos, bool isMoving)
 
 	// load chunks
 	auto loadChunksPos = glm::ivec3(pos / (float)Settings::CHUNK_SIZE);
-	Profiler::start("LoadChunks");
+	Profiler::start(LOAD_CHUNKS_INDEX);
 	loadChunks(loadChunksPos.x, loadChunksPos.y, loadChunksPos.z, false);
-	Profiler::end("LoadChunks");
+	Profiler::end(LOAD_CHUNKS_INDEX);
 	
 	// generate blocks
 	generateChunksBlocks(pos, isMoving);
@@ -273,7 +273,7 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 	}
 
 	// generate
-	Profiler::start("BlockGeneration");
+	Profiler::start(BLOCK_GENERATION_INDEX);
 	for (size_t i = 0; i < generateCount; i++)
 	{
 		Chunk* chunk = chunkGenerateQueue.front();
@@ -282,7 +282,7 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 		addChunkToGenerateFaces(chunk);
 		addSurroundingChunksToGenerateFaces(chunk);
 	}
-	Profiler::end("BlockGeneration");
+	Profiler::end(BLOCK_GENERATION_INDEX);
 }
 
 void World::generateChunksFaces()
@@ -292,12 +292,12 @@ void World::generateChunksFaces()
 		return;
 	}
 	Chunk::faceInstancesVBO->bind();
-	Profiler::start("MeshGeneration");
+	Profiler::start(MESH_GENERATION_INDEX);
 	for (Chunk* chunk : generateFacesSet)
 	{
 		chunk->generateFaces();
 	}
-	Profiler::end("MeshGeneration");
+	Profiler::end(MESH_GENERATION_INDEX);
 	generateFacesSet.clear();
 }
 
@@ -1079,19 +1079,19 @@ void World::darknessFloodFill()
 void World::updateLighting()
 {
 	// TODO: if place 2 light source close to eachother, after removing them, 1 block light will stay in last removed one
-	Profiler::start("BlockLightUpdate");
+	Profiler::start(BLOCK_LIGHT_UPDATE_INDEX);
 	for (const auto& update : Chunk::lightingUpdateVector)
 	{
 		updateBlockLighting(update);
 	}
-	Profiler::end("BlockLightUpdate");
+	Profiler::end(BLOCK_LIGHT_UPDATE_INDEX);
 
-	Profiler::start("SkyLightUpdate");
+	Profiler::start(SKY_LIGHT_UPDATE_INDEX);
 	for (const auto& update : Chunk::lightingUpdateVector)
 	{
 		updateSkyLighting(update);
 	}
-	Profiler::end("SkyLightUpdate");
+	Profiler::end(SKY_LIGHT_UPDATE_INDEX);
 
 	Chunk::lightingUpdateVector.clear();
 }
