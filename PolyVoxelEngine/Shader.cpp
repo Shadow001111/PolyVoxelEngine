@@ -40,8 +40,7 @@ GLuint CreateShader(GLuint type, const char* filepath, const std::vector<std::st
 			modifictation += flag;
 			modifictation += "\n";
 		}
-		// len(#version abc core) = 17 // +1 for new line
-		code.insert(18, modifictation);
+		code.insert(code.find("\n") + 1, modifictation);
 	}
 
 	// shader
