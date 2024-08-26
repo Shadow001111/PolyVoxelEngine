@@ -206,7 +206,8 @@ int SoundEngine::init()
     alcMakeContextCurrent(context);
 
     // settings
-    alDopplerVelocity(343.0f); // Speed of sound in air in this environment
+    alSpeedOfSound(1000.0f);
+    alDistanceModel(AL_LINEAR_DISTANCE_CLAMPED);
 
     return 0;
 }

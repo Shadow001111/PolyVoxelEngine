@@ -178,6 +178,11 @@ void Player::update(float intelpolation)
 
 	camera.Forward = newForward;
 	camera.updateVectors();
+
+	// update listener
+	SoundEngine::setListenerPosition(camera.position.x, camera.position.y, camera.position.z);
+	SoundEngine::setListenerVelocity(physicEntity.velocity.x, physicEntity.velocity.y, physicEntity.velocity.z);
+	SoundEngine::setListenerOrientation(newForward.x, newForward.y, newForward.z, camera.Up.x, camera.Up.y, camera.Up.z);
 }
 
 void Player::BeforeRender()
