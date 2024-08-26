@@ -7,17 +7,17 @@
 #include <unordered_map>
 #include <glm/glm.hpp>
 
-std::vector<std::string> splitString(const std::string& input, char delimiter);
+std::vector<std::string> splitString(const std::string& input, char delimiter = ' ');
 
 std::string ReadFile(const char* filepath);
-GLuint CreateShader(GLuint type, const char* filepath);
+GLuint CreateShader(GLuint type, const char* filepath, const std::vector<std::string>& flags);
 
 class Shader
 {
 	std::string name;
 public:
 	GLuint ID;
-	Shader(const std::string& name);
+	Shader(const std::string& name, const std::string& flags = "");
 
 	void bind() const;
 	void unbind() const;

@@ -3,7 +3,6 @@
 layout(location = 0) in vec3 vertPos;
 layout(location = 1) in ivec3 packedData;
 
-
 layout(binding = 0) restrict readonly buffer ChunkPositionSSBO
 {
 	float chunkPositions[];

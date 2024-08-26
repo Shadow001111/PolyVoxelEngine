@@ -2,7 +2,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <sstream>
 
-std::vector<std::string> splitString(const std::string& input, char delimiter = ' ')
+std::vector<std::string> splitString(const std::string& input, char delimiter)
 {
 	std::vector<std::string> result;
 	std::istringstream iss(input);
@@ -11,7 +11,6 @@ std::vector<std::string> splitString(const std::string& input, char delimiter = 
 	{
 		result.push_back(writeString);
 	}
-	std::cout << std::endl;
 	return result;
 }
 
@@ -28,23 +27,40 @@ std::string ReadFile(const char* filepath)
 	return buffer.str();
 }
 
-GLuint CreateShader(GLuint type, const char* filepath)
+GLuint CreateShader(GLuint type, const char* filepath, const std::vector<std::string>& flags)
 {
-	GLuint shader = glCreateShader(type);
 	std::string code = ReadFile(filepath);
+	if (!flags.empty())
+	{
+		std::string modifictation;
+		modifictation.reserve(flags.size() * 9);
+		for (const std::string& flag : flags)
+		{
+			modifictation += "#define ";
+			modifictation += flag;
+			modifictation += "\n";
+		}
+		// len(#version abc core) = 17 // +1 for new line
+		code.insert(18, modifictation);
+	}
+
+	// shader
 	const char* source = code.c_str();
+	GLuint shader = glCreateShader(type);
 	glShaderSource(shader, 1, &source, NULL);
 	return shader;
 }
 
-Shader::Shader(const std::string& name) : name(name)
+Shader::Shader(const std::string& name, const std::string& flags) : name(name)
 {
 	// shaders
-	GLuint vertexShader = CreateShader(GL_VERTEX_SHADER, ("Shaders/" + name + ".vert").c_str());
+	auto vectorOfFlags = splitString(flags);
+
+	GLuint vertexShader = CreateShader(GL_VERTEX_SHADER, ("Shaders/" + name + ".vert").c_str(), vectorOfFlags);
 	glCompileShader(vertexShader);
 	checkForCompilationErrors(vertexShader, "VERTEX");
 
-	GLuint fragmentShader = CreateShader(GL_FRAGMENT_SHADER, ("Shaders/" + name + ".frag").c_str());
+	GLuint fragmentShader = CreateShader(GL_FRAGMENT_SHADER, ("Shaders/" + name + ".frag").c_str(), vectorOfFlags);
 	glCompileShader(fragmentShader);
 	checkForCompilationErrors(fragmentShader, "FRAGMENT");
 
