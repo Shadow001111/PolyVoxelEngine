@@ -4,11 +4,11 @@ layout(location = 0) in vec3 vertPos;
 layout(location = 1) in ivec2 packedData;
 
 
-layout(binding = 0) buffer ChunkPositionSSBO
+layout(binding = 0) restrict readonly buffer ChunkPositionSSBO
 {
 	float chunkPositions[];
 };
-layout(binding = 1) buffer ChunkPositionIndexSSBO
+layout(binding = 1) restrict readonly buffer ChunkPositionIndexSSBO
 {
 	uint chunkPositionIndexes[];
 };
