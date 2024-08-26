@@ -114,7 +114,7 @@ public:
 
 	static std::queue<Light> lightingFloodFillQueue;
 	static std::queue<Light> darknessFloodFillQueue;
-	static std::queue<LightUpdate> lightingUpdateQueue;
+	static std::vector<LightUpdate> lightingUpdateVector;
 
 	bool hasAnyFaces = false; // TODO: try to remove it
 	uint16_t blocksCount = 0;

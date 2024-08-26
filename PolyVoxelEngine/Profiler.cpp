@@ -10,7 +10,8 @@ uint16_t Profiler::maxTime = 0;
 const std::string profilerSamplesNames[PROFILER_SAMPLES_COUNT] =
 {
 	"BlockGeneration",
-	"LightUpdate",
+	"BlockLightUpdate",
+	"SkyLightUpdate",
 	"MeshGeneration",
 	"LoadChunks",
 };
@@ -21,6 +22,7 @@ const glm::vec3 profilerSamplesColors[PROFILER_SAMPLES_COUNT] =
 	{0.0f, 1.0f, 0.0f},
 	{0.0f, 0.0f, 1.0f},
 	{1.0f, 1.0f, 0.0f},
+	{0.0f, 1.0f, 1.0f},
 };
 
 void Profiler::start(const std::string& name)

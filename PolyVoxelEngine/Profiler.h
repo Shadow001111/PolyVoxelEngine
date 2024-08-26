@@ -11,7 +11,7 @@ struct ProfilerData
 };
 
 constexpr size_t PROFILER_MEMORY_TABLE_SIZE = 50;
-constexpr size_t PROFILER_SAMPLES_COUNT = 4;
+constexpr size_t PROFILER_SAMPLES_COUNT = 5;
 
 constexpr float PROFILER_DRAW_WIDTH = 0.5f;
 constexpr float PROFILER_DRAW_HEIGHT = 0.5f;

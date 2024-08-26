@@ -11,7 +11,7 @@ FaceInstancesVBO* Chunk::faceInstancesVBO = nullptr;
 std::unordered_map<int, Chunk*> Chunk::chunkMap;
 std::queue<Light> Chunk::lightingFloodFillQueue;
 std::queue<Light> Chunk::darknessFloodFillQueue;
-std::queue<LightUpdate> Chunk::lightingUpdateQueue;
+std::vector<LightUpdate> Chunk::lightingUpdateVector;
 
 inline constexpr int min_int(int a, int b)
 {
@@ -155,10 +155,14 @@ void Chunk::generateBlocks()
 	}
 	for (int x = -1; x <= Settings::CHUNK_SIZE; x++)
 	{
+		int globalX = x + X * Settings::CHUNK_SIZE;
 		for (int y = -1; y <= Settings::CHUNK_SIZE; y++)
 		{
+			int globalY = y + Y * Settings::CHUNK_SIZE;
 			for (int z = -1; z <= Settings::CHUNK_SIZE; z++)
 			{
+				int globalZ = z + Z * Settings::CHUNK_SIZE;
+
 				if (x == -1 || x == Settings::CHUNK_SIZE ||
 					y == -1 || y == Settings::CHUNK_SIZE ||
 					z == -1 || z == Settings::CHUNK_SIZE
@@ -818,7 +822,7 @@ void Chunk::greedyMeshing(Face* facesData)
 
 void Chunk::updateLightingAt(size_t x, size_t y, size_t z, Block block, Block prevBlock)
 {
-	lightingUpdateQueue.emplace
+	lightingUpdateVector.emplace_back
 	(
 		this, x, y, z,
 		block, prevBlock

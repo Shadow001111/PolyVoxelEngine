@@ -212,21 +212,15 @@ void World::update(const glm::vec3& pos, bool isMoving)
 	Profiler::end("LoadChunks");
 	
 	// generate blocks
-	Profiler::start("BlockGeneration");
 	generateChunksBlocks(pos, isMoving);
-	Profiler::end("BlockGeneration");
 
 	// update lighting
-	Profiler::start("LightUpdate");
 	updateLighting();
 	darknessFloodFill();
 	lightingFloodFill();
-	Profiler::end("LightUpdate");
 
 	// generate faces
-	Profiler::start("MeshGeneration");
 	generateChunksFaces();
-	Profiler::end("MeshGeneration");
 
 	// day night cycle
 	time++;
@@ -272,13 +266,14 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 			return a.distance < b.distance;
 		});
 
-		for (const ChunkDistance& chunk : chunks)
+		for (const ChunkDistance& pair : chunks)
 		{
-			chunkGenerateQueue.push(chunk.chunk);
+			chunkGenerateQueue.push(pair.chunk);
 		}
 	}
 
 	// generate
+	Profiler::start("BlockGeneration");
 	for (size_t i = 0; i < generateCount; i++)
 	{
 		Chunk* chunk = chunkGenerateQueue.front();
@@ -287,6 +282,7 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 		addChunkToGenerateFaces(chunk);
 		addSurroundingChunksToGenerateFaces(chunk);
 	}
+	Profiler::end("BlockGeneration");
 }
 
 void World::generateChunksFaces()
@@ -296,10 +292,12 @@ void World::generateChunksFaces()
 		return;
 	}
 	Chunk::faceInstancesVBO->bind();
+	Profiler::start("MeshGeneration");
 	for (Chunk* chunk : generateFacesSet)
 	{
 		chunk->generateFaces();
 	}
+	Profiler::end("MeshGeneration");
 	generateFacesSet.clear();
 }
 
@@ -825,7 +823,9 @@ void World::regenerateChunks()
 {
 	for (const auto& pair : Chunk::chunkMap)
 	{
-		chunkGenerateQueue.push(pair.second);
+		Chunk* chunk = pair.second;
+		chunk->init(chunk->X, chunk->Y, chunk->Z);
+		chunkGenerateQueue.push(chunk);
 	}
 }
 
@@ -1079,13 +1079,21 @@ void World::darknessFloodFill()
 void World::updateLighting()
 {
 	// TODO: if place 2 light source close to eachother, after removing them, 1 block light will stay in last removed one
-	while (!Chunk::lightingUpdateQueue.empty())
+	Profiler::start("BlockLightUpdate");
+	for (const auto& update : Chunk::lightingUpdateVector)
 	{
-		auto lightUpdate = Chunk::lightingUpdateQueue.front();
-		Chunk::lightingUpdateQueue.pop();
-		updateBlockLighting(lightUpdate);
-		updateSkyLighting(lightUpdate);
+		updateBlockLighting(update);
 	}
+	Profiler::end("BlockLightUpdate");
+
+	Profiler::start("SkyLightUpdate");
+	for (const auto& update : Chunk::lightingUpdateVector)
+	{
+		updateSkyLighting(update);
+	}
+	Profiler::end("SkyLightUpdate");
+
+	Chunk::lightingUpdateVector.clear();
 }
 
 void World::updateBlockLighting(const LightUpdate& lightUpdate)
