@@ -47,6 +47,6 @@ public:
 
 	static void beforeTextRender();
 	static void afterTextRender();
-	static void renderText(const std::string& text, float x_, float y_, float scale, glm::vec3 color, AligmentX aligmentX, AligmentY aligmentY);
+	static void renderText(const std::string& text, float x, float y, float scale, glm::vec3 color, AligmentX aligmentX, AligmentY aligmentY);
 };
 

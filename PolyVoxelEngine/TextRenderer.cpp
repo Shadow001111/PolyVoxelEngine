@@ -121,7 +121,7 @@ void TextRenderer::afterTextRender()
     glEnable(GL_DEPTH_TEST);
 }
 
-void TextRenderer::renderText(const std::string& text, float x_, float y_, float scale, glm::vec3 color, AligmentX aligmentX, AligmentY aligmentY)
+void TextRenderer::renderText(const std::string& text, float x, float y, float scale, glm::vec3 color, AligmentX aligmentX, AligmentY aligmentY)
 {
     textShader->setUniformFloat3("textColor", color.r, color.g, color.b);
     scale *= 2.0f / fontSize;
@@ -133,7 +133,7 @@ void TextRenderer::renderText(const std::string& text, float x_, float y_, float
     size_t textLength = text.size();
     for (size_t i = 0; i < textLength; i++)
     {
-        Character& ch = characters[text[i]];
+        const Character& ch = characters[text[i]];
 
         if (i == 0)
         {
@@ -156,29 +156,36 @@ void TextRenderer::renderText(const std::string& text, float x_, float y_, float
 
     if (aligmentX == AligmentX::Right)
     {
-        x_ -= textW;
+        x -= textW;
     }
     else if (aligmentX == AligmentX::Center)
     {
-        x_ -= textW * 0.5f;
+        x -= textW * 0.5f;
     }
     if (aligmentY == AligmentY::Bottom)
     {
-        y_ += textH;
+        y += textH;
     }
     else if (aligmentY == AligmentY::Center)
     {
-        y_ += textH * 0.5f;
+        y += textH * 0.5f;
     }
 
     // render
-    float x = x_;
+    float textX = x;
+    float textY = y;
     for (char c : text)
     {
+        if (c == '\n')
+        {
+            textX = x;
+            textY -= textH * 1.2f;
+            continue;
+        }
         const Character& ch = characters[c];
 
-        float posX = x + ch.bearing.x * scale;
-        float posY = y_ - (ch.size.y - ch.bearing.y) * scale;
+        float posX = textX + ch.bearing.x * scale;
+        float posY = textY - (ch.size.y - ch.bearing.y) * scale;
 
         float w = ch.size.x * scale;
 
@@ -195,6 +202,6 @@ void TextRenderer::renderText(const std::string& text, float x_, float y_, float
 
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
-        x += ch.advance * scale;
+        textX += ch.advance * scale;
     }
 }
