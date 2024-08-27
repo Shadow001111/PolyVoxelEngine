@@ -456,7 +456,7 @@ void Game::run()
 	// save data
 	WorldData worldData;
 
-	worldData.worldTime - world.time;
+	worldData.worldTime = world.time;
 
 	worldData.playerPosition = player->physicEntity.position;
 	worldData.playerRotation = player->rotation;

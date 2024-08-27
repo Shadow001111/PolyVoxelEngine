@@ -385,6 +385,7 @@ void Player::keyCallback(int key, int scancode, int action, int mods)
 	else if (key == GLFW_KEY_P)
 	{
 		GraphicController::zPrePass ^= 1;
+		std::cout << "zPrePass: " << std::to_string(GraphicController::zPrePass) << std::endl;
 	}
 	else if (key == GLFW_KEY_U)
 	{

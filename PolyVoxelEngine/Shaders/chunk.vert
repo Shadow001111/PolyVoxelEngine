@@ -1,7 +1,11 @@
 #version 460 core
 
 layout(location = 0) in vec3 vertPos;
+#ifdef SMOOTH_LIGHTING
+layout(location = 1) in ivec3 packedData;
+#else
 layout(location = 1) in ivec2 packedData;
+#endif
 
 layout(binding = 0) restrict readonly buffer ChunkPositionSSBO
 {
@@ -36,8 +40,11 @@ uniform float dayNightCycleSkyLightingSubtraction;
 out vec2 uv;
 out vec2 normalizedUV;
 flat out float textureID;
-out flat float[4] gottenAOValues;
+flat out float[4] gottenAOValues;
 out float depth;
+#ifdef SMOOTH_LIGHTING
+flat out float[4] gottenLightingValues;
+#endif
 flat out float blockLight;
 flat out float skyLight;
 
@@ -62,6 +69,15 @@ void main()
 	blockLight = ((packedData.y >> 8) & 15) / 15.0;
 	skyLight = max(0.0, round(((packedData.y >> 12) & 15) - dayNightCycleSkyLightingSubtraction * 15.0) / 15.0);
 
+	#ifdef SMOOTH_LIGHTING
+	for (int i = 0; i < 4; i++)
+	{
+		int tempL = (packedData.z >> (i * 8)) & 255;
+		float blockLight = tempL & 15;
+		float skyLight = max(0.0, (tempL >> 4) - dayNightCycleSkyLightingSubtraction * 15.0);
+		gottenLightingValues[i] = max(blockLight, skyLight) / 15.0f;
+	}
+	#endif
 	//
 	vec3 localPos = vertPos;
 	normalizedUV = localPos.xz;

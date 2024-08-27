@@ -215,8 +215,6 @@
     <None Include="Shaders\voxelGhost.vert" />
     <None Include="Shaders\hotbar.frag" />
     <None Include="Shaders\hotbar.vert" />
-    <None Include="Shaders\chunkSmooth.vert" />
-    <None Include="Shaders\chunkSmooth.frag" />
     <None Include="Shaders\button.frag" />
     <None Include="Shaders\button.vert" />
     <None Include="settings.ini" />

@@ -230,7 +230,7 @@ void World::update(const glm::vec3& pos, bool isMoving)
 	}
 	float angle = (float)time / 24000.0f * 2.0f * M_PI;
 	GraphicController::chunkProgram->bind();
-	GraphicController::chunkProgram->setUniformFloat("dayNightCycleSkyLightingSubtraction", (cosf(angle) + 1.0f) * 0.5f);
+	GraphicController::chunkProgram->setUniformFloat("dayNightCycleSkyLightingSubtraction", 1.0f);
 }
 
 void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)

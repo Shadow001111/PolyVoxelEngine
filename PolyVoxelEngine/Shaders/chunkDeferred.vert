@@ -1,7 +1,11 @@
 #version 460 core
 
 layout(location = 0) in vec3 vertPos;
+#ifdef SMOOTH_LIGHTING
+layout(location = 1) in ivec3 packedData;
+#else
 layout(location = 1) in ivec2 packedData;
+#endif
 
 
 layout(binding = 0) restrict readonly buffer ChunkPositionSSBO
