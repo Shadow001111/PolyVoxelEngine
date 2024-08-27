@@ -16,16 +16,6 @@ layout(binding = 1) restrict readonly buffer ChunkPositionIndexSSBO
 	uint chunkPositionIndexes[];
 };
 
-const vec3 normals[6] = vec3[6]
-(
-	vec3(1.0, 0.0, 0.0), // right
-	vec3(-1.0, 0.0, 0.0), // left
-	vec3(0.0, 1.0, 0.0), // up
-	vec3(0.0, -1.0, 0.0), // down
-	vec3(0.0, 0.0, 1.0), // front
-	vec3(0.0, 0.0, -1.0) // back
-);
-
 const float aoValues[4] = float[4]
 (
 	0.1, 0.25, 0.75, 1.0

@@ -415,6 +415,8 @@ void Player::mouseButtonCallback(int button, int action)
 		{
 			glfwSetInputMode(GraphicController::window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 			in_window = true;
+			glfwSetCursorPos(GraphicController::window, GraphicController::width / 2, GraphicController::height / 2);
+			glfwGetCursorPos(GraphicController::window, &previousMouseX, &previousMouseY);
 		}
 		else if (inventoryOpened)
 		{
@@ -489,7 +491,6 @@ void Player::scrollCallback(int yoffset)
 
 void Player::Inputs(float dt, float time)
 {
-	// EXIT
 	if (GraphicController::isKeyPressed(GLFW_KEY_ESCAPE))
 	{
 		//glfwSetWindowShouldClose(GraphicController::window, GL_TRUE);

@@ -7,7 +7,6 @@ layout(location = 1) in ivec3 packedData;
 layout(location = 1) in ivec2 packedData;
 #endif
 
-
 layout(binding = 0) restrict readonly buffer ChunkPositionSSBO
 {
 	float chunkPositions[];
@@ -16,16 +15,6 @@ layout(binding = 1) restrict readonly buffer ChunkPositionIndexSSBO
 {
 	uint chunkPositionIndexes[];
 };
-
-const vec3 normals[6] = vec3[6]
-(
-	vec3(1.0, 0.0, 0.0), // right
-	vec3(-1.0, 0.0, 0.0), // left
-	vec3(0.0, 1.0, 0.0), // up
-	vec3(0.0, -1.0, 0.0), // down
-	vec3(0.0, 0.0, 1.0), // front
-	vec3(0.0, 0.0, -1.0) // back
-);
 
 const float extending = 1.001;
 
@@ -46,7 +35,6 @@ void main()
 		((packedData.x >> 16) & 15) + 1
 	);
 	const int normalID = (packedData.x >> 20) & 7;
-	const int ao = (packedData.x >> 23) & 255;
 
 	//
 	vec3 localPos = vertPos;
