@@ -218,8 +218,6 @@
     <None Include="Shaders\button.frag" />
     <None Include="Shaders\button.vert" />
     <None Include="settings.ini" />
-    <None Include="Shaders\chunkDeferred.frag" />
-    <None Include="Shaders\chunkDeferred.vert" />
     <None Include="Shaders\rectangle.frag" />
     <None Include="Shaders\rectangle.vert" />
   </ItemGroup>

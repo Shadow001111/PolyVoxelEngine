@@ -1,5 +1,8 @@
 #version 460 core
 
+#ifdef Z_PRE_PASS
+void main(){}
+#else
 uniform sampler2DArray diffuse0;
 uniform sampler2DArray numbers;
 
@@ -14,9 +17,9 @@ in vec2 normalizedUV;
 flat in float textureID;
 in flat float[4] gottenAOValues;
 in float depth;
-#ifdef SMOOTH_LIGHTING
+ #ifdef SMOOTH_LIGHTING
 flat in float[4] gottenLightingValues;
-#endif
+ #endif
 flat in float blockLight;
 flat in float skyLight;
 
@@ -42,21 +45,21 @@ void main()
 	float b32 = mix(gottenAOValues[3], gottenAOValues[2], uv.x);
 	float brightness = mix(b01, b32, uv.y);
 
-	#ifdef SMOOTH_LIGHTING
+	 #ifdef SMOOTH_LIGHTING
 	float l01 = mix(gottenLightingValues[0], gottenLightingValues[1], uv.x);
 	float l32 = mix(gottenLightingValues[3], gottenLightingValues[2], uv.x);
 	float smoothLighting = mix(l01, l32, uv.y);
-	#endif
+	 #endif
 
 	color *= brightness;
 
 	if (debugViewMode == 0)
 	{
-		#ifdef SMOOTH_LIGHTING
+		 #ifdef SMOOTH_LIGHTING
 		color *= smoothLighting;
-		#else
+		 #else
 		color *= max(blockLight, skyLight);
-		#endif
+		 #endif
 	}
 	else if (debugViewMode == 1)
 	{
@@ -90,11 +93,11 @@ void main()
 	} 
 	else if (debugViewMode == 2)
 	{
-		#ifdef SMOOTH_LIGHTING
+		 #ifdef SMOOTH_LIGHTING
 		color *= smoothLighting;
-		#else
+		 #else
 		color *= max(blockLight, skyLight);
-		#endif
+		 #endif
 		float polyEffect = max(1.0, 3.0 / pow(depth, 0.8));
 		color = mix(color, polygonLook(color, normalizedUV), polyEffect);
 	}
@@ -104,3 +107,4 @@ void main()
 
 	fragColor = color;
 }
+#endif
