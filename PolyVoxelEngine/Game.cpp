@@ -355,12 +355,15 @@ void Game::run()
 						for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
 						{
 							float time = (float)Profiler::memoryTable[tableIndex][i] / (float)Profiler::maxTime;
-							const auto& color = profilerSamplesColors[i];
-							GraphicController::rectangleProgram->setUniformFloat2("position", left + barIndex * barWidth, bottom + yProgress * PROFILER_DRAW_HEIGHT);
-							GraphicController::rectangleProgram->setUniformFloat2("scale", barWidth, PROFILER_DRAW_HEIGHT * time);
-							GraphicController::rectangleProgram->setUniformFloat3("color", color.x, color.y, color.z);
-							glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-							yProgress += time;
+							if (time > 0.0f)
+							{
+								const auto& color = profilerSamplesColors[i];
+								GraphicController::rectangleProgram->setUniformFloat2("position", left + barIndex * barWidth, bottom + yProgress * PROFILER_DRAW_HEIGHT);
+								GraphicController::rectangleProgram->setUniformFloat2("scale", barWidth, PROFILER_DRAW_HEIGHT * time);
+								GraphicController::rectangleProgram->setUniformFloat3("color", color.x, color.y, color.z);
+								glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+								yProgress += time;
+							}
 						}
 					}
 				}
