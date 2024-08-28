@@ -93,12 +93,6 @@ World::World(unsigned int seed)
 	GraphicController::chunkProgram->setUniformInt("diffuse0", 0);
 	GraphicController::chunkProgram->setUniformInt("numbers", 1);
 
-	glActiveTexture(GL_TEXTURE0);
-	blockTextures.bind();
-
-	glActiveTexture(GL_TEXTURE1);
-	numberTextures.bind();
-
 	//
 	quadInstanceVAO.linkFloat(3, sizeof(QuadInstanceVertex));
 	Chunk::faceInstancesVBO = new FaceInstancesVBO(Settings::MAX_RENDERED_CHUNKS_COUNT * Settings::FACE_INSTANCES_PER_CHUNK, quadInstanceVAO.getLayout());
@@ -109,7 +103,7 @@ World::World(unsigned int seed)
 
 	chunkPositionSSBO.bindBase(0);
 	chunkPositionIndexSSBO.bindBase(1);
-	blockTextures.bind();
+
 	//
 	TerrainGenerator::init(seed);
 
@@ -230,7 +224,7 @@ void World::update(const glm::vec3& pos, bool isMoving)
 	}
 	float angle = (float)time / 24000.0f * 2.0f * M_PI;
 	GraphicController::chunkProgram->bind();
-	GraphicController::chunkProgram->setUniformFloat("dayNightCycleSkyLightingSubtraction", 1.0f);
+	GraphicController::chunkProgram->setUniformFloat("dayNightCycleSkyLightingSubtraction", (cosf(angle) + 1.0f) * 0.5f);
 }
 
 void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
@@ -640,6 +634,9 @@ void World::draw(const Camera& camera)
 	});
 	
 	// draw solid faces
+	blockTextures.bind();
+	numberTextures.bind();
+
 	size_t commandsCount, chunkPositionsCount;
 	getDrawCommands(renderChunks, camera, commandsCount, chunkPositionsCount, false);
 	glEnable(GL_DEPTH_TEST);

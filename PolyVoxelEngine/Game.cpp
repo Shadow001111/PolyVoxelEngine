@@ -319,69 +319,64 @@ void Game::run()
 			Profiler::saveToMemory();
 		}
 
-		const bool enableRender = true;
-
 		GraphicController::beforeRender();
 		{
-			if (enableRender)
+			player->BeforeRender();
+
+			world.draw(player->camera);
+			player->draw();
+
+
+			// profiler
+			rectangleVAO.bind();
+			rectangleVBO.bind();
+			GraphicController::rectangleProgram->bind();
 			{
-				player->BeforeRender();
+				const float barWidth = PROFILER_DRAW_WIDTH / PROFILER_MEMORY_TABLE_SIZE;
+				const float left = -GraphicController::aspectRatio;
+				const float bottom = -1.0f;
 
-				world.draw(player->camera);
-				player->draw();
+				// background
+				GraphicController::rectangleProgram->setUniformFloat2("position", left, bottom);
+				GraphicController::rectangleProgram->setUniformFloat2("scale", PROFILER_DRAW_WIDTH, PROFILER_DRAW_HEIGHT);
+				GraphicController::rectangleProgram->setUniformFloat3("color", 0.0f, 0.0f, 0.0f);
+				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
-
-				// profiler
-				rectangleVAO.bind();
-				rectangleVBO.bind();
-				GraphicController::rectangleProgram->bind();
+				// bars
+				if (Profiler::maxTime > 0)
 				{
-					const float barWidth = PROFILER_DRAW_WIDTH / PROFILER_MEMORY_TABLE_SIZE;
-					const float left = -GraphicController::aspectRatio;
-					const float bottom = -1.0f;
-
-					// background
-					GraphicController::rectangleProgram->setUniformFloat2("position", left, bottom);
-					GraphicController::rectangleProgram->setUniformFloat2("scale", PROFILER_DRAW_WIDTH, PROFILER_DRAW_HEIGHT);
-					GraphicController::rectangleProgram->setUniformFloat3("color", 0.0f, 0.0f, 0.0f);
-					glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-					// bars
-					if (Profiler::maxTime > 0)
+					for (size_t barIndex = 0; barIndex < PROFILER_MEMORY_TABLE_SIZE; barIndex++)
 					{
-						for (size_t barIndex = 0; barIndex < PROFILER_MEMORY_TABLE_SIZE; barIndex++)
+						size_t tableIndex = Profiler::memoryTableIndex + barIndex;
+						if (tableIndex >= PROFILER_MEMORY_TABLE_SIZE)
 						{
-							size_t tableIndex = Profiler::memoryTableIndex + barIndex;
-							if (tableIndex >= PROFILER_MEMORY_TABLE_SIZE)
+							tableIndex -= PROFILER_MEMORY_TABLE_SIZE;
+						}
+						float yProgress = 0.0f;
+						for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
+						{
+							float time = (float)Profiler::memoryTable[tableIndex][i] / (float)Profiler::maxTime;
+							if (time > 0.0f)
 							{
-								tableIndex -= PROFILER_MEMORY_TABLE_SIZE;
-							}
-							float yProgress = 0.0f;
-							for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
-							{
-								float time = (float)Profiler::memoryTable[tableIndex][i] / (float)Profiler::maxTime;
-								if (time > 0.0f)
-								{
-									const auto& color = profilerSamplesColors[i];
-									GraphicController::rectangleProgram->setUniformFloat2("position", left + barIndex * barWidth, bottom + yProgress * PROFILER_DRAW_HEIGHT);
-									GraphicController::rectangleProgram->setUniformFloat2("scale", barWidth, PROFILER_DRAW_HEIGHT * time);
-									GraphicController::rectangleProgram->setUniformFloat3("color", color.x, color.y, color.z);
-									glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-									yProgress += time;
-								}
+								const auto& color = profilerSamplesColors[i];
+								GraphicController::rectangleProgram->setUniformFloat2("position", left + barIndex * barWidth, bottom + yProgress * PROFILER_DRAW_HEIGHT);
+								GraphicController::rectangleProgram->setUniformFloat2("scale", barWidth, PROFILER_DRAW_HEIGHT * time);
+								GraphicController::rectangleProgram->setUniformFloat3("color", color.x, color.y, color.z);
+								glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+								yProgress += time;
 							}
 						}
 					}
+				}
 
-					// colors
-					GraphicController::rectangleProgram->setUniformFloat2("scale", PROFILER_DRAW_COLOR_RECT_SIZE, PROFILER_DRAW_COLOR_RECT_SIZE);
-					for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
-					{
-						const auto& color = profilerSamplesColors[i];
-						GraphicController::rectangleProgram->setUniformFloat2("position", left, bottom + PROFILER_DRAW_HEIGHT + 0.01f + i * (PROFILER_DRAW_COLOR_RECT_Y_OFFSET + PROFILER_DRAW_COLOR_RECT_SIZE));
-						GraphicController::rectangleProgram->setUniformFloat3("color", color.x, color.y, color.z);
-						glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-					}
+				// colors
+				GraphicController::rectangleProgram->setUniformFloat2("scale", PROFILER_DRAW_COLOR_RECT_SIZE, PROFILER_DRAW_COLOR_RECT_SIZE);
+				for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
+				{
+					const auto& color = profilerSamplesColors[i];
+					GraphicController::rectangleProgram->setUniformFloat2("position", left, bottom + PROFILER_DRAW_HEIGHT + 0.01f + i * (PROFILER_DRAW_COLOR_RECT_Y_OFFSET + PROFILER_DRAW_COLOR_RECT_SIZE));
+					GraphicController::rectangleProgram->setUniformFloat3("color", color.x, color.y, color.z);
+					glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 				}
 			}
 
