@@ -2,6 +2,7 @@
 #include <iostream>
 
 std::unordered_map<char, Character> TextRenderer::characters;
+unsigned int TextRenderer::spaceAdvance = 0;
 VAO* TextRenderer::textVAO = nullptr;
 VBO* TextRenderer::textVBO = nullptr;
 
@@ -43,11 +44,16 @@ int TextRenderer::init(Shader* textShader)
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     // loading characters
-    for (unsigned char c = 0; c < 128; c++)
+    for (unsigned char c = 32; c <= 126; c++)
     {
         if (FT_Load_Char(face, c, FT_LOAD_RENDER))
         {
             std::cerr << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+            continue;
+        }
+        if (c == ' ')
+        {
+            spaceAdvance = ((unsigned int)face->glyph->advance.x) >> 6;
             continue;
         }
 
@@ -76,7 +82,7 @@ int TextRenderer::init(Shader* textShader)
             texture,
             glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
             glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-            static_cast<unsigned int>(face->glyph->advance.x) >> 6,
+            (unsigned int)(face->glyph->advance.x) >> 6
         };
         characters[c] = character;
     }
@@ -176,13 +182,23 @@ void TextRenderer::renderText(const std::string& text, float x, float y, float s
     float textY = y;
     for (char c : text)
     {
-        if (c == '\n')
+        if (c == ' ')
+        {
+            textX += spaceAdvance * scale;
+            continue;
+        }
+        else if (c == '\n')
         {
             textX = x;
             textY -= textH * 1.2f;
             continue;
         }
-        const Character& ch = characters[c];
+        const auto& it = characters.find(c);
+        if (it == characters.end())
+        {
+            continue;
+        }
+        const Character& ch = it->second;
 
         float posX = textX + ch.bearing.x * scale;
         float posY = textY - (ch.size.y - ch.bearing.y) * scale;

@@ -35,6 +35,7 @@ class TextRenderer
 	static FT_Library ft;
 	static FT_Face face;
 	static std::unordered_map<char, Character> characters;
+	static unsigned int spaceAdvance;
 	static VAO* textVAO;
 	static VBO* textVBO;
 	static size_t fontSize;
