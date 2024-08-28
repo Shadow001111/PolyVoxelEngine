@@ -10,15 +10,6 @@ size_t TextRenderer::fontSize = 52;
 
 Shader* TextRenderer::textShader = nullptr;
 
-struct TextVertex
-{
-    glm::vec2 pos;
-    glm::vec2 uv;
-
-    TextVertex(float x, float y, float u, float v) : pos(x, y), uv(u, v)
-    {}
-};
-
 int TextRenderer::init(Shader* textShader)
 {
     TextRenderer::textShader = textShader;
@@ -91,11 +82,18 @@ int TextRenderer::init(Shader* textShader)
     FT_Done_FreeType(ft);
 
     //
-    textVBO = new VBO(nullptr, sizeof(TextVertex) * 6, GL_DYNAMIC_DRAW);
+    const glm::vec2 vertices[4] =
+    {
+        {0.0f, 1.0f},
+        {1.0f, 1.0f},
+        {1.0f, 0.0f},
+        {0.0f, 0.0f}
+    };
+
+    textVBO = new VBO((const char*)vertices, sizeof(vertices), GL_STATIC_DRAW);
 
     textVAO = new VAO();
-    textVAO->linkFloat(2, sizeof(TextVertex));
-    textVAO->linkFloat(2, sizeof(TextVertex));
+    textVAO->linkFloat(2, sizeof(glm::vec2));
 
 	return 0;
 }
@@ -168,13 +166,13 @@ void TextRenderer::renderText(const std::string& text, float x, float y, float s
     {
         x -= textW * 0.5f;
     }
-    if (aligmentY == AligmentY::Bottom)
+    if (aligmentY == AligmentY::Top)
     {
-        y += textH;
+        y -= textH;
     }
     else if (aligmentY == AligmentY::Center)
     {
-        y += textH * 0.5f;
+        y -= textH * 0.5f;
     }
 
     // render
@@ -205,18 +203,10 @@ void TextRenderer::renderText(const std::string& text, float x, float y, float s
 
         float w = ch.size.x * scale;
 
-        TextVertex vertices[4] =
-        {
-            {posX,      posY - textH, 0.0f, 1.0f},
-            {posX + w,  posY - textH, 1.0f, 1.0f},
-            {posX + w,  posY,         1.0f, 0.0f},
-            {posX,      posY,         0.0f, 0.0f}
-        };
+        GraphicController::textProgram->setUniformFloat4("transform", textX, textY, w, textH);
 
         glBindTexture(GL_TEXTURE_2D, ch.textureID);
-        textVBO->setData((const char*)vertices, sizeof(vertices));
-
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, 1);
 
         textX += ch.advance * scale;
     }
