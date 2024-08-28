@@ -11,7 +11,7 @@ unsigned int TextRenderer::letterIndexes[TEXT_SSBO_SIZE] = {};
 SSBO* TextRenderer::transformsSSBO = nullptr;
 SSBO* TextRenderer::letterIndexesSSBO = nullptr;
 
-size_t TextRenderer::fontSize = 52;
+size_t TextRenderer::fontSize = 32;
 
 Shader* TextRenderer::textShader = nullptr;
 
@@ -49,8 +49,8 @@ int TextRenderer::init(Shader* textShader)
         fontSize, fontSize, loadRangeEnd - loadRangeStart,
         0, GL_RED, GL_UNSIGNED_BYTE, 0
     );
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
