@@ -319,7 +319,7 @@ void Game::run()
 			Profiler::saveToMemory();
 		}
 
-		const bool enableRender = false;
+		const bool enableRender = true;
 
 		GraphicController::beforeRender();
 		{
@@ -327,7 +327,7 @@ void Game::run()
 			{
 				player->BeforeRender();
 
-				//world.draw(player->camera);
+				world.draw(player->camera);
 				player->draw();
 
 
@@ -465,12 +465,12 @@ void Game::run()
 	// save data
 	WorldData worldData;
 
-	//worldData.worldTime = world.time;
+	worldData.worldTime = world.time;
 
 	worldData.playerPosition = player->physicEntity.position;
 	worldData.playerRotation = player->rotation;
 
-	//world.saveWorldData(worldData);
+	world.saveWorldData(worldData);
 
 	player->clean(); delete player;
 
