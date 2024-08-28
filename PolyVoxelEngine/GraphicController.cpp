@@ -120,7 +120,7 @@ int GraphicController::init(const GraphicSettings& graphicSettings, const GameSe
 
 	// programs
 #if ENABLE_SMOOTH_LIGHTING
-	chunkProgram = new Shader("chunk", "SMOOTH_LIGHTING");
+	chunkProgram = new Shader("chunk", "#define SMOOTH_LIGHTING");
 #else
 	chunkProgram = new Shader("chunk");
 #endif
@@ -130,9 +130,9 @@ int GraphicController::init(const GraphicSettings& graphicSettings, const GameSe
 	chunkProgram->setUniformFloat("fogGradient", Settings::fogGradient);
 
 #if ENABLE_SMOOTH_LIGHTING
-	deferredChunkProgram = new Shader("chunk", "Z_PRE_PASS SMOOTH_LIGHTING");
+	deferredChunkProgram = new Shader("chunk", "#define Z_PRE_PASS;#define SMOOTH_LIGHTING");
 #else
-	deferredChunkProgram = new Shader("chunk", "Z_PRE_PASS");
+	deferredChunkProgram = new Shader("chunk", "#define Z_PRE_PASS");
 #endif
 
 	framebufferProgram = new Shader("frameBuffer");

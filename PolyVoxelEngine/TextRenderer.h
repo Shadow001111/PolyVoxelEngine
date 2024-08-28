@@ -7,6 +7,7 @@
 #include "VAO.h"
 #include "VBO.h"
 #include "GraphicController.h"
+#include "SSBO.h"
 
 enum class AligmentX : char
 {
@@ -30,6 +31,8 @@ struct Character
 	unsigned int advance;
 };
 
+constexpr size_t TEXT_SSBO_SIZE = 20;
+
 class TextRenderer
 {
 	static FT_Library ft;
@@ -39,6 +42,12 @@ class TextRenderer
 	static VAO* textVAO;
 	static VBO* textVBO;
 	static size_t fontSize;
+	static unsigned int textureArray;
+
+	static glm::vec4 transforms[TEXT_SSBO_SIZE];
+	static unsigned int letterIndexes[TEXT_SSBO_SIZE];
+	static SSBO* transformsSSBO;
+	static SSBO* letterIndexesSSBO;
 
 	static Shader* textShader;
 public:

@@ -36,7 +36,6 @@ GLuint CreateShader(GLuint type, const char* filepath, const std::vector<std::st
 		modifictation.reserve(flags.size() * 9);
 		for (const std::string& flag : flags)
 		{
-			modifictation += "#define ";
 			modifictation += flag;
 			modifictation += "\n";
 		}
@@ -53,7 +52,7 @@ GLuint CreateShader(GLuint type, const char* filepath, const std::vector<std::st
 Shader::Shader(const std::string& name, const std::string& flags) : name(name)
 {
 	// shaders
-	auto vectorOfFlags = splitString(flags);
+	auto vectorOfFlags = splitString(flags, ';');
 
 	GLuint vertexShader = CreateShader(GL_VERTEX_SHADER, ("Shaders/" + name + ".vert").c_str(), vectorOfFlags);
 	glCompileShader(vertexShader);
