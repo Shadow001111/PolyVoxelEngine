@@ -821,6 +821,7 @@ void World::regenerateChunks()
 	for (const auto& pair : Chunk::chunkMap)
 	{
 		Chunk* chunk = pair.second;
+		chunk->destroy();
 		chunk->init(chunk->X, chunk->Y, chunk->Z);
 		chunkGenerateQueue.push(chunk);
 	}
@@ -1281,13 +1282,6 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 
 void World::updateSkyLighting(const LightUpdate& lightUpdate)
 {
-	Chunk* chunk = (Chunk*)lightUpdate.chunk;
-	size_t x = lightUpdate.x;
-	size_t y = lightUpdate.y;
-	size_t z = lightUpdate.z;
-	int X = chunk->X;
-	int Y = chunk->Y;
-	int Z = chunk->Z;
 	const BlockData& blockData = ALL_BLOCK_DATA[(size_t)lightUpdate.block];
 	const BlockData& prevBlockData = ALL_BLOCK_DATA[(size_t)lightUpdate.prevBlock];
 
@@ -1296,9 +1290,24 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 		return;
 	}
 
+	Chunk* chunk = (Chunk*)lightUpdate.chunk;
+	size_t x = lightUpdate.x;
+	size_t y = lightUpdate.y;
+	size_t z = lightUpdate.z;
+	int X = chunk->X;
+	int Y = chunk->Y;
+	int Z = chunk->Z;
+
 	int globalX = x + X * Settings::CHUNK_SIZE;
 	int globalY = y + Y * Settings::CHUNK_SIZE;
 	int globalZ = z + Z * Settings::CHUNK_SIZE;
+
+	// TODO: merge these identical if statements
+	HeightMap* heightMap = TerrainGenerator::getHeightMap(X, Z);
+	int skyLightMaxHeight = heightMap->getSlMHAt(x, z);
+
+	uint8_t fillLightPower = 0;
+	bool findNewSLMH = false;
 
 	if (blockData.transparent) // !prevBlockData.transparent
 	{
@@ -1321,6 +1330,11 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 				{
 					maxLighting = lighting;
 					maxLightingSide = side;
+					// doesnt help
+					/*if (maxLighting == 15)
+					{
+						break;
+					}*/
 				}
 			}
 			offsets[axis] = 0;
@@ -1336,92 +1350,51 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 				maxLighting, true
 			);
 		}
+
+		if (globalY != skyLightMaxHeight)
+		{
+			return;
+		}
+		fillLightPower = 15;
+		findNewSLMH = true;
+		Chunk::lightingFloodFillQueue.emplace(
+			globalX, globalY, globalZ,
+			fillLightPower, true
+		);
 	}
 	else // prevBlockData.transparent
 	{
 		uint8_t prevLighting = chunk->getLightingAtInBoundaries(x, y, z) >> 4;
 		chunk->setLightingAtInBoundaries(x, y, z, 0, true);
-		int offsets[3] = { 0, 0, 0 };
-		for (size_t side = 0; side < 6; side++)
+		if (prevLighting > 1)
 		{
-			size_t axis = side >> 1;
-			offsets[axis] = (side & 1) ? -1 : 1;
-			int offX = x + offsets[0];
-			int offY = y + offsets[1];
-			int offZ = z + offsets[2];
-			Block block = chunk->getBlockAtSideCheck(offX, offY, offZ, side);
-			const BlockData& blockData = ALL_BLOCK_DATA[(size_t)block];
-			if (blockData.transparent)
+			int offsets[3] = { 0, 0, 0 };
+			for (size_t side = 0; side < 6; side++)
 			{
-				uint8_t lighting = chunk->getLightingAtSideCheck(offX, offY, offZ, side) >> 4;
-				if (lighting < prevLighting && lighting > 0)
+				size_t axis = side >> 1;
+				offsets[axis] = (side & 1) ? -1 : 1;
+				int offX = x + offsets[0];
+				int offY = y + offsets[1];
+				int offZ = z + offsets[2];
+				Block block = chunk->getBlockAtSideCheck(offX, offY, offZ, side);
+				if (ALL_BLOCK_DATA[(size_t)block].transparent)
 				{
-					Chunk::darknessFloodFillQueue.emplace(
-						globalX + offsets[0],
-						globalY + offsets[1],
-						globalZ + offsets[2],
-						lighting, true
-					);
+					uint8_t lighting = chunk->getLightingAtSideCheck(offX, offY, offZ, side) >> 4;
+					if (lighting < prevLighting) // && lighting > 0  it will always be higher than zero
+					{
+						Chunk::darknessFloodFillQueue.emplace(
+							globalX + offsets[0],
+							globalY + offsets[1],
+							globalZ + offsets[2],
+							lighting, true
+						);
+					}
 				}
+				offsets[axis] = 0;
 			}
-			offsets[axis] = 0;
 		}
-	}
-	
-	//
-	HeightMap* heightMap = TerrainGenerator::getHeightMap(X, Z);
-	int skyLightMaxHeight = heightMap->getSlMHAt(x, z);
 
-	uint8_t lightPower = 0;
-	if (blockData.transparent)
-	{
-		if (globalY == skyLightMaxHeight)
-		{
-			lightPower = 15;
-			Chunk::lightingFloodFillQueue.emplace(
-				globalX, globalY, globalZ,
-				lightPower, true
-			);
-			// find new skmh
-			{
-				int localY = y;
-				Chunk* chunk_ = chunk;
-				while (true)
-				{
-					localY--;
-					if (localY < 0)
-					{
-						localY = Settings::CHUNK_SIZE - 1;
-						chunk_ = chunk_->neighbours[3];
-						if (!chunk_)
-						{
-							break;
-						}
-					}
-					Block block = chunk_->getBlockAtInBoundaries(x, localY, z);
-					if (!ALL_BLOCK_DATA[(size_t)block].transparent)
-					{
-						break;
-					}
-				}
-				if (chunk_)
-				{
-					heightMap->setSlMHAt(x, z, localY + chunk_->Y * Settings::CHUNK_SIZE);
-				}
-				else
-				{
-					heightMap->setSlMHAt(x, z, INT_MIN);
-				}
-			}
-		}
-		else
-		{
-			return;
-		}
-	}
-	else
-	{
-		lightPower = 0;
+		fillLightPower = 0;
 		if (globalY > skyLightMaxHeight)
 		{
 			heightMap->setSlMHAt(x, z, globalY);
@@ -1450,23 +1423,23 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 			break;
 		}
 
-		if (lightPower == 15)
+		(fillLightPower == 0 ? Chunk::darknessFloodFillQueue : Chunk::lightingFloodFillQueue).emplace
+		(
+			globalX,
+			localY + chunk_->Y * Settings::CHUNK_SIZE,
+			globalZ,
+			15, true
+		);
+	}
+	if (findNewSLMH)
+	{
+		if (chunk_)
 		{
-			Chunk::lightingFloodFillQueue.emplace(
-				globalX,
-				localY + chunk_->Y * Settings::CHUNK_SIZE,
-				globalZ,
-				15, true
-			);
+			heightMap->setSlMHAt(x, z, localY + chunk_->Y * Settings::CHUNK_SIZE);
 		}
-		else if (lightPower == 0)
+		else
 		{
-			Chunk::darknessFloodFillQueue.emplace(
-				globalX,
-				localY + chunk_->Y * Settings::CHUNK_SIZE,
-				globalZ,
-				15, true
-			);
+			heightMap->setSlMHAt(x, z, INT_MIN);
 		}
 	}
 }
