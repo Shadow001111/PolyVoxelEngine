@@ -28,7 +28,7 @@ int TextRenderer::init(Shader* textShader)
 
     const char* fontPath = "fonts/Minecraft.ttf";
 
-    const size_t loadRangeStart = 33;
+    const size_t loadRangeStart = 32;
     const size_t loadRangeEnd = 127;
 
     FT_Face face;
