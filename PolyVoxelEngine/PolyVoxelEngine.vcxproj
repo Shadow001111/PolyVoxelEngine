@@ -221,7 +221,6 @@
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="settings.ini" />
     <None Include="Shaders\button.frag" />
     <None Include="Shaders\button.vert" />
     <None Include="Shaders\frameBuffer.frag" />
@@ -241,10 +240,6 @@
     <Font Include="fonts\comic.ttf" />
     <Font Include="fonts\Minecraft.ttf" />
     <Font Include="fonts\RusEngMinecraft.ttf" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="Numbers.png" />
-    <Image Include="PolyVoxelEngine.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

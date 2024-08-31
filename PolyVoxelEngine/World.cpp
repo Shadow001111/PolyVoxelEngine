@@ -267,16 +267,16 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 	}
 
 	// generate
-	Profiler::start(BLOCK_GENERATION_INDEX);
 	for (size_t i = 0; i < generateCount; i++)
 	{
 		Chunk* chunk = chunkGenerateQueue.front();
 		chunkGenerateQueue.pop();
+		Profiler::start(BLOCK_GENERATION_INDEX);
 		chunk->generateBlocks();
+		Profiler::end(BLOCK_GENERATION_INDEX);
 		addChunkToGenerateFaces(chunk);
 		addSurroundingChunksToGenerateFaces(chunk);
 	}
-	Profiler::end(BLOCK_GENERATION_INDEX);
 }
 
 void World::generateChunksFaces()
