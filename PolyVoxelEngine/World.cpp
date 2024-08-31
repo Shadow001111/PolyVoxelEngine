@@ -86,8 +86,8 @@ World::World(unsigned int seed)
 	chunkPositionSSBO(Settings::MAX_RENDERED_CHUNKS_COUNT * sizeof(glm::vec3)),
 	chunkPositionIndexSSBO(Settings::MAX_CHUNK_DRAW_COMMANDS_COUNT * sizeof(unsigned int)),
 
-	blockTextures("Textures.png", 0, Settings::BLOCK_TEXTURE_SIZE, Settings::BLOCK_TEXTURES_IN_ROW, Settings::BLOCK_TEXTURES_COUNT, Settings::BLOCK_TEXTURES_NUM_CHANNELS, GL_REPEAT),
-	numberTextures("Numbers.png", 1, 8, 4, 16, 1, GL_CLAMP_TO_BORDER)
+	blockTextures("res/Textures.png", 0, Settings::BLOCK_TEXTURE_SIZE, Settings::BLOCK_TEXTURES_IN_ROW, Settings::BLOCK_TEXTURES_COUNT, Settings::BLOCK_TEXTURES_NUM_CHANNELS, GL_REPEAT),
+	numberTextures("res/Numbers.png", 1, 8, 4, 16, 1, GL_CLAMP_TO_BORDER)
 {
 	GraphicController::chunkProgram->bind();
 	GraphicController::chunkProgram->setUniformInt("diffuse0", 0);
@@ -1448,7 +1448,7 @@ void World::calculateBlockColors()
 {
 	int imgW, imgH;
 	stbi_set_flip_vertically_on_load(true);
-	unsigned char* bytes = stbi_load("Textures.png", &imgW, &imgH, nullptr, 3);
+	unsigned char* bytes = stbi_load("res/Textures.png", &imgW, &imgH, nullptr, 3);
 
 	if (bytes)
 	{

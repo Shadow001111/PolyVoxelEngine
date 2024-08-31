@@ -26,7 +26,7 @@ int TextRenderer::init(Shader* textShader)
         return -1;
     }
 
-    const char* fontPath = "fonts/Minecraft.ttf";
+    const char* fontPath = "res/fonts/Minecraft.ttf";
 
     const size_t loadRangeStart = 32;
     const size_t loadRangeEnd = 127;

@@ -11,12 +11,12 @@ int main()
 
 	// init
 	{
-		auto parser = IniParser("settings.ini");
+		auto parser = IniParser("res/settings.ini");
 
 		GraphicSettings graphicSettings =
 		{
 			460,
-			"PolyVoxelEngine.png",
+			"res/PolyVoxelEngine.png",
 
 			parser.Get<int>("VideoSettings", "Width", 1200),
 			parser.Get<int>("VideoSettings", "Height", 800),

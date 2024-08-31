@@ -54,11 +54,11 @@ Shader::Shader(const std::string& name, const std::string& flags) : name(name)
 	// shaders
 	auto vectorOfFlags = splitString(flags, ';');
 
-	GLuint vertexShader = CreateShader(GL_VERTEX_SHADER, ("Shaders/" + name + ".vert").c_str(), vectorOfFlags);
+	GLuint vertexShader = CreateShader(GL_VERTEX_SHADER, ("res/shaders/" + name + ".vert").c_str(), vectorOfFlags);
 	glCompileShader(vertexShader);
 	checkForCompilationErrors(vertexShader, "VERTEX");
 
-	GLuint fragmentShader = CreateShader(GL_FRAGMENT_SHADER, ("Shaders/" + name + ".frag").c_str(), vectorOfFlags);
+	GLuint fragmentShader = CreateShader(GL_FRAGMENT_SHADER, ("res/shaders/" + name + ".frag").c_str(), vectorOfFlags);
 	glCompileShader(fragmentShader);
 	checkForCompilationErrors(fragmentShader, "FRAGMENT");
 

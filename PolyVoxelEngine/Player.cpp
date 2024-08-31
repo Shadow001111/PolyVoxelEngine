@@ -129,8 +129,8 @@ Player::Player(glm::vec3 position, float fov, float near, float far) :
 
 	flyMode = gamemode == Gamemode::Creative;
 
-	blockPlaceSoundSource.load("Sounds/block place.wav");
-	blockBreakSoundSource.load("Sounds/block break.wav");
+	blockPlaceSoundSource.load("res/sounds/block place.wav");
+	blockBreakSoundSource.load("res/sounds/block break.wav");
 }
 
 void Player::clean()
