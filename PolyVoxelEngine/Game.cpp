@@ -330,7 +330,6 @@ void Game::run()
 			world.draw(player->camera);
 			player->draw();
 
-
 			// profiler
 			rectangleVAO.bind();
 			rectangleVBO.bind();

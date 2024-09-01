@@ -131,6 +131,9 @@ Player::Player(glm::vec3 position, float fov, float near, float far) :
 
 	blockPlaceSoundSource.load("res/sounds/block place.wav");
 	blockBreakSoundSource.load("res/sounds/block break.wav");
+
+	blockPlaceSoundSource.setRelativeMode(true);
+	blockBreakSoundSource.setRelativeMode(true);
 }
 
 void Player::clean()
