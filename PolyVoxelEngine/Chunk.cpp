@@ -163,32 +163,72 @@ void Chunk::generateBlocks()
 			}
 		}
 	}
-	for (int x = -1; x <= Settings::CHUNK_SIZE; x++)
+	for (int x = -1; x <= Settings::CHUNK_SIZE; x += (Settings::CHUNK_SIZE + 1))
 	{
 		int globalX = x + X * Settings::CHUNK_SIZE;
-		bool xBool = x == -1 || x == Settings::CHUNK_SIZE;
-		for (int z = -1; z <= Settings::CHUNK_SIZE; z++)
+		for (int z = 0; z < Settings::CHUNK_SIZE; z++)
 		{
 			int globalZ = z + Z * Settings::CHUNK_SIZE;
-			bool zBool = z == -1 || z == Settings::CHUNK_SIZE;
-			for (int y = -1; y <= Settings::CHUNK_SIZE; y++)
+			for (int y = 0; y < Settings::CHUNK_SIZE; y++)
 			{
-				if (xBool || zBool ||
-					y == -1 || y == Settings::CHUNK_SIZE
-					)
+				int globalY = y + Y * Settings::CHUNK_SIZE;
+
+				uint8_t lighting = getLightingAtSideCheck(x, y, z, x == -1 ? 1 : 0) & 15;
+				if (lighting > 1)
 				{
-					uint8_t lighting = getLightingAt(x, y, z) & 15;
+					lightingFloodFillQueue.emplace
+					(
+						globalX, globalY, globalZ,
+						lighting, false
+					);
+				}
+			}
+		}
+	}
+	for (int y = -1; y <= Settings::CHUNK_SIZE; y += (Settings::CHUNK_SIZE + 1))
+	{
+		int globalY = y + Y * Settings::CHUNK_SIZE;
+		for (int z = 0; z < Settings::CHUNK_SIZE; z++)
+		{
+			int globalZ = z + Z * Settings::CHUNK_SIZE;
+			for (int x = 0; x < Settings::CHUNK_SIZE; x++)
+			{
+				int globalX = x + X * Settings::CHUNK_SIZE;
+
+				uint8_t lighting = getLightingAtSideCheck(x, y, z, y == -1 ? 3 : 2) & 15;
+				if (lighting > 1)
+				{
+					lightingFloodFillQueue.emplace
+					(
+						globalX, globalY, globalZ,
+						lighting, false
+					);
+				}
+			}
+		}
+	}
+	for (int z = -1; z <= Settings::CHUNK_SIZE; z += (Settings::CHUNK_SIZE + 1))
+		{
+			int globalZ = z + Z * Settings::CHUNK_SIZE;
+			for (int x = 0; x < Settings::CHUNK_SIZE; x++)
+			{
+				int globalX = x + X * Settings::CHUNK_SIZE;
+				for (int y = 0; y < Settings::CHUNK_SIZE; y++)
+				{
+					int globalY = y + Y * Settings::CHUNK_SIZE;
+
+					uint8_t lighting = getLightingAtSideCheck(x, y, z, z == -1 ? 5 : 4) & 15;
 					if (lighting > 1)
 					{
-						lightingFloodFillQueue.emplace(
-							globalX, y + Y * Settings::CHUNK_SIZE, globalZ,
+						lightingFloodFillQueue.emplace
+						(
+							globalX, globalY, globalZ,
 							lighting, false
 						);
 					}
 				}
 			}
 		}
-	}
 	Profiler::end(CHUNK_LIGHTING_INDEX);
 }
 

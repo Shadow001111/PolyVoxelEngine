@@ -679,54 +679,11 @@ void World::draw(const Camera& camera)
 	glDisable(GL_CULL_FACE);
 	if (commandsCount > 0)
 	{
-		/*struct FaceDistance
-		{
-			TransparentSortFaceData* face = nullptr;
-			float distance = 0.0f;
-		};
-		std::vector<FaceDistance> faces;
-
-		for (const ChunkDistance& pair : renderChunks)
-		{
-			const Chunk* chunk = pair.chunk;
-			const DrawCommand& command = chunk->drawCommand;
-			for (size_t normalID = 0; normalID < 6; normalID++)
-			{
-				size_t axis = normalID >> 1;
-				GLuint facesCount = command.facesCount[normalID + 6];
-				if (facesCount > 0 && chunk->canSideBeSeen(camera, normalID))
-				{
-					for (size_t i = 0; i < facesCount; i++)
-					{
-						const auto& face = chunk->transparentSortFaceData[i];
-
-						int x = face.dataXY >> 4;
-						int y = face.dataXY & 15;
-						int z = face.dataZ;
-						int w = (face.dataWH >> 4) + 1;
-						int h = (face.dataWH & 15) + 1;
-
-						int extX = 0.0f;
-						int extY = 0.0f;
-						int extZ = 0.0f;
-
-						if (axis == 0)
-						{
-							extY
-						}
-
-						glm::vec3 center = {x + extX * 0.5f, y + extY * 0.5f, z + extZ * 0.5f};
-					}
-				}
-			}
-		}*/
-
 		chunkPositionSSBO.setData((const char*)chunkPositions, chunkPositionsCount * sizeof(glm::vec3));
 		chunkPositionIndexSSBO.setData((const char*)chunkPositionIndexes, commandsCount * sizeof(unsigned int));
 		indirectBuffer.setData(drawCommands, commandsCount);
 	
 		quadInstanceVAO.bind();
-
 
 		if (GraphicController::zPrePass)
 		{
