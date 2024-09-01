@@ -116,14 +116,12 @@ public:
 	static std::queue<Light> darknessFloodFillQueue;
 	static std::vector<LightUpdate> lightingUpdateVector;
 
-	bool hasAnyFaces = false; // TODO: try to remove it
+	bool hasAnyFaces = false; // Removing it doesnt change class size
 	uint16_t blocksCount = 0;
 	int X, Y, Z;
 	DrawCommand drawCommand;
 	Chunk* neighbours[6];
 	Vector<const PhysicEntityCollider*, Settings::MAX_ENTITIES_PER_CHUNK> physicEntities;
-
-	//TransparentSortFaceData transparentSortFaceData[Settings::SINGLE_TYPE_FACE_INSTANCES_PER_CHUNK];
 
 	Chunk(unsigned int ID);
 	~Chunk();

@@ -4,6 +4,7 @@
 #include <iostream>
 #include "TerrainGenerator.h"
 #include <unordered_set>
+#include "Profiler.h"
 
 Face* Chunk::facesData = nullptr;
 FaceInstanceData* Chunk::faceInstancesData = nullptr;
@@ -83,6 +84,7 @@ void Chunk::destroy()
 
 void Chunk::generateBlocks()
 {
+	Profiler::start(BLOCK_GENERATION_INDEX);
 	blocksCount = 0;
 	for (size_t i = 0; i < Settings::CHUNK_SIZE_CUBED; i++)
 	{
@@ -120,24 +122,32 @@ void Chunk::generateBlocks()
 			}
 		}
 	}
+	Profiler::end(BLOCK_GENERATION_INDEX);
 
+	Profiler::start(CHUNK_LOAD_DATA_INDEX);
 	loadData(blockChanges, X, Y, Z);
+	Profiler::end(CHUNK_LOAD_DATA_INDEX);
+
 	applyChanges();
 
 	// lighting
+	Profiler::start(CHUNK_LIGHTING_INDEX);
 	for (size_t x = 0; x < Settings::CHUNK_SIZE; x++)
 	{
 		int globalX = (int)x + X * Settings::CHUNK_SIZE;
-		for (size_t y = 0; y < Settings::CHUNK_SIZE; y++)
+		for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
 		{
-			int globalY = (int)y + Y * Settings::CHUNK_SIZE;
-			for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
+			int globalZ = (int)z + Z * Settings::CHUNK_SIZE;
+			int slmh = heightMap->getSlMHAt(x, z);
+
+			for (size_t y = 0; y < Settings::CHUNK_SIZE; y++)
 			{
-				int globalZ = (int)z + Z * Settings::CHUNK_SIZE;
+				int globalY = (int)y + Y * Settings::CHUNK_SIZE;
+
 				Block block = getBlockAtInBoundaries(x, y, z);
 				if (ALL_BLOCK_DATA[(size_t)block].transparent)
 				{
-					if (globalY < heightMap->getSlMHAt(x, z))
+					if (globalY < slmh)
 					{
 						darknessFloodFillQueue.emplace(
 							globalX, globalY, globalZ,
@@ -156,25 +166,22 @@ void Chunk::generateBlocks()
 	for (int x = -1; x <= Settings::CHUNK_SIZE; x++)
 	{
 		int globalX = x + X * Settings::CHUNK_SIZE;
-		for (int y = -1; y <= Settings::CHUNK_SIZE; y++)
+		bool xBool = x == -1 || x == Settings::CHUNK_SIZE;
+		for (int z = -1; z <= Settings::CHUNK_SIZE; z++)
 		{
-			int globalY = y + Y * Settings::CHUNK_SIZE;
-			for (int z = -1; z <= Settings::CHUNK_SIZE; z++)
+			int globalZ = z + Z * Settings::CHUNK_SIZE;
+			bool zBool = z == -1 || z == Settings::CHUNK_SIZE;
+			for (int y = -1; y <= Settings::CHUNK_SIZE; y++)
 			{
-				int globalZ = z + Z * Settings::CHUNK_SIZE;
-
-				if (x == -1 || x == Settings::CHUNK_SIZE ||
-					y == -1 || y == Settings::CHUNK_SIZE ||
-					z == -1 || z == Settings::CHUNK_SIZE
+				if (xBool || zBool ||
+					y == -1 || y == Settings::CHUNK_SIZE
 					)
 				{
 					uint8_t lighting = getLightingAt(x, y, z) & 15;
 					if (lighting > 1)
 					{
 						lightingFloodFillQueue.emplace(
-							x + X * Settings::CHUNK_SIZE,
-							y + Y * Settings::CHUNK_SIZE,
-							z + Z * Settings::CHUNK_SIZE,
+							globalX, y + Y * Settings::CHUNK_SIZE, globalZ,
 							lighting, false
 						);
 					}
@@ -182,6 +189,7 @@ void Chunk::generateBlocks()
 			}
 		}
 	}
+	Profiler::end(CHUNK_LIGHTING_INDEX);
 }
 
 void Chunk::generateFaces()
@@ -270,10 +278,12 @@ void Chunk::updateFacesData()
 {
 	for (size_t i = 0; i < 6; i++)
 	{
-		faceInstancesVBO->setData(faceInstancesData + i * (Settings::FACE_INSTANCES_PER_CHUNK / 6), drawCommand.offset + i * (Settings::FACE_INSTANCES_PER_CHUNK / 6), drawCommand.facesCount[i]);
+		size_t count = drawCommand.facesCount[i];
+		size_t offset = i * (Settings::FACE_INSTANCES_PER_CHUNK / 6);
+		faceInstancesVBO->setData(faceInstancesData + offset, drawCommand.offset + offset, count);
 
-		size_t count = drawCommand.facesCount[6 + i];
-		size_t offset = (i + 1) * (Settings::FACE_INSTANCES_PER_CHUNK / 6) - count;
+		count = drawCommand.facesCount[6 + i];
+		offset = (i + 1) * (Settings::FACE_INSTANCES_PER_CHUNK / 6) - count;
 		faceInstancesVBO->setData(faceInstancesData + offset, drawCommand.offset + offset, count);
 	}
 }
@@ -500,7 +510,7 @@ void Chunk::loadData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_
 	}
 
 	size_t sizeOfBlock = 0;
-	unsigned int mapSize = (unsigned int)Block::Air;
+	unsigned int mapSize = 0;
 
 	file.read(reinterpret_cast<char*>(&sizeOfBlock), 1);
 	file.read(reinterpret_cast<char*>(&mapSize), sizeOfBlock);
@@ -512,12 +522,14 @@ void Chunk::loadData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_
 		Block block;
 		uint16_t count;
 
-		file.read(reinterpret_cast<char*>(&block), sizeOfBlock);
 		file.read(reinterpret_cast<char*>(&count), sizeof(count));
 		if (count == 0)
 		{
+			std::cerr << "Chunk::loadData: block count is 0" << std::endl;
 			continue;
 		}
+
+		file.read(reinterpret_cast<char*>(&block), sizeOfBlock);
 
 		indexes.resize(count);
 		file.read
@@ -526,7 +538,7 @@ void Chunk::loadData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_
 			count * sizeof(indexes[0])
 		);
 
-		blockChanges[block] = indexes;
+		blockChanges[block] = std::move(indexes);
 	}
 
 	file.close();
@@ -571,13 +583,13 @@ void Chunk::saveData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_
 
 			file.write
 			(
-				reinterpret_cast<const char*>(&block),
-				sizeOfBlock
+				reinterpret_cast<const char*>(&count),
+				sizeof(count)
 			);
 			file.write
 			(
-				reinterpret_cast<const char*>(&count),
-				sizeof(count)
+				reinterpret_cast<const char*>(&block),
+				sizeOfBlock
 			);
 			file.write
 			(

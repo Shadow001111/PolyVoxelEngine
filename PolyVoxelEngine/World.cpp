@@ -271,9 +271,7 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 	{
 		Chunk* chunk = chunkGenerateQueue.front();
 		chunkGenerateQueue.pop();
-		Profiler::start(BLOCK_GENERATION_INDEX);
 		chunk->generateBlocks();
-		Profiler::end(BLOCK_GENERATION_INDEX);
 		addChunkToGenerateFaces(chunk);
 		addSurroundingChunksToGenerateFaces(chunk);
 	}
