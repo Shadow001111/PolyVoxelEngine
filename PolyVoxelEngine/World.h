@@ -104,6 +104,8 @@ public:
 	TextureArray blockTextures;
 	TextureArray numberTextures;
 
+	uint32_t drawCommandsCount = 0;
+
 	World(unsigned int seed);
 	~World();
 

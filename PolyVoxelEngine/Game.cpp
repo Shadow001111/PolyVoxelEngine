@@ -165,13 +165,15 @@ struct Tick
 
 struct GUIData
 {
-	int fps = 0;
+	std::string fps;
 
-	uint8_t cpu = 0;
-	size_t ram = 0;
+	std::string cpu;
+	std::string ram;
 
-	uint8_t gpu = 0;
-	size_t vram = 0;
+	std::string gpu;
+	std::string vram;
+
+	std::string drawCommandsCount;
 };
 
 void gameKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -305,13 +307,15 @@ void Game::run()
 			auto* gpu = HardwareUsageInfo::getGPUUtilization();
 			auto* vram = HardwareUsageInfo::getVRAMUsage();
 
-			guiData.fps = 1.0f / deltaTime;
+			guiData.fps = std::to_string(int(1.0f / deltaTime));
 
-			guiData.cpu = HardwareUsageInfo::getCPUUsage();
-			guiData.ram = HardwareUsageInfo::getRAMUsage() >> 20;
+			guiData.cpu = std::to_string(HardwareUsageInfo::getCPUUsage());
+			guiData.ram = std::to_string(HardwareUsageInfo::getRAMUsage() >> 20);
 
-			guiData.gpu = gpu->gpu;
-			guiData.vram = vram->used >> 20;
+			guiData.gpu = std::to_string(gpu->gpu);
+			guiData.vram = std::to_string(vram->used >> 20);
+
+			guiData.drawCommandsCount = std::to_string(world.drawCommandsCount);
 		}
 
 		if (profilerTick.checkOnce())
@@ -384,25 +388,22 @@ void Game::run()
 			TextRenderer::beforeTextRender();
 			{
 				{
-					std::string FPS = "FPS: " + std::to_string(guiData.fps);
-					std::string CPU = "CPU: " + std::to_string(guiData.cpu);
-					std::string RAM = "RAM: " + std::to_string(guiData.ram);
-					std::string GPU = "GPU: " + std::to_string(guiData.gpu);
-					std::string VRAM = "VRAM: " + std::to_string(guiData.vram) + " mb";
-
 					float offsetX = 0.02f;
 					float offsetY = offsetX;
 
-					float scale = 0.03f;
-					float offsetYPerText = scale * 2.0f;
-
 					float x = -1.0f * GraphicController::aspectRatio + offsetX;
 
-					TextRenderer::renderText(FPS, x, 1.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
-					TextRenderer::renderText(CPU, x, 1.0f - offsetYPerText - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
-					TextRenderer::renderText(RAM, x, 1.0f - offsetYPerText * 2.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
-					TextRenderer::renderText(GPU, x, 1.0f - offsetYPerText * 3.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
-					TextRenderer::renderText(VRAM, x, 1.0f - offsetYPerText * 4.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
+					float scale = 0.03f;
+
+					const std::string text =
+						"FPS: " + guiData.fps +
+						"\nCPU: " + guiData.cpu +
+						"\nRAM: " + guiData.ram +
+						"\nGPU: " + guiData.gpu +
+						"\nVRAM: " + guiData.vram + " mb"
+						"\nDrawCommands: " + guiData.drawCommandsCount;
+
+					TextRenderer::renderText(text, x, 1.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
 				}
 				{
 					float offsetX = 0.02f;

@@ -31,7 +31,7 @@ struct Character
 	unsigned int advance;
 };
 
-constexpr size_t TEXT_SSBO_SIZE = 20;
+constexpr size_t TEXT_SSBO_SIZE = 400;
 
 class TextRenderer
 {

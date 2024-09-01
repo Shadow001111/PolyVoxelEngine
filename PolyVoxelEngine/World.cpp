@@ -621,6 +621,8 @@ bool World::loadChunks(int x, int y, int z, bool forced)
 
 void World::draw(const Camera& camera)
 {
+	drawCommandsCount = 0;
+
 	// get render chunks
 	std::vector<ChunkDistance> renderChunks;
 	getRenderChunks(renderChunks, camera);
@@ -637,6 +639,7 @@ void World::draw(const Camera& camera)
 
 	size_t commandsCount, chunkPositionsCount;
 	getDrawCommands(renderChunks, camera, commandsCount, chunkPositionsCount, false);
+	drawCommandsCount += commandsCount;
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 	if (commandsCount > 0)
@@ -672,6 +675,7 @@ void World::draw(const Camera& camera)
 	// draw transparent
 	std::reverse(renderChunks.begin(), renderChunks.end());
 	getDrawCommands(renderChunks, camera, commandsCount, chunkPositionsCount, true);
+	drawCommandsCount += commandsCount;
 	glDisable(GL_CULL_FACE);
 	if (commandsCount > 0)
 	{
