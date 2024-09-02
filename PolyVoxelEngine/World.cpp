@@ -75,7 +75,7 @@ void World::releaseChunk(Chunk* chunk)
 	chunk->destroy();
 }
 
-World::World(unsigned int seed) 
+World::World(const WorldData& worldData)
 	: lastPlayerLoadChunkPos{0.0f, 0.0f, 0.0f},
 
 	quadInstanceVBO((const char*)quadInstanceVertices, 4 * sizeof(QuadInstanceVertex), GL_STATIC_DRAW),
@@ -85,6 +85,8 @@ World::World(unsigned int seed)
 
 	chunkPositionSSBO(Settings::MAX_RENDERED_CHUNKS_COUNT * sizeof(glm::vec3)),
 	chunkPositionIndexSSBO(Settings::MAX_CHUNK_DRAW_COMMANDS_COUNT * sizeof(unsigned int)),
+
+	time(worldData.worldTime),
 
 	blockTextures("res/Textures.png", 0, Settings::BLOCK_TEXTURE_SIZE, Settings::BLOCK_TEXTURES_IN_ROW, Settings::BLOCK_TEXTURES_COUNT, Settings::BLOCK_TEXTURES_NUM_CHANNELS, GL_REPEAT),
 	numberTextures("res/Numbers.png", 1, 8, 4, 16, 1, GL_CLAMP_TO_BORDER)
@@ -105,7 +107,7 @@ World::World(unsigned int seed)
 	chunkPositionIndexSSBO.bindBase(1);
 
 	//
-	TerrainGenerator::init(seed);
+	TerrainGenerator::init(worldData.seed);
 
 	chunkPool = new Chunk*[Settings::MAX_RENDERED_CHUNKS_COUNT];
 	for (size_t i = 0; i < Settings::MAX_RENDERED_CHUNKS_COUNT; i++)
@@ -1334,7 +1336,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	}
 }
 
-WorldData World::loadWorldData() const
+WorldData World::loadWorldData()
 {
 	WorldData worldData;
 	if (!std::filesystem::exists(Settings::WORLD_DATA_PATH))
@@ -1352,7 +1354,7 @@ WorldData World::loadWorldData() const
 	return worldData;
 }
 
-void World::saveWorldData(const WorldData& worldData) const
+void World::saveWorldData(const WorldData& worldData)
 {
 	std::ofstream file(Settings::WORLD_DATA_PATH, std::ios::binary | std::ios::trunc);
 	if (!file.is_open())

@@ -45,6 +45,7 @@ struct WorldData
 	glm::vec3 playerPosition = {0, INT_MIN, 0};
 	glm::vec2 playerRotation = { 0, 0 };
 
+	unsigned int seed = 0;
 	uint16_t worldTime = 12000;
 };
 
@@ -97,7 +98,7 @@ public:
 
 	uint32_t drawCommandsCount = 0;
 
-	World(unsigned int seed);
+	World(const WorldData& worldData);
 	~World();
 
 	void update(const glm::vec3& pos, bool isMoving);
@@ -109,8 +110,8 @@ public:
 
 	bool loadChunks(int x, int y, int z, bool forced);
 
-	WorldData loadWorldData() const;
-	void saveWorldData(const WorldData& worldData) const;
+	static WorldData loadWorldData();
+	static void saveWorldData(const WorldData& worldData);
 
 	void draw(const Camera& camera);
 

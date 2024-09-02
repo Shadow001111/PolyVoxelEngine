@@ -213,19 +213,16 @@ void Game::run()
 	glfwSetScrollCallback(GraphicController::window, &gameScrollCallback);
 	glfwSetMouseButtonCallback(GraphicController::window, &gameMouseButtonCallback);
 
+	// world data
+	WorldData worldData = World::loadWorldData();
+
 	// player, world
 	player = new Player({ 0.0f, 0.0f, 0.0f }, 80.0f, 0.1f, Settings::MAX_RENDER_DISTANCE);
-	World world(0);
+	World world(worldData);
 	PhysicEntity::world = &world;
 
-	// load data
+	// player data
 	{
-		WorldData worldData = world.loadWorldData();
-
-		// world
-		world.time = worldData.worldTime;
-
-		// player
 		auto& pos = player->physicEntity.position;
 		pos.x = worldData.playerPosition.x;
 		pos.z = worldData.playerPosition.z;
@@ -457,9 +454,7 @@ void Game::run()
 		}
 	}
 
-	// save data
-	WorldData worldData;
-
+	// save world data
 	worldData.worldTime = world.time;
 
 	worldData.playerPosition = player->physicEntity.position;

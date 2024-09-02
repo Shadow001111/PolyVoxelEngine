@@ -286,11 +286,7 @@ void Chunk::generateFaces()
 						face.textureID = textures[normalID];
 						face.lighting = getLightingAtSideCheck(x + offsets[0], y + offsets[1], z + offsets[2], normalID);
 #if ENABLE_SMOOTH_LIGHTING
-						char ao = getAOandSmoothLighting(x + offsets[0], y + offsets[1], z + offsets[2], planeIndex, packOffsets[normalID], face.smoothLighting);
-						if (blockData.lightPower > 0)
-						{
-							ao = 255;
-						}
+						char ao = getAOandSmoothLighting(blockData.lightPower > 0, x + offsets[0], y + offsets[1], z + offsets[2], planeIndex, packOffsets[normalID], face.smoothLighting);
 #else
 						char ao = 255;
 						if (blockData.lightPower == 0)
@@ -399,7 +395,7 @@ SizeT3 Chunk::getCoordinatesByIndex(size_t index)
 	return SizeT3(x, y, z);
 }
 
-char Chunk::getAOandSmoothLighting(int x, int y, int z, size_t side, const char* packOffsets, uint8_t* smoothLighting) const
+char Chunk::getAOandSmoothLighting(bool maxAO, int x, int y, int z, size_t side, const char* packOffsets, uint8_t* smoothLighting) const
 {
 	BlockAndLighting center, a, b, c, d, e, f, g, h;
 
@@ -492,6 +488,11 @@ char Chunk::getAOandSmoothLighting(int x, int y, int z, size_t side, const char*
 	smoothLighting[packOffsets[1]] = (sl1 << 4) | bl1;
 	smoothLighting[packOffsets[2]] = (sl2 << 4) | bl2;
 	smoothLighting[packOffsets[3]] = (sl3 << 4) | bl3;
+
+	if (maxAO)
+	{
+		return 255;
+	}
 
 	char ao0 = ba + bb + bc;
 	char ao1 = bg + bh + ba;
