@@ -272,6 +272,7 @@ void Chunk::generateFaces()
 
 				const auto& textures = blockData.textures;
 
+				bool maxAO = blockData.lightPower > 0;
 				for (size_t normalID = 0; normalID < 6; normalID++)
 				{
 					size_t planeIndex = normalID >> 1;
@@ -286,7 +287,7 @@ void Chunk::generateFaces()
 						face.textureID = textures[normalID];
 						face.lighting = getLightingAtSideCheck(x + offsets[0], y + offsets[1], z + offsets[2], normalID);
 #if ENABLE_SMOOTH_LIGHTING
-						char ao = getAOandSmoothLighting(blockData.lightPower > 0, x + offsets[0], y + offsets[1], z + offsets[2], planeIndex, packOffsets[normalID], face.smoothLighting);
+						char ao = getAOandSmoothLighting(maxAO, x + offsets[0], y + offsets[1], z + offsets[2], planeIndex, packOffsets[normalID], face.smoothLighting);
 #else
 						char ao = 255;
 						if (blockData.lightPower == 0)
