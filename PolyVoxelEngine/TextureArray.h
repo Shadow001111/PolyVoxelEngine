@@ -9,7 +9,7 @@ public:
 	unsigned int ID;
 	GLuint unit;
 
-	TextureArray(const char* filePath, GLint slot, int textureSize, int rowSize, int texturesCount, int desiredChannels, int textureWrapMode);
+	TextureArray(const char* filePath, GLint slot, int textureSize, int rowSize, int texturesCount, int desiredChannels, int textureWrapMode, bool createMipmaps);
 
 	void passToShader(Shader* shader, const char* uniform, unsigned int unit) const;
 	

@@ -1,7 +1,7 @@
 #include "TextureArray.h"
 #include "settings.h"
 
-TextureArray::TextureArray(const char* filePath, GLint slot, int textureSize, int rowSize, int texturesCount, int desiredChannels, int textureWrapMode) : ID(0), unit(slot)
+TextureArray::TextureArray(const char* filePath, GLint slot, int textureSize, int rowSize, int texturesCount, int desiredChannels, int textureWrapMode, bool createMipmaps) : ID(0), unit(slot)
 {
 	int width = 0, height = 0, numChannels = desiredChannels;
 
@@ -24,7 +24,7 @@ TextureArray::TextureArray(const char* filePath, GLint slot, int textureSize, in
 
 	GLint format = numChannelsToFormat[numChannels - 1][0];
 	GLint formatByte = numChannelsToFormat[numChannels - 1][1];
-	int mipmapLevels = 1 + (int)log2f(textureSize);
+	int mipmapLevels = 1 + (createMipmaps ? ceilf(log2f(textureSize)) : 0);
 
 	glGenTextures(1, &ID);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, ID);
