@@ -124,8 +124,6 @@ World::World(unsigned int seed)
 	chunkPositions = new glm::vec3[Settings::MAX_RENDERED_CHUNKS_COUNT];
 	chunkPositionIndexes = new unsigned int[Settings::MAX_CHUNK_DRAW_COMMANDS_COUNT];
 
-	calculateBlockColors();
-
 	//
 	if (!std::filesystem::exists(Settings::chunkSavesPath))
 	{
@@ -706,73 +704,6 @@ void World::draw(const Camera& camera)
 		glEnable(GL_BLEND);
 		glMultiDrawArraysIndirect(GL_TRIANGLE_FAN, nullptr, commandsCount, 0);
 	}
-}
-
-void World::buildImage(int x, int y, int z, int w, int h, int xAxis, int yAxis, const char* imagePath)
-{
-	int imgW, imgH;
-	stbi_set_flip_vertically_on_load(true);
-	unsigned char* bytes = stbi_load(imagePath, &imgW, &imgH, nullptr, 3);
-
-	if (!bytes)
-	{
-		std::cerr << "Can not load '" << imagePath << "'" << std::endl;
-		return;
-	}
-
-	float xMultiplier = (float)imgW / (float)w;
-	float yMultiplier = (float)imgH / (float)h;
-
-	int coords[3] = { x, y, z };
-
-	for (int ix = 0; ix < w; ix++)
-	{
-		int imageX = floorf(ix * xMultiplier);
-		coords[xAxis] += ix;
-		for (int iy = 0; iy < h; iy++)
-		{
-			int imageY = floorf(iy * yMultiplier);
-			coords[yAxis] += iy;
-
-			// get block by color
-			Block block = Block::BlackConcrete;
-
-			{
-				size_t index = 3 * (imageX + imageY * imgW);
-
-				int r = bytes[index];
-				int g = bytes[index + 1];
-				int b = bytes[index + 2];
-
-				uint32_t minDifference = -1;
-
-				for (size_t block_ = (size_t)Block::Grass; block_ < (size_t)Block::Count; block_++)
-				{
-					RGB8 blockColor = blockColors[block_];
-
-					int dr = (int)blockColor.r - r;
-					int dg = (int)blockColor.g - g;
-					int db = (int)blockColor.b - b;
-
-					uint32_t difference = dr * dr + dg * dg + db * db;
-
-					if (difference < minDifference)
-					{
-						block = (Block)block_;
-						minDifference = difference;
-					}
-				}
-			}
-
-			// place block
-			setBlockAt(coords[0], coords[1], coords[2], block);
-
-			coords[yAxis] -= iy;
-		}
-		coords[xAxis] -= ix;
-	}
-
-	stbi_image_free(bytes);
 }
 
 void World::regenerateChunks()
@@ -1400,50 +1331,6 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 		{
 			heightMap->setSlMHAt(x, z, INT_MIN);
 		}
-	}
-}
-
-void World::calculateBlockColors()
-{
-	int imgW, imgH;
-	stbi_set_flip_vertically_on_load(true);
-	unsigned char* bytes = stbi_load("res/Textures.png", &imgW, &imgH, nullptr, 3);
-
-	if (bytes)
-	{
-		for (size_t block = 0; block < (size_t)Block::Count; block++)
-		{
-			size_t blockTexture = ALL_BLOCK_DATA[block].textures[0];
-
-			int tile_y = blockTexture / Settings::BLOCK_TEXTURES_IN_ROW;
-			int tile_x = blockTexture % Settings::BLOCK_TEXTURES_IN_ROW;
-
-			size_t r = 0, g = 0, b = 0;
-			for (int i = 0; i < Settings::BLOCK_TEXTURE_SIZE * Settings::BLOCK_TEXTURE_SIZE; ++i)
-			{
-				int x = i % Settings::BLOCK_TEXTURE_SIZE;
-				int y = i / Settings::BLOCK_TEXTURE_SIZE;
-
-				int index = ((x + tile_x * Settings::BLOCK_TEXTURE_SIZE) + (y + tile_y * Settings::BLOCK_TEXTURE_SIZE) * Settings::BLOCK_TEXTURES_IN_ROW * Settings::BLOCK_TEXTURES_IN_ROW) * 3;
-
-				r += bytes[index];
-				g += bytes[index + 1];
-				b += bytes[index + 2];
-			}
-
-			int div = Settings::BLOCK_TEXTURE_SIZE * Settings::BLOCK_TEXTURE_SIZE;
-			r /= div;
-			g /= div;
-			b /= div;
-
-			blockColors[block] = { (uint8_t)r, (uint8_t)g, (uint8_t)b };
-		}
-
-		stbi_image_free(bytes);
-	}
-	else
-	{
-		std::cerr << "Can not load image for block colors" << std::endl;
 	}
 }
 

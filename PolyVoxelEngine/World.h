@@ -29,11 +29,6 @@ struct ChunkDistance
 	ChunkDistance(Chunk* chunk, float distance);
 };
 
-struct RGB8
-{
-	uint8_t r = 0, g = 0, b = 0;
-};
-
 struct Int3
 {
 	int x = 0, y = 0, z = 0;
@@ -78,8 +73,6 @@ class World
 	glm::vec3* chunkPositions = nullptr;
 	unsigned int* chunkPositionIndexes = nullptr;
 
-	RGB8 blockColors[(size_t)Block::Count];
-
 	Chunk* getChunk(int x, int y, int z);
 	void releaseChunk(Chunk* chunk);
 
@@ -96,8 +89,6 @@ class World
 	void updateLighting();
 	void updateBlockLighting(const LightUpdate& lightUpdate);
 	void updateSkyLighting(const LightUpdate& lightUpdate);
-
-	void calculateBlockColors();
 public:
 	uint16_t time = 0;
 
@@ -124,7 +115,6 @@ public:
 	void draw(const Camera& camera);
 
 	//
-	void buildImage(int x, int y, int z, int w, int h, int xAxis, int yAxis, const char* imagePath);
 	void regenerateChunks();
 };
 
