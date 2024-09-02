@@ -649,12 +649,12 @@ void World::draw(const Camera& camera)
 		quadInstanceVAO.bind();
 
 		glEnable(GL_CULL_FACE);
+		glDepthFunc(GL_LESS);
 
 		if (GraphicController::zPrePass)
 		{
 			GraphicController::deferredChunkProgram->bind();
 			glEnable(GL_RASTERIZER_DISCARD);
-			glDepthFunc(GL_LESS);
 			glMultiDrawArraysIndirect(GL_TRIANGLE_FAN, nullptr, commandsCount, 0);
 
 			GraphicController::chunkProgram->bind();
@@ -664,7 +664,6 @@ void World::draw(const Camera& camera)
 		}
 		else
 		{
-			glDepthFunc(GL_LESS);
 			GraphicController::chunkProgram->bind();
 			glMultiDrawArraysIndirect(GL_TRIANGLE_FAN, nullptr, commandsCount, 0);
 		}
@@ -995,13 +994,12 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 	int Z = chunk->Z;
 	const BlockData& blockData = ALL_BLOCK_DATA[(size_t)lightUpdate.block];
 	const BlockData& prevBlockData = ALL_BLOCK_DATA[(size_t)lightUpdate.prevBlock];
-
-	//
+	
 	bool addLights = false;
 	bool removeLights = false;
 	bool addLights2 = false;
 	bool removeLights2 = false;
-	// TODO: sky light still need to be changed
+
 	if (blockData.lightPower > prevBlockData.lightPower)
 	{
 		addLights = true;
@@ -1010,6 +1008,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 	{
 		addLights = blockData.lightPower > 0;
 		removeLights = true;
+		addLights2 = true;
 	}
 	else
 	{
@@ -1047,6 +1046,10 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 				z + Z * Settings::CHUNK_SIZE,
 				blockData.lightPower, false
 			);
+		}
+		else
+		{
+			chunk->setLightingAtInBoundaries(x, y, z, 0, false);
 		}
 	}
 	if (removeLights)
@@ -1106,13 +1109,10 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 					maxLightingSide = side;
 				}
 			}
-			else if (blockData.lightPower > 0)
+			else if (blockData.lightPower >= maxLighting)
 			{
-				if (blockData.lightPower + 1 > maxLighting)
-				{
-					maxLighting = blockData.lightPower;
-					maxLightingSide = 6;
-				}
+				maxLighting = blockData.lightPower;
+				maxLightingSide = 6;
 			}
 			offsets[axis] = 0;
 		}

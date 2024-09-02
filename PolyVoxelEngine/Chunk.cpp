@@ -459,6 +459,20 @@ char Chunk::getAOandSmoothLighting(int x, int y, int z, size_t side, const char*
 	uint8_t lg = g.lighting;
 	uint8_t lh = h.lighting;
 
+	/*if (
+		(!bcenter && lcenter > 0) ||
+		(!ba && la > 0) ||
+		(!bb && lb > 0) ||
+		(!bc && lc > 0) ||
+		(!bd && ld > 0) ||
+		(!be && le > 0) ||
+		(!bf && lf > 0) ||
+		(!bg && lg > 0) ||
+		(!bh && lh > 0))
+	{
+		std::cerr << "Lighting in solid block" << std::endl;
+	}*/
+
 	uint8_t sum0 = bcenter + ba + bb + bc;
 	uint8_t sum1 = bcenter + bg + bh + ba;
 	uint8_t sum2 = bcenter + be + bf + bg;
