@@ -139,9 +139,9 @@ void Game::run()
 	//
 	GUIData guiData;
 
-	const std::string debugViewModeNames[2] =
+	const std::string debugViewModeNames[3] =
 	{
-		"Light", "Polygon"
+		"Normal", "Light", "Polygon"
 	};
 
 	float frameDelay;
@@ -279,6 +279,7 @@ void Game::run()
 					float offsetY = offsetX;
 
 					float x = -1.0f * GraphicController::aspectRatio + offsetX;
+					float y = 1.0f - offsetY;
 
 					float scale = 0.03f;
 
@@ -290,22 +291,28 @@ void Game::run()
 						"\nVRAM: " + guiData.vram + " mb"
 						"\nDrawCommands: " + guiData.drawCommandsCount;
 
-					TextRenderer::renderText(text, x, 1.0f - offsetY, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
+					TextRenderer::renderText(text, x, y, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
 				}
 				{
 					float offsetX = 0.02f;
 					float offsetY = offsetX;
 
 					float scale = 0.05f;
-					float offsetYPerText = scale * 2.0f;
 
 					float x = 1.0f * GraphicController::aspectRatio - offsetX;
 					float y = 1.0f - offsetY;
 
-					if (player->debugViewMode > 0)
-					{
-						TextRenderer::renderText("ViewMode: " + debugViewModeNames[player->debugViewMode - 1], x, y, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Right, AligmentY::Top);
-					}
+					const auto& playerPos = player->physicEntity.position;
+
+					std::string text = "ViewMode: " + debugViewModeNames[player->debugViewMode];
+					text += "\nX: ";
+					text += std::to_string((int)floorf(playerPos.x));
+					text += " Y: ";
+					text += std::to_string((int)floorf(playerPos.y));
+					text += " Z: ";
+					text += std::to_string((int)floorf(playerPos.z));
+
+					TextRenderer::renderText(text, x, y, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Right, AligmentY::Top);
 				}
 				// profiler
 				{

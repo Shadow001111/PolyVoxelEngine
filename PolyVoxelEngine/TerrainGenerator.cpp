@@ -12,6 +12,8 @@ size_t TerrainGenerator::heightMapPoolIndex = 0;
 constexpr int noise2ValuesRes = 1;
 float* TerrainGenerator::noise2Values = nullptr;
 
+Spline TerrainGenerator::continentalSpline = {"res/Splines/continental.bin"};
+
 int pos2_hash(int x, int y)
 {
 	constexpr int shift = sizeof(int) * 8 / 2;
@@ -53,6 +55,11 @@ void calculatePosNegCoord(int localCoord, int chunkCoord, int& positiveCoord, in
 		positiveChunkCoord = chunkCoord + 1;
 		negativeChunkCoord = chunkCoord;
 	}
+}
+
+inline float step(float x, float steps)
+{
+	return floorf(x * steps) / (steps - 1.0f);
 }
 
 
@@ -114,21 +121,22 @@ HeightMap* TerrainGenerator::getHeightMap(int chunkX, int chunkZ)
 
 Block TerrainGenerator::getBlock(int x, int y, int z, int height, Biome biome)
 {
-	if (y <= height - 20)
+	if (y > height)
 	{
-		return IsCave(x, y, z) ? Block::Air : Block::Stone;
+		return Block::Air;
 	}
-	else if (y <= height - 10)
+
+	if (y <= 0)
+	{
+		return Block::Sand;
+	}
+	return Block::Stone;
+	/*if (y <= height - 10)
 	{
 		return Block::Stone;
 	}
-	else if (y < height)
+	else if (y <= height)
 	{
-		if (y < 60)
-		{
-			return Block::Sand;
-		}
-
 		Block b1;
 		Block b2;
 		if (biome == Biome::Grass)
@@ -152,13 +160,9 @@ Block TerrainGenerator::getBlock(int x, int y, int z, int height, Biome biome)
 			b2 = Block::Dirt;
 		}
 
-		return (y == height - 1) ? b1 : b2;
+		return (y == height) ? b1 : b2;
 	}
-	else if (y < 60)
-	{
-		return Block::Water;
-	}
-	return Block::Air;
+	return Block::Air;*/
 }
 
 bool TerrainGenerator::IsCave(int x, int y, int z)
@@ -181,47 +185,28 @@ float TerrainGenerator::calculateInitialHeight(int globalX, int globalZ, Biome b
 	int chunkX = floorf((float)globalX / (float)Settings::CHUNK_SIZE);
 	int chunkZ = floorf((float)globalZ / (float)Settings::CHUNK_SIZE);
 
-	const BiomeData& biomeData_ = biomeData[(size_t)biome];
+	float continentalAmpl = 200.0f;
+	float continentalFreq = 0.001f;
+	float continental = getLayeredNoise(globalX, globalZ, 3, 1.0f, continentalFreq, 0.5f, 2.0f, 0.0f, 0.0f);
+	continental = continentalSpline.get(continental) * continentalAmpl;
 
-	int layersCount = biomeData_.layersCount;
-	int minHeight = biomeData_.minHeight;
-	int maxHeight = biomeData_.maxHeight;
-	float ampl = 1.0f;
-	float amplFactor = biomeData_.amplFactor;
-	float freq = biomeData_.freq;
-	float freqFactor = biomeData_.freqFactor;
-	float erosionFreq = biomeData_.erosionFreq;
-	float erosionPower = biomeData_.erosionPower;
+	// no erosion
 
-	float height = 0.0f;
-	for (int i = 0; i < layersCount; i++)
-	{
-		float terrain_noise = (noise(globalX * freq, globalZ * freq + 1.0f)) * 0.5f;
-		float value = terrain_noise * (i & 1 ? -1.0f : 1.0f) * ampl;
+	float pvAmpl = 20.0f;
+	float weirdnessFreq = 0.0025f;
+	float weirdness = getLayeredNoise(globalX, globalZ, 3, 1.0f, weirdnessFreq, 0.25f, 4.0f, 0.1764f, -0.14151f);
+	float pv = (1 - fabsf(3 * fabsf(weirdness) - 2)) * pvAmpl;
 
-		if (i == 0)
-		{
-			float erosion_noise = noise(globalX * erosionFreq + 0.1f, globalZ * erosionFreq + 0.53423f);
-			if (erosion_noise < 0.0f)
-			{
-				value *= erosionPower;
-			}
-		}
-		//
-
-		height += value;
-		ampl *= amplFactor;
-		freq *= freqFactor;
-	}
-
-	height *= (1.0f - amplFactor) / (1.0f - powf(amplFactor, layersCount));
-	return minHeight + (int)(height * (maxHeight - minHeight));
+	return continental;
 }
 
 int TerrainGenerator::calculateHeight(int globalX, int globalZ)
 {
 	int chunkX = floorf((float)globalX / (float)Settings::CHUNK_SIZE);
 	int chunkZ = floorf((float)globalZ / (float)Settings::CHUNK_SIZE);
+
+	Biome biome = getBiome(chunkX, chunkZ);
+	return TerrainGenerator::calculateInitialHeight(globalX, globalZ, biome);
 
 	int localX = globalX & (Settings::CHUNK_SIZE - 1);
 	int localZ = globalZ & (Settings::CHUNK_SIZE - 1);

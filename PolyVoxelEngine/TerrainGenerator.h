@@ -4,6 +4,7 @@
 #include "settings.h"
 #include <unordered_map>
 #include "SimplexNoise.h"
+#include "Spline.h"
 
 struct HeightMap
 {
@@ -26,6 +27,8 @@ class TerrainGenerator
 	static size_t heightMapPoolIndex;
 
 	static float* noise2Values;
+
+	static Spline continentalSpline;
 
 	static float calculateInitialHeight(int globalX, int globalZ, Biome biome);
 public:

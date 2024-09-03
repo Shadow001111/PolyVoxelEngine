@@ -111,6 +111,9 @@
     <ClCompile Include="SoundEngine.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Spline.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FBO.h">
@@ -201,6 +204,9 @@
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="SoundEngine.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Spline.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

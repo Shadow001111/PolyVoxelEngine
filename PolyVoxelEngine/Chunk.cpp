@@ -94,8 +94,10 @@ void Chunk::generateBlocks()
 	Biome biome = TerrainGenerator::getBiome(X, Z);
 	int chunkMaxY;
 	{
-		BiomeData biomeData_ = biomeData[(size_t)biome];
-		chunkMaxY = ceilf((float)biomeData_.maxHeight / (float)Settings::CHUNK_SIZE);
+		// TODO: implement chunkMaxY
+		chunkMaxY = INT_MAX;
+		//BiomeData biomeData_ = biomeData[(size_t)biome];
+		//chunkMaxY = ceilf((float)biomeData_.maxHeight / (float)Settings::CHUNK_SIZE);
 	}
 
 	const HeightMap* heightMap = TerrainGenerator::getHeightMap(X, Z);
