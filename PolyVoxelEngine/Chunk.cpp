@@ -66,9 +66,6 @@ void Chunk::init(int x, int y, int z)
 			neighbours[i]->neighbours[i ^ 1] = this;
 		}
 	}
-
-	// lighting
-	memset(lightingMap, 0, sizeof(lightingMap));
 }
 
 void Chunk::destroy()

@@ -59,19 +59,6 @@ struct Tick
 	}
 };
 
-struct GUIData
-{
-	std::string fps;
-
-	std::string cpu;
-	std::string ram;
-
-	std::string gpu;
-	std::string vram;
-
-	std::string drawCommandsCount;
-};
-
 void gameKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	Game* game = (Game*)glfwGetWindowUserPointer(window);
@@ -137,7 +124,7 @@ void Game::run()
 	Tick profilerTick(40);
 
 	//
-	GUIData guiData;
+	std::string guiPerfomanceText;
 
 	const std::string debugViewModeNames[3] =
 	{
@@ -195,15 +182,25 @@ void Game::run()
 			auto* gpu = HardwareUsageInfo::getGPUUtilization();
 			auto* vram = HardwareUsageInfo::getVRAMUsage();
 
-			guiData.fps = std::to_string(int(1.0f / deltaTime));
+			guiPerfomanceText.clear();
 
-			guiData.cpu = std::to_string(HardwareUsageInfo::getCPUUsage());
-			guiData.ram = std::to_string(HardwareUsageInfo::getRAMUsage() >> 20);
+			guiPerfomanceText += "FPS: ";
+			guiPerfomanceText += std::to_string(int(1.0f / deltaTime));
 
-			guiData.gpu = std::to_string(gpu->gpu);
-			guiData.vram = std::to_string(vram->used >> 20);
+			guiPerfomanceText += "\nCPU: ";
+			guiPerfomanceText += std::to_string(HardwareUsageInfo::getCPUUsage());
 
-			guiData.drawCommandsCount = std::to_string(world.drawCommandsCount);
+			guiPerfomanceText += "\nRAM: ";
+			guiPerfomanceText += std::to_string(HardwareUsageInfo::getRAMUsage() >> 20);
+
+			guiPerfomanceText += "\nGPU: ";
+			guiPerfomanceText += std::to_string(gpu->gpu);
+
+			guiPerfomanceText += "\nVRAM: ";
+			guiPerfomanceText += std::to_string(vram->used >> 20);
+
+			guiPerfomanceText += "\nDrawCommands: ";
+			guiPerfomanceText += std::to_string(world.drawCommandsCount);
 		}
 
 		if (profilerTick.checkOnce())
@@ -283,15 +280,7 @@ void Game::run()
 
 					float scale = 0.03f;
 
-					const std::string text =
-						"FPS: " + guiData.fps +
-						"\nCPU: " + guiData.cpu +
-						"\nRAM: " + guiData.ram +
-						"\nGPU: " + guiData.gpu +
-						"\nVRAM: " + guiData.vram + " mb"
-						"\nDrawCommands: " + guiData.drawCommandsCount;
-
-					TextRenderer::renderText(text, x, y, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
+					TextRenderer::renderText(guiPerfomanceText, x, y, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
 				}
 				{
 					float offsetX = 0.02f;
@@ -304,7 +293,8 @@ void Game::run()
 
 					const auto& playerPos = player->physicEntity.position;
 
-					std::string text = "ViewMode: " + debugViewModeNames[player->debugViewMode];
+					std::string text = "ViewMode: ";
+					text += debugViewModeNames[player->debugViewMode];
 					text += "\nX: ";
 					text += std::to_string((int)floorf(playerPos.x));
 					text += " Y: ";
