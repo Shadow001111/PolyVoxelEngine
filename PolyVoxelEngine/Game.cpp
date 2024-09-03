@@ -4,6 +4,7 @@
 #include "World.h"
 #include "TerrainGenerator.h"
 #include "Profiler.h"
+#include <format>
 
 struct Tick
 {
@@ -301,6 +302,13 @@ void Game::run()
 					text += std::to_string((int)floorf(playerPos.y));
 					text += " Z: ";
 					text += std::to_string((int)floorf(playerPos.z));
+
+					text += "\nX: ";
+					text += std::format("{:.2f}", player->camera.Forward.x);
+					text += " Y: ";
+					text += std::format("{:.2f}", player->camera.Forward.y);
+					text += " Z: ";
+					text += std::format("{:.2f}", player->camera.Forward.z);
 
 					TextRenderer::renderText(text, x, y, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Right, AligmentY::Top);
 				}

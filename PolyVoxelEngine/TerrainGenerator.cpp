@@ -175,8 +175,8 @@ float TerrainGenerator::calculateInitialHeight(int globalX, int globalZ, Biome b
 {
 	int chunkX = floorf((float)globalX / (float)Settings::CHUNK_SIZE);
 	int chunkZ = floorf((float)globalZ / (float)Settings::CHUNK_SIZE);
-	
-	float erosionThreshold = 0.8f;
+
+	/*float erosionThreshold = 0.8f;
 	float erosionAmpl = 10.0f;
 	float erosionFreq = 0.01f;
 	float erosion = getLayeredNoise(globalX, globalZ, 1, 1.0f, erosionFreq, 0.0f, 0.0f, -0.235626f, 0.5252562f);;
@@ -193,7 +193,8 @@ float TerrainGenerator::calculateInitialHeight(int globalX, int globalZ, Biome b
 	float weirdness = getLayeredNoise(globalX, globalZ, 3, 1.0f, weirdnessFreq, 0.25f, 4.0f, 0.1764f, -0.14151f);
 	float pv = (1 - fabsf(3 * fabsf(weirdness) - 2)) * pvAmpl;
 
-	return continental + pv;
+	return continental + pv;*/
+	return continentalSpline.get(globalX * 0.01f) * 100;
 }
 
 int TerrainGenerator::calculateHeight(int globalX, int globalZ)

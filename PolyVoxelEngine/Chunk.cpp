@@ -804,14 +804,15 @@ void Chunk::greedyMeshing(Face* facesData)
 					{
 						continue;
 					}
+
+					size_t copyCoords[3] = {0, 0, 0};
 					int currentW = 1;
 					int currentH = 1;
 
 					// expand W
-					size_t copyCoords[3] = {0, 0, 0};
 					memcpy(copyCoords, coords, sizeof(copyCoords));
 					copyCoords[wCoordIndex]++;
-					while (coords[wCoordIndex] + currentW < Settings::CHUNK_SIZE + 1)
+					while (coords[wCoordIndex] + currentW < Settings::CHUNK_SIZE)
 					{
 						const auto& tempFace = facesData[getFaceIndex(copyCoords, normalID)];
 						if (tempFace.none || !(tempFace == currentFace))
@@ -853,8 +854,7 @@ void Chunk::greedyMeshing(Face* facesData)
 						copyCoords[hCoordIndex] = coords[hCoordIndex];
 						for (size_t dh = 0; dh < currentH; dh++)
 						{
-							auto& tempFace = facesData[getFaceIndex(copyCoords, normalID)];
-							tempFace.none = true;
+							facesData[getFaceIndex(copyCoords, normalID)].none = true;
 							copyCoords[hCoordIndex]++;
 						}
 						copyCoords[wCoordIndex]++;
