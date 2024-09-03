@@ -150,11 +150,28 @@ void TextRenderer::renderText(const std::string& text, float x, float y, float s
 
     // get width and height
     float textW = 0.0f;
-    int textMinY = INT_MAX;
-    int textMaxY = INT_MIN;
+    float tempTextW = 0.0f;
+
+    float textMinY = 999.0f;
+    float textMaxY = -999.0f;
+    int newLinesCount = 0;
     for (size_t i = 0; i < textLength; i++)
     {
-        const auto& it = characters.find(text[i]);
+        char c = text[i];
+        if (c == ' ')
+        {
+            tempTextW += spaceAdvance;
+            continue;
+        }
+        else if (c == '\n')
+        {
+            textW = fmaxf(textW, tempTextW);
+            tempTextW = 0.0f;
+            newLinesCount++;
+            continue;
+        }
+
+        const auto& it = characters.find(c);
         if (it == characters.end())
         {
             continue;
@@ -163,21 +180,21 @@ void TextRenderer::renderText(const std::string& text, float x, float y, float s
 
         if (i == 0)
         {
-            textW += ch.advance - ch.bearing.x;
+            tempTextW += ch.advance - ch.bearing.x;
         }
         else if (i == textLength - 1)
         {
-            textW += ch.size.x;
+            tempTextW += ch.size.x;
         }
         else
         {
-            textW += ch.advance;
+            tempTextW += ch.advance;
         }
 
-        textMinY = std::min(textMinY, ch.bearing.y - ch.size.y);
-        textMaxY = std::max(textMaxY, ch.bearing.y);
+        textMinY = fminf(textMinY, ch.bearing.y - ch.size.y);
+        textMaxY = fmaxf(textMaxY, ch.bearing.y);
     }
-    textW *= scale;
+    textW = fmaxf(textW, tempTextW) * scale;
     float textH = (textMaxY - textMinY) * scale;
 
     if (aligmentX == AligmentX::Right)
@@ -188,6 +205,7 @@ void TextRenderer::renderText(const std::string& text, float x, float y, float s
     {
         x -= textW * 0.5f;
     }
+
     if (aligmentY == AligmentY::Top)
     {
         y -= textH;
@@ -195,6 +213,10 @@ void TextRenderer::renderText(const std::string& text, float x, float y, float s
     else if (aligmentY == AligmentY::Center)
     {
         y -= textH * 0.5f;
+    }
+    else
+    {
+        y += newLinesCount * (fontSize * 1.2f * scale);
     }
 
     // render
@@ -218,7 +240,7 @@ void TextRenderer::renderText(const std::string& text, float x, float y, float s
             else if (c == '\n')
             {
                 textX = x;
-                textY -= textH * 1.2f;
+                textY -= fontSize * scale * 1.2f;
                 continue;
             }
             const auto& it = characters.find(c);
