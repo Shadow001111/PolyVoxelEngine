@@ -121,48 +121,39 @@ HeightMap* TerrainGenerator::getHeightMap(int chunkX, int chunkZ)
 
 Block TerrainGenerator::getBlock(int x, int y, int z, int height, Biome biome)
 {
+	constexpr int snowLevel = 130;
+	constexpr int mountainStoneLevel = 130;
+	constexpr float mountainStoneLevelVariationAmpl = 5.0f;
+	constexpr float mountainStoneLevelVariationFreq = 0.1f;
+
 	if (y > height)
 	{
 		return Block::Air;
 	}
 
-	if (y <= 0)
+	if (y == height)
 	{
-		return Block::Sand;
+		int level = snowLevel + sinf((x + z) * mountainStoneLevelVariationFreq) * mountainStoneLevelVariationAmpl;
+		if (y > level)
+		{
+			return Block::Snow;
+		}
+		else
+		{
+			Block blocks[(size_t)Biome::Count] = { Block::Grass, Block::Snow, Block::Sand, Block::Grass };
+			return blocks[(size_t)biome];
+		}
 	}
-	return Block::Stone;
-	/*if (y <= height - 10)
+	else if (y < height - 10)
 	{
 		return Block::Stone;
 	}
-	else if (y <= height)
+	else if (y < height)
 	{
-		Block b1;
-		Block b2;
-		if (biome == Biome::Grass)
-		{
-			b1 = Block::Grass;
-			b2 = Block::Dirt;
-		}
-		else if (biome == Biome::Tundra)
-		{
-			b1 = Block::Snow;
-			b2 = Block::Dirt;
-		}
-		else if (biome == Biome::Desert)
-		{
-			b1 = Block::Sand;
-			b2 = Block::Sand;
-		}
-		else if (biome == Biome::Tropic)
-		{
-			b1 = Block::Grass;
-			b2 = Block::Dirt;
-		}
-
-		return (y == height) ? b1 : b2;
+		int level = mountainStoneLevel + sinf((x + z) * mountainStoneLevelVariationFreq) * mountainStoneLevelVariationAmpl;
+		return y < level ? Block::Dirt : Block::Stone;
 	}
-	return Block::Air;*/
+	return Block::Stone;
 }
 
 bool TerrainGenerator::IsCave(int x, int y, int z)
