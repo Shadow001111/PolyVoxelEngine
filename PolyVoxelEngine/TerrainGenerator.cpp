@@ -184,20 +184,25 @@ float TerrainGenerator::calculateInitialHeight(int globalX, int globalZ, Biome b
 {
 	int chunkX = floorf((float)globalX / (float)Settings::CHUNK_SIZE);
 	int chunkZ = floorf((float)globalZ / (float)Settings::CHUNK_SIZE);
+	
+	float erosionThreshold = 0.8f;
+	float erosionAmpl = 10.0f;
+	float erosionFreq = 0.01f;
+	float erosion = getLayeredNoise(globalX, globalZ, 1, 1.0f, erosionFreq, 0.0f, 0.0f, -0.235626f, 0.5252562f);;
 
 	float continentalAmpl = 200.0f;
 	float continentalFreq = 0.001f;
-	float continental = getLayeredNoise(globalX, globalZ, 3, 1.0f, continentalFreq, 0.5f, 2.0f, 0.0f, 0.0f);
-	continental = continentalSpline.get(continental) * continentalAmpl;
-
-	// no erosion
+	float continental = getLayeredNoise(globalX, globalZ, 1, 1.0f, continentalFreq, 0.0f, 1.0f, 0.0f, 0.0f);
+	continental += getLayeredNoise(globalX, globalZ, 2, 0.5f, continentalFreq * 2.0f, 0.5f, 2.0f, 0.0f, 0.0f);
+	continental /= 1.5f;
+	continental = continentalSpline.get(continental) * continentalAmpl -(erosion > erosionThreshold ? (erosion - erosionThreshold) / (1.0f - erosionThreshold) * erosionAmpl : 0.0f);
 
 	float pvAmpl = 20.0f;
 	float weirdnessFreq = 0.0025f;
 	float weirdness = getLayeredNoise(globalX, globalZ, 3, 1.0f, weirdnessFreq, 0.25f, 4.0f, 0.1764f, -0.14151f);
 	float pv = (1 - fabsf(3 * fabsf(weirdness) - 2)) * pvAmpl;
 
-	return continental;
+	return continental + pv;
 }
 
 int TerrainGenerator::calculateHeight(int globalX, int globalZ)
