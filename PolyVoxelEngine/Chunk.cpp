@@ -271,27 +271,31 @@ void Chunk::generateFaces()
 
 				const auto& textures = blockData.textures;
 
-				bool maxAO = blockData.lightPower > 0;
+				const bool maxAO = blockData.lightPower > 0;
 				for (size_t normalID = 0; normalID < 6; normalID++)
 				{
 					size_t planeIndex = normalID >> 1;
 					offsets[planeIndex] = ((normalID & 1 ^ 1) << 1) - 1;
 
-					Block faceBlock = getBlockAtSideCheck(x + offsets[0], y + offsets[1], z + offsets[2], normalID);
+					const int offX = x + offsets[0];
+					const int offY = y + offsets[1];
+					const int offZ = z + offsets[2];
+
+					Block faceBlock = getBlockAtSideCheck(offX, offY, offZ, normalID);
 					if (faceBlock != Block::Void && faceBlock != block && ALL_BLOCK_DATA[(size_t)faceBlock].transparent)
 					{
 						auto& face = facesData[normalID + (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6];
 						face.none = false;
 						face.transparent = blockData.transparent;
 						face.textureID = textures[normalID];
-						face.lighting = getLightingAtSideCheck(x + offsets[0], y + offsets[1], z + offsets[2], normalID);
+						face.lighting = getLightingAtSideCheck(offX, offY, offZ, normalID);
 #if ENABLE_SMOOTH_LIGHTING
-						char ao = getAOandSmoothLighting(maxAO, x + offsets[0], y + offsets[1], z + offsets[2], planeIndex, packOffsets[normalID], face.smoothLighting);
+						char ao = getAOandSmoothLighting(maxAO, offX, offY, offZ, planeIndex, packOffsets[normalID], face.smoothLighting);
 #else
 						char ao = 255;
 						if (blockData.lightPower == 0)
 						{
-							ao = getAO(x + offsets[0], y + offsets[1], z + offsets[2], planeIndex, packOffsets[normalID]);
+							ao = getAO(offX, offY, offZ, planeIndex, packOffsets[normalID]);
 						}
 #endif
 						face.ao = ao;

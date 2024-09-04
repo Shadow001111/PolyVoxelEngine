@@ -1,6 +1,6 @@
 #include "settings.h"
 
-int DynamicSettings::generateChunksPerTickStationary = 200000;
+int DynamicSettings::generateChunksPerTickStationary = 200;
 int DynamicSettings::generateChunksPerTickMoving = 100;
 
 int calcArea(int radius)

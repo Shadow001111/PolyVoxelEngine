@@ -23,7 +23,7 @@ const float aoValues[4] = float[4]
 );
 #endif
 
-const float extending = 1.001;
+const float extending = 1.01;
 
 uniform mat4 camMatrix;
 
