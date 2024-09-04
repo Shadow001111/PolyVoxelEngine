@@ -80,7 +80,7 @@ class World
 	void getRenderChunks(std::vector<ChunkDistance>& renderChunks, const Camera& camera) const;
 	void getDrawCommands(const std::vector<ChunkDistance>& renderChunks, const Camera& camera, size_t& commandsCount, size_t& positionsCount, bool transparent);
 
-	void addChunkToGenerateFaces(Chunk* chunk);
+	inline void addChunkToGenerateFaces(Chunk* chunk);
 	void addSurroundingChunksToGenerateFaces(const Chunk* chunk);
 
 	uint8_t getLightingAt(int x, int y, int z) const;

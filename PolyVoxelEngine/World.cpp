@@ -787,7 +787,7 @@ void World::getDrawCommands(const std::vector<ChunkDistance>& renderChunks, cons
 	}
 }
 
-void World::addChunkToGenerateFaces(Chunk* chunk)
+inline void World::addChunkToGenerateFaces(Chunk* chunk)
 {
 	generateFacesSet.emplace(chunk);
 }
@@ -797,22 +797,26 @@ void World::addSurroundingChunksToGenerateFaces(const Chunk* chunk)
 	int chX = chunk->X;
 	int chY = chunk->Y;
 	int chZ = chunk->Z;
-	for (int dx = -1; dx <= 1; dx++)
+	for (int dx = -1; dx <= 1; dx += 2)
 	{
-		for (int dy = -1; dy <= 1; dy++)
+		for (int dy = -1; dy <= 1; dy += 2)
 		{
-			for (int dz = -1; dz <= 1; dz++)
+			for (int dz = -1; dz <= 1; dz += 2)
 			{
-				if (dx == 0 || dy == 0 || dz == 0)
-				{
-					continue;
-				}
 				Chunk* chunk = Chunk::getChunkAt(chX + dx, chY + dy, chZ + dz);
 				if (chunk)
 				{
 					addChunkToGenerateFaces(chunk);
 				}
 			}
+		}
+	}
+
+	for (Chunk* neighbour : chunk->neighbours)
+	{
+		if (neighbour)
+		{
+			addChunkToGenerateFaces(neighbour);
 		}
 	}
 }
@@ -1194,7 +1198,6 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	int globalY = y + Y * Settings::CHUNK_SIZE;
 	int globalZ = z + Z * Settings::CHUNK_SIZE;
 
-	// TODO: merge these identical if statements
 	HeightMap* heightMap = TerrainGenerator::getHeightMap(X, Z);
 	int skyLightMaxHeight = heightMap->getSlMHAt(x, z);
 

@@ -100,11 +100,24 @@ void Chunk::generateBlocks()
 	const HeightMap* heightMap = TerrainGenerator::getHeightMap(X, Z);
 	if (Y <= chunkMaxY)
 	{
+		constexpr size_t LOD = 0;
+		constexpr size_t lodMask = (1u << LOD) - 1;
+
 		for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
 		{
+			if ((z & lodMask) > 0)
+			{
+				continue;
+			}
+
 			int globalZ = Z * Settings::CHUNK_SIZE + z;
 			for (size_t x = 0; x < Settings::CHUNK_SIZE; x++)
 			{
+				if ((x & lodMask) > 0)
+				{
+					continue;
+				}
+
 				int globalX = X * Settings::CHUNK_SIZE + x;
 
 				int globalHeight = heightMap->getHeightAt(x, z);
@@ -113,14 +126,47 @@ void Chunk::generateBlocks()
 				size_t height = clamp_int(localHeight, 0, Settings::CHUNK_SIZE);
 				for (size_t y = 0; y < Settings::CHUNK_SIZE; y++)
 				{
+					if ((y & lodMask) > 0)
+					{
+						continue;
+					}
+
 					int globalY = Y * Settings::CHUNK_SIZE + y;
 					Block block = TerrainGenerator::getBlock(globalX, globalY, globalZ, globalHeight, biome);
 					setBlockAtNoSave(x, y, z, block);
-					setLightingAtInBoundaries(x, y, z, 0, false);
+				}
+			}
+		}
+	
+		if constexpr (LOD > 0)
+		{
+			const size_t blocksInChunkRow = 1 << LOD;
+			for (size_t chx = 0; chx < Settings::CHUNK_SIZE; chx += blocksInChunkRow)
+			{
+				for (size_t chy = 0; chy < Settings::CHUNK_SIZE; chy += blocksInChunkRow)
+				{
+					for (size_t chz = 0; chz < Settings::CHUNK_SIZE; chz += blocksInChunkRow)
+					{
+						for (size_t x = 0; x < blocksInChunkRow; x++)
+						{
+							for (size_t y = 0; y < blocksInChunkRow; y++)
+							{
+								for (size_t z = 0; z < blocksInChunkRow; z++)
+								{
+									setBlockAtNoSave
+									(
+										x + chx, y + chy, z + chz, getBlockAtInBoundaries(chx, chy, chz)
+									);
+								}
+							}
+						}
+					}
 				}
 			}
 		}
 	}
+
+
 	Profiler::end(BLOCK_GENERATION_INDEX);
 
 	Profiler::start(CHUNK_LOAD_DATA_INDEX);
