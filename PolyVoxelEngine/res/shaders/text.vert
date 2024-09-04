@@ -1,19 +1,27 @@
 #version 460 core
 layout (location = 0) in vec2 pos;
 
-layout(binding = 2) restrict readonly buffer TransformsSSBO
+struct CharacterData
 {
-	vec4 transforms[];
+    float transform[4];
+    uint textureID;
+};
+
+layout(std430, binding = 2) restrict readonly buffer TextSSBO
+{
+	CharacterData charactersData[];
 };
 
 out vec2 uv;
-flat out uint index;
+flat out uint textureID;
 
 uniform float aspectRatio;
 
 void main()
 {
-    const vec4 transform = transforms[gl_InstanceID];
+    CharacterData data = charactersData[gl_InstanceID];
+
+    const vec4 transform = {data.transform[0], data.transform[1], data.transform[2], data.transform[3]};
     vec2 vertPos = transform.xy + pos.xy * transform.zw;
     vertPos.x /= aspectRatio;
     gl_Position = vec4(vertPos, 0.0f, 1.0f);
@@ -21,5 +29,5 @@ void main()
     uv = pos.xy;
     uv.y = 1.0 - uv.y;
 
-    index = gl_InstanceID;
-}  
+    textureID = data.textureID;
+}

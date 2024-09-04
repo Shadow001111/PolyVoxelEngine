@@ -6,10 +6,8 @@ unsigned int TextRenderer::spaceAdvance = 0;
 VAO* TextRenderer::textVAO = nullptr;
 VBO* TextRenderer::textVBO = nullptr;
 unsigned int TextRenderer::textureArray = 0;
-glm::vec4 TextRenderer::transforms[TEXT_SSBO_SIZE] = {};
-unsigned int TextRenderer::letterIndexes[TEXT_SSBO_SIZE] = {};
-SSBO* TextRenderer::transformsSSBO = nullptr;
-SSBO* TextRenderer::letterIndexesSSBO = nullptr;
+RenderCharacterData TextRenderer::renderCharactersData[TEXT_SSBO_SIZE] = {};
+SSBO* TextRenderer::textSSBO = nullptr;
 
 size_t TextRenderer::fontSize = 32;
 
@@ -105,10 +103,8 @@ int TextRenderer::init(Shader* textShader)
     textVAO = new VAO();
     textVAO->linkFloat(2, sizeof(glm::vec2));
 
-    transformsSSBO = new SSBO(TEXT_SSBO_SIZE * sizeof(glm::vec4));
-    transformsSSBO->bindBase(2);
-    letterIndexesSSBO = new SSBO(TEXT_SSBO_SIZE * sizeof(unsigned int));
-    letterIndexesSSBO->bindBase(3);
+    textSSBO = new SSBO(sizeof(renderCharactersData));
+    textSSBO->bindBase(2);
 	return 0;
 }
 
@@ -117,8 +113,7 @@ void TextRenderer::destroy()
     glDeleteTextures(1, &textureArray);
     textVAO->clean(); delete textVAO;
     textVBO->clean(); delete textVBO;
-    transformsSSBO->clean(); delete transformsSSBO;
-    letterIndexesSSBO->clean(); delete letterIndexesSSBO;
+    textSSBO->clean(); delete textSSBO;
 }
 
 void TextRenderer::beforeTextRender()
@@ -253,15 +248,15 @@ void TextRenderer::renderText(const std::string& text, float x, float y, float s
             float posX = textX + ch.bearing.x * scale;
             float posY = textY - (fontSize - ch.bearing.y) * scale;
 
-            transforms[renderCharacterIndex] = { posX, posY, fontSize * scale, fontSize * scale };
-            letterIndexes[renderCharacterIndex] = ch.textureID;
+            auto& data = renderCharactersData[renderCharacterIndex];
+            data.transform = { posX, posY, fontSize * scale, fontSize * scale };
+            data.textureID = ch.textureID;
 
             textX += ch.advance * scale;
             renderCharacterIndex++;
         }
 
-        transformsSSBO->setData((const char*)transforms, renderCharacterIndex * sizeof(glm::vec4));
-        letterIndexesSSBO->setData((const char*)letterIndexes, renderCharacterIndex * sizeof(unsigned int));
+        textSSBO->setData((const char*)renderCharactersData, renderCharacterIndex * sizeof(RenderCharacterData));
 
         glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, renderCharacterIndex);
     }

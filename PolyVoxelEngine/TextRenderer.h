@@ -31,6 +31,12 @@ struct Character
 	unsigned int advance;
 };
 
+struct RenderCharacterData
+{
+	glm::vec4 transform;
+	unsigned int textureID;
+};
+
 constexpr size_t TEXT_SSBO_SIZE = 400;
 
 class TextRenderer
@@ -44,10 +50,8 @@ class TextRenderer
 	static size_t fontSize;
 	static unsigned int textureArray;
 
-	static glm::vec4 transforms[TEXT_SSBO_SIZE];
-	static unsigned int letterIndexes[TEXT_SSBO_SIZE];
-	static SSBO* transformsSSBO;
-	static SSBO* letterIndexesSSBO;
+	static RenderCharacterData renderCharactersData[TEXT_SSBO_SIZE];
+	static SSBO* textSSBO;
 
 	static Shader* textShader;
 public:
