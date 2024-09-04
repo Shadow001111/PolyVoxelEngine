@@ -23,7 +23,7 @@ const float aoValues[4] = float[4]
 );
 #endif
 
-const float extending = 1.01;
+const float extending = 0.03;
 
 uniform mat4 camMatrix;
 
@@ -91,64 +91,76 @@ void main()
 		localPos.y = localPos.x;
 		localPos.x = 1.0;
 		localPos.z = unpackedSize.y - localPos.z;
-		#ifndef Z_PRE_PASS
-		uv = uv.yx;
-		#endif
 
 		const vec2 center = unpackedSize * 0.5f;
-		localPos.yz = (localPos.yz - center) * extending + center;
+		localPos.yz += normalize(localPos.yz - center) * extending;
+
+		#ifndef Z_PRE_PASS
+		uv = uv.yx;
+		uv += normalize(uv - center) * extending;
+		#endif
 	}
 	else if (normalID == 1) // left
 	{
 		localPos.xy = localPos.yx;
-		#ifndef Z_PRE_PASS
-		uv = uv.yx;
-		#endif
 
 		const vec2 center = unpackedSize * 0.5f;
-		localPos.yz = (localPos.yz - center) * extending + center;
+		localPos.yz += normalize(localPos.yz - center) * extending;
+
+		#ifndef Z_PRE_PASS
+		uv = uv.yx;
+		uv += normalize(uv - center) * extending;
+		#endif
 	}
 	else if (normalID == 2) // up
 	{
 		localPos.y = 1.0;
-		#ifndef Z_PRE_PASS
-		uv.y = unpackedSize.y - uv.y;
-		#endif
 
 		const vec2 center = unpackedSize * 0.5f;
-		localPos.xz = (localPos.xz - center) * extending + center;
+		localPos.xz += normalize(localPos.xz - center) * extending;
+
+		#ifndef Z_PRE_PASS
+		uv.y = unpackedSize.y - uv.y;
+		uv += normalize(uv - center) * extending;
+		#endif
 	}
 	else if (normalID == 3) // down
 	{
 		localPos.x = unpackedSize.x - localPos.x;
-		#ifndef Z_PRE_PASS
-		uv.x = unpackedSize.x - uv.x;
-		#endif
 
 		const vec2 center = unpackedSize * 0.5f;
-		localPos.xz = (localPos.xz - center) * extending + center;
+		localPos.xz += normalize(localPos.xz - center) * extending;
+
+		#ifndef Z_PRE_PASS
+		uv.x = unpackedSize.x - uv.x;
+		uv += normalize(uv - center) * extending;
+		#endif
 	}
 	else if (normalID == 4) // front
 	{
 		localPos.y = localPos.z;
 		localPos.z = 1.0;
 		localPos.x = unpackedSize.x - localPos.x;
-		#ifndef Z_PRE_PASS
-		uv.x = unpackedSize.x - uv.x;
-		#endif
 
 		const vec2 center = unpackedSize * 0.5f;
-		localPos.xy = (localPos.xy - center) * extending + center;
+		localPos.xy += normalize(localPos.xy - center) * extending;
+
+		#ifndef Z_PRE_PASS
+		uv.x = unpackedSize.x - uv.x;
+		uv += normalize(uv - center) * extending;
+		#endif
 	}
 	else // back
 	{
 		localPos.zy = localPos.yz;
-		#ifndef Z_PRE_PASS
-		uv.x = unpackedSize.x - uv.x;
-		#endif
 
 		const vec2 center = unpackedSize * 0.5f;
-		localPos.xy = (localPos.xy - center) * extending + center;
+		localPos.xy += normalize(localPos.xy - center) * extending;
+
+		#ifndef Z_PRE_PASS
+		uv.x = unpackedSize.x - uv.x;
+		uv += normalize(uv - center) * extending;
+		#endif
 	}
 
 	#ifndef Z_PRE_PASS

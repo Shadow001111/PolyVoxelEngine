@@ -396,7 +396,7 @@ void Player::keyCallback(int key, int scancode, int action, int mods)
 	}
 
 	// NUMPAD
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		if (key == GLFW_KEY_KP_0 + i)
 		{
