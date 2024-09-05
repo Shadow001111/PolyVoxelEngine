@@ -1301,7 +1301,12 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	int localY = y;
 	Chunk* chunk_ = chunk;
 
-	//int maxIterations = std::max(0, globalY - skyLightMaxHeight) - !blockData.transparent;
+	int maxIterations = skyLightMaxHeight == INT_MIN ? 0 : std::max(0, globalY - skyLightMaxHeight) - !blockData.transparent;
+	auto& floodFillVector = fillLightPower == 0 ? Chunk::darknessFloodFillQueue : Chunk::lightingFloodFillQueue;
+	if (maxIterations > 0)
+	{
+		floodFillVector.reserve(floodFillVector.size() + maxIterations);
+	}
 	
 	int iterations = 0;
 	while (true)
@@ -1323,7 +1328,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 			break;
 		}
 
-		(fillLightPower == 0 ? Chunk::darknessFloodFillQueue : Chunk::lightingFloodFillQueue).emplace_back
+		floodFillVector.emplace_back
 		(
 			globalX,
 			localY + chunk_->Y * Settings::CHUNK_SIZE,
@@ -1333,6 +1338,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 
 		iterations++;
 	}
+
 	if (findNewSLMH)
 	{
 		if (chunk_)
