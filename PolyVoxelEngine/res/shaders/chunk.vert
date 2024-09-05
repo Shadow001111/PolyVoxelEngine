@@ -86,54 +86,48 @@ void main()
 	uv = localPos.xz;
 	#endif
 	
+	const vec2 center = unpackedSize * 0.5f;
+
 	if (normalID == 0) // right
 	{
 		localPos.y = localPos.x;
 		localPos.x = 1.0;
 		localPos.z = unpackedSize.y - localPos.z;
 
-		const vec2 center = unpackedSize * 0.5f;
 		localPos.yz += normalize(localPos.yz - center) * extending;
 
 		#ifndef Z_PRE_PASS
 		uv = uv.yx;
-		uv += normalize(uv - center) * extending;
 		#endif
 	}
 	else if (normalID == 1) // left
 	{
 		localPos.xy = localPos.yx;
 
-		const vec2 center = unpackedSize * 0.5f;
 		localPos.yz += normalize(localPos.yz - center) * extending;
 
 		#ifndef Z_PRE_PASS
 		uv = uv.yx;
-		uv += normalize(uv - center) * extending;
 		#endif
 	}
 	else if (normalID == 2) // up
 	{
 		localPos.y = 1.0;
 
-		const vec2 center = unpackedSize * 0.5f;
 		localPos.xz += normalize(localPos.xz - center) * extending;
 
 		#ifndef Z_PRE_PASS
 		uv.y = unpackedSize.y - uv.y;
-		uv += normalize(uv - center) * extending;
 		#endif
 	}
 	else if (normalID == 3) // down
 	{
 		localPos.x = unpackedSize.x - localPos.x;
 
-		const vec2 center = unpackedSize * 0.5f;
 		localPos.xz += normalize(localPos.xz - center) * extending;
 
 		#ifndef Z_PRE_PASS
 		uv.x = unpackedSize.x - uv.x;
-		uv += normalize(uv - center) * extending;
 		#endif
 	}
 	else if (normalID == 4) // front
@@ -142,28 +136,25 @@ void main()
 		localPos.z = 1.0;
 		localPos.x = unpackedSize.x - localPos.x;
 
-		const vec2 center = unpackedSize * 0.5f;
 		localPos.xy += normalize(localPos.xy - center) * extending;
 
 		#ifndef Z_PRE_PASS
 		uv.x = unpackedSize.x - uv.x;
-		uv += normalize(uv - center) * extending;
 		#endif
 	}
 	else // back
 	{
 		localPos.zy = localPos.yz;
-
-		const vec2 center = unpackedSize * 0.5f;
 		localPos.xy += normalize(localPos.xy - center) * extending;
 
 		#ifndef Z_PRE_PASS
 		uv.x = unpackedSize.x - uv.x;
-		uv += normalize(uv - center) * extending;
 		#endif
 	}
 
 	#ifndef Z_PRE_PASS
+	uv += normalize(uv - center) * extending;
+
 	gottenAOValues[0] = aoValues[ao & 3];
 	gottenAOValues[1] = aoValues[(ao >> 2) & 3];
 	gottenAOValues[2] = aoValues[(ao >> 4) & 3];

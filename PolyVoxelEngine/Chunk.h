@@ -5,7 +5,6 @@
 #include "Shapes.h"
 #include <unordered_map>
 #include <unordered_set>
-#include <queue>
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -112,8 +111,8 @@ public:
 	static FaceInstancesVBO* faceInstancesVBO;
 	static std::unordered_map<int, Chunk*> chunkMap;
 
-	static std::queue<Light> lightingFloodFillQueue;
-	static std::queue<Light> darknessFloodFillQueue;
+	static std::vector<Light> lightingFloodFillQueue;
+	static std::vector<Light> darknessFloodFillQueue;
 	static std::vector<LightUpdate> lightingUpdateVector;
 
 	bool hasAnyFaces = false; // Removing it doesnt change class size

@@ -865,10 +865,9 @@ void World::lightingFloodFill()
 	std::unordered_set<glm::ivec3, Int3> alreadyCheckedBlock;
 	std::unordered_set<glm::ivec3, Int3> alreadyCheckedSky;
 	auto& needToCheck = Chunk::lightingFloodFillQueue;
-	while (!needToCheck.empty())
+	for (size_t i = 0; i < needToCheck.size(); i++)
 	{
-		auto light = needToCheck.front();
-		needToCheck.pop();
+		auto light = needToCheck[i];
 		int x = light.pos.x;
 		int y = light.pos.y;
 		int z = light.pos.z;
@@ -903,14 +902,16 @@ void World::lightingFloodFill()
 
 		if (light.power != 0)
 		{
-			needToCheck.emplace(x + 1, y, z, light.power, blockOrSky);
-			needToCheck.emplace(x - 1, y, z, light.power, blockOrSky);
-			needToCheck.emplace(x, y + 1, z, light.power, blockOrSky);
-			needToCheck.emplace(x, y - 1, z, light.power, blockOrSky);
-			needToCheck.emplace(x, y, z + 1, light.power, blockOrSky);
-			needToCheck.emplace(x, y, z - 1, light.power, blockOrSky);
+			//needToCheck.reserve(needToCheck.size() + 6);
+			needToCheck.emplace_back(x + 1, y, z, light.power, blockOrSky);
+			needToCheck.emplace_back(x - 1, y, z, light.power, blockOrSky);
+			needToCheck.emplace_back(x, y + 1, z, light.power, blockOrSky);
+			needToCheck.emplace_back(x, y - 1, z, light.power, blockOrSky);
+			needToCheck.emplace_back(x, y, z + 1, light.power, blockOrSky);
+			needToCheck.emplace_back(x, y, z - 1, light.power, blockOrSky);
 		}
 	}
+	needToCheck.clear();
 }
 
 void World::darknessFloodFill()
@@ -918,10 +919,9 @@ void World::darknessFloodFill()
 	std::unordered_set<glm::ivec3, Int3> alreadyCheckedBlock;
 	std::unordered_set<glm::ivec3, Int3> alreadyCheckedSky;
 	auto& needToCheck = Chunk::darknessFloodFillQueue;
-	while (!needToCheck.empty())
+	for (size_t i = 0; i < needToCheck.size(); i++)
 	{
-		auto light = needToCheck.front();
-		needToCheck.pop();
+		auto light = needToCheck[i];
 		int x = light.pos.x;
 		int y = light.pos.y;
 		int z = light.pos.z;
@@ -950,7 +950,7 @@ void World::darknessFloodFill()
 		}
 		else if (light.power < prevLight)
 		{
-			Chunk::lightingFloodFillQueue.emplace(x, y, z, prevLight, blockOrSky);
+			Chunk::lightingFloodFillQueue.emplace_back(x, y, z, prevLight, blockOrSky);
 			continue;
 		}
 		light.power--;
@@ -959,14 +959,15 @@ void World::darknessFloodFill()
 
 		if (light.power != 0)
 		{
-			needToCheck.emplace(x + 1, y, z, light.power, blockOrSky);
-			needToCheck.emplace(x - 1, y, z, light.power, blockOrSky);
-			needToCheck.emplace(x, y + 1, z, light.power, blockOrSky);
-			needToCheck.emplace(x, y - 1, z, light.power, blockOrSky);
-			needToCheck.emplace(x, y, z + 1, light.power, blockOrSky);
-			needToCheck.emplace(x, y, z - 1, light.power, blockOrSky);
+			needToCheck.emplace_back(x + 1, y, z, light.power, blockOrSky);
+			needToCheck.emplace_back(x - 1, y, z, light.power, blockOrSky);
+			needToCheck.emplace_back(x, y + 1, z, light.power, blockOrSky);
+			needToCheck.emplace_back(x, y - 1, z, light.power, blockOrSky);
+			needToCheck.emplace_back(x, y, z + 1, light.power, blockOrSky);
+			needToCheck.emplace_back(x, y, z - 1, light.power, blockOrSky);
 		}
 	}
+	needToCheck.clear();
 }
 
 void World::updateLighting()
@@ -1034,7 +1035,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 			int offY = y + offsets[1];
 			int offZ = z + offsets[2];
 
-			Chunk::lightingFloodFillQueue.emplace(
+			Chunk::lightingFloodFillQueue.emplace_back(
 				offX + X * Settings::CHUNK_SIZE,
 				offY + Y * Settings::CHUNK_SIZE,
 				offZ + Z * Settings::CHUNK_SIZE,
@@ -1046,7 +1047,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 
 		if (blockData.transparent)
 		{
-			Chunk::lightingFloodFillQueue.emplace(
+			Chunk::lightingFloodFillQueue.emplace_back(
 				x + X * Settings::CHUNK_SIZE,
 				y + Y * Settings::CHUNK_SIZE,
 				z + Z * Settings::CHUNK_SIZE,
@@ -1070,7 +1071,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 			int offY = y + offsets[1];
 			int offZ = z + offsets[2];
 
-			Chunk::darknessFloodFillQueue.emplace(
+			Chunk::darknessFloodFillQueue.emplace_back(
 				offX + X * Settings::CHUNK_SIZE,
 				offY + Y * Settings::CHUNK_SIZE,
 				offZ + Z * Settings::CHUNK_SIZE,
@@ -1081,7 +1082,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 		}
 		if (prevBlockData.transparent)
 		{
-			Chunk::darknessFloodFillQueue.emplace(
+			Chunk::darknessFloodFillQueue.emplace_back(
 				x + X * Settings::CHUNK_SIZE,
 				y + Y * Settings::CHUNK_SIZE,
 				z + Z * Settings::CHUNK_SIZE,
@@ -1132,7 +1133,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 			int offX = x + offsets[0];
 			int offY = y + offsets[1];
 			int offZ = z + offsets[2];
-			Chunk::lightingFloodFillQueue.emplace(
+			Chunk::lightingFloodFillQueue.emplace_back(
 				offX + X * Settings::CHUNK_SIZE,
 				offY + Y * Settings::CHUNK_SIZE,
 				offZ + Z * Settings::CHUNK_SIZE,
@@ -1162,7 +1163,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 					uint8_t lighting = chunk->getLightingAtSideCheck(offX, offY, offZ, side) & 15;
 					if (lighting < prevLighting)
 					{
-						Chunk::darknessFloodFillQueue.emplace(
+						Chunk::darknessFloodFillQueue.emplace_back(
 							offX + X * Settings::CHUNK_SIZE,
 							offY + Y * Settings::CHUNK_SIZE,
 							offZ + Z * Settings::CHUNK_SIZE,
@@ -1199,7 +1200,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	int globalZ = z + Z * Settings::CHUNK_SIZE;
 
 	HeightMap* heightMap = TerrainGenerator::getHeightMap(X, Z);
-	int skyLightMaxHeight = heightMap->getSlMHAt(x, z);
+	const int skyLightMaxHeight = heightMap->getSlMHAt(x, z);
 
 	uint8_t fillLightPower = 0;
 	bool findNewSLMH = false;
@@ -1238,7 +1239,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 		{
 			size_t axis = maxLightingSide >> 1;
 			offsets[axis] = (maxLightingSide & 1) ? -1 : 1;
-			Chunk::lightingFloodFillQueue.emplace(
+			Chunk::lightingFloodFillQueue.emplace_back(
 				globalX + offsets[0],
 				globalY + offsets[1],
 				globalZ + offsets[2],
@@ -1252,7 +1253,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 		}
 		fillLightPower = 15;
 		findNewSLMH = true;
-		Chunk::lightingFloodFillQueue.emplace(
+		Chunk::lightingFloodFillQueue.emplace_back(
 			globalX, globalY, globalZ,
 			fillLightPower, true
 		);
@@ -1277,7 +1278,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 					uint8_t lighting = chunk->getLightingAtSideCheck(offX, offY, offZ, side) >> 4;
 					if (lighting < prevLighting) // && lighting > 0  it will always be higher than zero
 					{
-						Chunk::darknessFloodFillQueue.emplace(
+						Chunk::darknessFloodFillQueue.emplace_back(
 							globalX + offsets[0],
 							globalY + offsets[1],
 							globalZ + offsets[2],
@@ -1299,6 +1300,10 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	// fill column with light value
 	int localY = y;
 	Chunk* chunk_ = chunk;
+
+	//int maxIterations = std::max(0, globalY - skyLightMaxHeight) - !blockData.transparent;
+	
+	int iterations = 0;
 	while (true)
 	{
 		localY--;
@@ -1318,13 +1323,15 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 			break;
 		}
 
-		(fillLightPower == 0 ? Chunk::darknessFloodFillQueue : Chunk::lightingFloodFillQueue).emplace
+		(fillLightPower == 0 ? Chunk::darknessFloodFillQueue : Chunk::lightingFloodFillQueue).emplace_back
 		(
 			globalX,
 			localY + chunk_->Y * Settings::CHUNK_SIZE,
 			globalZ,
 			15, true
 		);
+
+		iterations++;
 	}
 	if (findNewSLMH)
 	{
