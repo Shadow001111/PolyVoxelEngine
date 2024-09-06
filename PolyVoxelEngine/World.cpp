@@ -235,12 +235,14 @@ void World::update(const glm::vec3& pos, bool isMoving)
 		Chunk::lightingUpdateVector.shrink_to_fit();
 		Chunk::lightingFloodFillVector.shrink_to_fit();
 		Chunk::darknessFloodFillVector.shrink_to_fit();
+		chunkGenerateVector.shrink_to_fit();
 	}
 }
 
 void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 {
-	size_t generateCount = chunkGenerateQueue.size();
+	size_t generateCount = chunkGenerateVector.size();
+	const size_t chunksCount = chunkGenerateVector.size();
 	sortGenerateChunksQueueTick++;
 	if (generateCount == 0)
 	{
@@ -252,41 +254,42 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 	if (sortGenerateChunksQueueTick > 20)
 	{
 		sortGenerateChunksQueueTick = 0;
-		// sort queue
-		std::vector<ChunkDistance> chunks;
-		chunks.reserve(chunkGenerateQueue.size());
-		while (!chunkGenerateQueue.empty())
-		{
-			Chunk* chunk = chunkGenerateQueue.front();
-			chunkGenerateQueue.pop();
 
+		// sort chunks in ascending order by distance
+		// later chunks will be generated from back to front
+		std::vector<ChunkDistance> chunkDistances;
+		chunkDistances.reserve(chunksCount);
+
+		for (Chunk* chunk : chunkGenerateVector)
+		{
 			float X = chunk->X * Settings::CHUNK_SIZE;
 			float Y = chunk->Y * Settings::CHUNK_SIZE;
 			float Z = chunk->Z * Settings::CHUNK_SIZE;
 			float distance = glm::distance2({ X, Y, Z }, pos);
-			chunks.emplace_back(chunk, distance);
+			chunkDistances.emplace_back(chunk, distance);
 		}
 
-		std::sort(chunks.begin(), chunks.end(), [&](const ChunkDistance& a, const ChunkDistance& b)
+		std::sort(chunkDistances.begin(), chunkDistances.end(), [&](const ChunkDistance& a, const ChunkDistance& b)
 		{
-			return a.distance < b.distance;
+			return a.distance > b.distance;
 		});
 
-		for (const ChunkDistance& pair : chunks)
+		for (size_t i = 0; i < chunksCount; i++)
 		{
-			chunkGenerateQueue.push(pair.chunk);
+			chunkGenerateVector[i] = chunkDistances[i].chunk;
 		}
 	}
 
 	// generate
-	for (size_t i = 0; i < generateCount; i++)
+	const int range = int(chunksCount - generateCount);
+	for (int i = chunksCount - 1; i >= range; i--)
 	{
-		Chunk* chunk = chunkGenerateQueue.front();
-		chunkGenerateQueue.pop();
+		Chunk* chunk = chunkGenerateVector[i];
 		chunk->generateBlocks();
 		addChunkToGenerateFaces(chunk);
 		addSurroundingChunksToGenerateFaces(chunk);
 	}
+	chunkGenerateVector.resize(chunksCount - generateCount);
 }
 
 void World::generateChunksFaces()
@@ -624,7 +627,7 @@ bool World::loadChunks(int x, int y, int z, bool forced)
 				}
 
 				chunk = getChunk(x + dx, y + dy, z + dz);
-				chunkGenerateQueue.push(chunk);
+				chunkGenerateVector.push_back(chunk);
 			}
 		} 
 	}
@@ -726,7 +729,7 @@ void World::regenerateChunks()
 		Chunk* chunk = pair.second;
 		chunk->destroy();
 		chunk->init(chunk->X, chunk->Y, chunk->Z);
-		chunkGenerateQueue.push(chunk);
+		chunkGenerateVector.push_back(chunk);
 	}
 }
 

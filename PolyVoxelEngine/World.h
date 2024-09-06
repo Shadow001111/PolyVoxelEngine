@@ -56,7 +56,7 @@ class World
 	glm::ivec3 lastPlayerLoadChunkPos;
 	uint8_t sortGenerateChunksQueueTick = 9999999;
 
-	std::queue<Chunk*> chunkGenerateQueue;
+	std::vector<Chunk*> chunkGenerateVector;
 	std::unordered_set<Chunk*> generateFacesSet;
 
 	std::unordered_map<int, std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_SIZE_CUBED>>> temporalChunkBlockChanges;
