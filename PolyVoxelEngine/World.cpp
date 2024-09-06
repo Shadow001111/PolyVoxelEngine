@@ -225,11 +225,23 @@ void World::update(const glm::vec3& pos, bool isMoving)
 	float angle = (float)time / 24000.0f * 2.0f * M_PI;
 	GraphicController::chunkProgram->bind();
 	GraphicController::chunkProgram->setUniformFloat("dayNightCycleSkyLightingSubtraction", (cosf(angle) + 1.0f) * 0.5f);
+
+	// shrinking vectors
+	dataShrinkingTick++;
+	if (dataShrinkingTick > 20)
+	{
+		dataShrinkingTick = 0;
+
+		Chunk::lightingUpdateVector.shrink_to_fit();
+		Chunk::lightingFloodFillVector.shrink_to_fit();
+		Chunk::darknessFloodFillVector.shrink_to_fit();
+	}
 }
 
 void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 {
 	size_t generateCount = chunkGenerateQueue.size();
+	sortGenerateChunksQueueTick++;
 	if (generateCount == 0)
 	{
 		return;
@@ -237,7 +249,6 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 	generateCount = std::min(generateCount, size_t(isMoving ? DynamicSettings::generateChunksPerTickMoving : DynamicSettings::generateChunksPerTickStationary));
 
 	// sort
-	sortGenerateChunksQueueTick++;
 	if (sortGenerateChunksQueueTick > 20)
 	{
 		sortGenerateChunksQueueTick = 0;
@@ -1118,16 +1129,20 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 					maxLightingSide = side;
 				}
 			}
-			else if (blockData.lightPower >= maxLighting)
+			else if (blockData.lightPower > 0 && blockData.lightPower >= maxLighting)
 			{
-				maxLighting = blockData.lightPower;
+				maxLighting = blockData.lightPower + 1;
 				maxLightingSide = 6;
 			}
 			offsets[axis] = 0;
 		}
 		if (maxLighting > 1)
 		{
-			if (maxLightingSide < 6)
+			if (maxLightingSide == 6)
+			{
+				maxLighting--;
+			}
+			else
 			{
 				size_t axis = maxLightingSide >> 1;
 				offsets[axis] = (maxLightingSide & 1) ? -1 : 1;

@@ -166,7 +166,6 @@ void Chunk::generateBlocks()
 		}
 	}
 
-
 	Profiler::end(BLOCK_GENERATION_INDEX);
 
 	Profiler::start(CHUNK_LOAD_DATA_INDEX);
@@ -194,12 +193,12 @@ void Chunk::generateBlocks()
 				{
 					if (globalY < slmh)
 					{
-						darknessFloodFillVector.emplace_back(
-							globalX, globalY, globalZ,
-							15, true
-						);
+						lightingMap[getIndex(x, y, z)] = 0;
 					}
-					lightingMap[getIndex(x, y, z)] = 240;
+					else
+					{
+						lightingMap[getIndex(x, y, z)] = 240;
+					}
 				}
 				else
 				{
@@ -208,6 +207,8 @@ void Chunk::generateBlocks()
 			}
 		}
 	}
+
+	// get lighting from neighbours
 	for (int x = -1; x <= Settings::CHUNK_SIZE; x += (Settings::CHUNK_SIZE + 1))
 	{
 		int globalX = x + X * Settings::CHUNK_SIZE;
@@ -274,6 +275,7 @@ void Chunk::generateBlocks()
 				}
 			}
 		}
+
 	Profiler::end(CHUNK_LIGHTING_INDEX);
 }
 

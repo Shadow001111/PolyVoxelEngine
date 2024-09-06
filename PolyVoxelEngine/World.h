@@ -54,7 +54,7 @@ class World
 	Chunk** chunkPool = nullptr;
 	size_t chunkPoolIndex = 0;
 	glm::ivec3 lastPlayerLoadChunkPos;
-	int sortGenerateChunksQueueTick = 9999999;
+	uint8_t sortGenerateChunksQueueTick = 9999999;
 
 	std::queue<Chunk*> chunkGenerateQueue;
 	std::unordered_set<Chunk*> generateFacesSet;
@@ -73,6 +73,9 @@ class World
 	DrawArraysIndirectCommand* drawCommands = nullptr;
 	glm::vec3* chunkPositions = nullptr;
 	unsigned int* chunkPositionIndexes = nullptr;
+
+	uint8_t dataShrinkingTick = 0;
+
 
 	Chunk* getChunk(int x, int y, int z);
 	void releaseChunk(Chunk* chunk);
