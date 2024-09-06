@@ -243,6 +243,7 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 		sortGenerateChunksQueueTick = 0;
 		// sort queue
 		std::vector<ChunkDistance> chunks;
+		chunks.reserve(chunkGenerateQueue.size());
 		while (!chunkGenerateQueue.empty())
 		{
 			Chunk* chunk = chunkGenerateQueue.front();
@@ -864,7 +865,7 @@ void World::lightingFloodFill()
 {
 	std::unordered_set<glm::ivec3, Int3> alreadyCheckedBlock;
 	std::unordered_set<glm::ivec3, Int3> alreadyCheckedSky;
-	auto& needToCheck = Chunk::lightingFloodFillQueue;
+	auto& needToCheck = Chunk::lightingFloodFillVector;
 	for (size_t i = 0; i < needToCheck.size(); i++)
 	{
 		auto light = needToCheck[i];
@@ -890,11 +891,11 @@ void World::lightingFloodFill()
 		{
 			// check if cell was already checked
 			auto& alreadyChecked = blockOrSky ? alreadyCheckedSky : alreadyCheckedBlock;
-			if (alreadyChecked.find(light.pos) != alreadyChecked.end())
+			auto result = alreadyChecked.insert(light.pos);
+			if (!result.second)
 			{
 				continue;
 			}
-			alreadyChecked.insert(light.pos);
 		}
 
 		setLightingAt(x, y, z, light.power, blockOrSky);
@@ -918,7 +919,7 @@ void World::darknessFloodFill()
 {
 	std::unordered_set<glm::ivec3, Int3> alreadyCheckedBlock;
 	std::unordered_set<glm::ivec3, Int3> alreadyCheckedSky;
-	auto& needToCheck = Chunk::darknessFloodFillQueue;
+	auto& needToCheck = Chunk::darknessFloodFillVector;
 	for (size_t i = 0; i < needToCheck.size(); i++)
 	{
 		auto light = needToCheck[i];
@@ -936,11 +937,11 @@ void World::darknessFloodFill()
 
 		// check if cell was already checked
 		auto& alreadyChecked = blockOrSky ? alreadyCheckedSky : alreadyCheckedBlock;
-		if (alreadyChecked.find(light.pos) != alreadyChecked.end())
+		auto result = alreadyChecked.insert(light.pos);
+		if (!result.second)
 		{
 			continue;
 		}
-		alreadyChecked.insert(light.pos);
 
 		// comparing lighting
 		uint8_t prevLight = (getLightingAt(x, y, z) >> (4 * blockOrSky)) & 15;
@@ -950,7 +951,7 @@ void World::darknessFloodFill()
 		}
 		else if (light.power < prevLight)
 		{
-			Chunk::lightingFloodFillQueue.emplace_back(x, y, z, prevLight, blockOrSky);
+			Chunk::lightingFloodFillVector.emplace_back(x, y, z, prevLight, blockOrSky);
 			continue;
 		}
 		light.power--;
@@ -959,6 +960,7 @@ void World::darknessFloodFill()
 
 		if (light.power != 0)
 		{
+			//needToCheck.reserve(needToCheck.size() + 6);
 			needToCheck.emplace_back(x + 1, y, z, light.power, blockOrSky);
 			needToCheck.emplace_back(x - 1, y, z, light.power, blockOrSky);
 			needToCheck.emplace_back(x, y + 1, z, light.power, blockOrSky);
@@ -1035,7 +1037,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 			int offY = y + offsets[1];
 			int offZ = z + offsets[2];
 
-			Chunk::lightingFloodFillQueue.emplace_back(
+			Chunk::lightingFloodFillVector.emplace_back(
 				offX + X * Settings::CHUNK_SIZE,
 				offY + Y * Settings::CHUNK_SIZE,
 				offZ + Z * Settings::CHUNK_SIZE,
@@ -1047,7 +1049,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 
 		if (blockData.transparent)
 		{
-			Chunk::lightingFloodFillQueue.emplace_back(
+			Chunk::lightingFloodFillVector.emplace_back(
 				x + X * Settings::CHUNK_SIZE,
 				y + Y * Settings::CHUNK_SIZE,
 				z + Z * Settings::CHUNK_SIZE,
@@ -1071,7 +1073,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 			int offY = y + offsets[1];
 			int offZ = z + offsets[2];
 
-			Chunk::darknessFloodFillQueue.emplace_back(
+			Chunk::darknessFloodFillVector.emplace_back(
 				offX + X * Settings::CHUNK_SIZE,
 				offY + Y * Settings::CHUNK_SIZE,
 				offZ + Z * Settings::CHUNK_SIZE,
@@ -1082,7 +1084,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 		}
 		if (prevBlockData.transparent)
 		{
-			Chunk::darknessFloodFillQueue.emplace_back(
+			Chunk::darknessFloodFillVector.emplace_back(
 				x + X * Settings::CHUNK_SIZE,
 				y + Y * Settings::CHUNK_SIZE,
 				z + Z * Settings::CHUNK_SIZE,
@@ -1133,7 +1135,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 			int offX = x + offsets[0];
 			int offY = y + offsets[1];
 			int offZ = z + offsets[2];
-			Chunk::lightingFloodFillQueue.emplace_back(
+			Chunk::lightingFloodFillVector.emplace_back(
 				offX + X * Settings::CHUNK_SIZE,
 				offY + Y * Settings::CHUNK_SIZE,
 				offZ + Z * Settings::CHUNK_SIZE,
@@ -1163,7 +1165,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 					uint8_t lighting = chunk->getLightingAtSideCheck(offX, offY, offZ, side) & 15;
 					if (lighting < prevLighting)
 					{
-						Chunk::darknessFloodFillQueue.emplace_back(
+						Chunk::darknessFloodFillVector.emplace_back(
 							offX + X * Settings::CHUNK_SIZE,
 							offY + Y * Settings::CHUNK_SIZE,
 							offZ + Z * Settings::CHUNK_SIZE,
@@ -1239,7 +1241,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 		{
 			size_t axis = maxLightingSide >> 1;
 			offsets[axis] = (maxLightingSide & 1) ? -1 : 1;
-			Chunk::lightingFloodFillQueue.emplace_back(
+			Chunk::lightingFloodFillVector.emplace_back(
 				globalX + offsets[0],
 				globalY + offsets[1],
 				globalZ + offsets[2],
@@ -1253,7 +1255,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 		}
 		fillLightPower = 15;
 		findNewSLMH = true;
-		Chunk::lightingFloodFillQueue.emplace_back(
+		Chunk::lightingFloodFillVector.emplace_back(
 			globalX, globalY, globalZ,
 			fillLightPower, true
 		);
@@ -1278,7 +1280,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 					uint8_t lighting = chunk->getLightingAtSideCheck(offX, offY, offZ, side) >> 4;
 					if (lighting < prevLighting) // && lighting > 0  it will always be higher than zero
 					{
-						Chunk::darknessFloodFillQueue.emplace_back(
+						Chunk::darknessFloodFillVector.emplace_back(
 							globalX + offsets[0],
 							globalY + offsets[1],
 							globalZ + offsets[2],
@@ -1302,7 +1304,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	Chunk* chunk_ = chunk;
 
 	int maxIterations = skyLightMaxHeight == INT_MIN ? 0 : std::max(0, globalY - skyLightMaxHeight) - !blockData.transparent;
-	auto& floodFillVector = fillLightPower == 0 ? Chunk::darknessFloodFillQueue : Chunk::lightingFloodFillQueue;
+	auto& floodFillVector = fillLightPower == 0 ? Chunk::darknessFloodFillVector : Chunk::lightingFloodFillVector;
 	if (maxIterations > 0)
 	{
 		floodFillVector.reserve(floodFillVector.size() + maxIterations);
@@ -1390,17 +1392,17 @@ Int3::Int3(int x, int y, int z) : x(x), y(y), z(z)
 {
 }
 
-size_t Int3::operator()(const Int3& pos) const
+size_t Int3::operator()(const Int3& pos) const noexcept
 {
 	return pos3_hash(pos.x, pos.y, pos.z);
 }
 
-size_t Int3::operator()(const glm::ivec3& pos) const
+size_t Int3::operator()(const glm::ivec3& pos) const noexcept
 {
 	return pos3_hash(pos.x, pos.y, pos.z);
 }
 
-bool Int3::operator==(const Int3& pos) const
+bool Int3::operator==(const Int3& pos) const noexcept
 {
-	return (x == pos.x) && (y == pos.y)&& (z == pos.z);
+	return (x == pos.x) && (y == pos.y) && (z == pos.z);
 }

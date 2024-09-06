@@ -12,7 +12,7 @@
 #include "Camera.h"
 #include "Vector.h"
 
-int pos3_hash(int x, int y, int z);
+int pos3_hash(int x, int y, int z) noexcept;
 
 struct DrawCommand
 {
@@ -111,8 +111,8 @@ public:
 	static FaceInstancesVBO* faceInstancesVBO;
 	static std::unordered_map<int, Chunk*> chunkMap;
 
-	static std::vector<Light> lightingFloodFillQueue;
-	static std::vector<Light> darknessFloodFillQueue;
+	static std::vector<Light> lightingFloodFillVector;
+	static std::vector<Light> darknessFloodFillVector;
 	static std::vector<LightUpdate> lightingUpdateVector;
 
 	bool hasAnyFaces = false; // Removing it doesnt change class size

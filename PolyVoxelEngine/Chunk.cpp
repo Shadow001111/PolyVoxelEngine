@@ -10,8 +10,8 @@ Face* Chunk::facesData = nullptr;
 FaceInstanceData* Chunk::faceInstancesData = nullptr;
 FaceInstancesVBO* Chunk::faceInstancesVBO = nullptr;
 std::unordered_map<int, Chunk*> Chunk::chunkMap;
-std::vector<Light> Chunk::lightingFloodFillQueue;
-std::vector<Light> Chunk::darknessFloodFillQueue;
+std::vector<Light> Chunk::lightingFloodFillVector;
+std::vector<Light> Chunk::darknessFloodFillVector;
 std::vector<LightUpdate> Chunk::lightingUpdateVector;
 
 inline constexpr int min_int(int a, int b)
@@ -29,7 +29,7 @@ inline constexpr int clamp_int(int value, int min_, int max_)
 	return min_int(max_, max_int(min_, value));
 }
 
-int pos3_hash(int x, int y, int z)
+int pos3_hash(int x, int y, int z) noexcept
 {
 	constexpr int shift = sizeof(int) * 8 / 3;
 	constexpr int mod = (1 << shift) - 1;
@@ -194,7 +194,7 @@ void Chunk::generateBlocks()
 				{
 					if (globalY < slmh)
 					{
-						darknessFloodFillQueue.emplace_back(
+						darknessFloodFillVector.emplace_back(
 							globalX, globalY, globalZ,
 							15, true
 						);
@@ -221,7 +221,7 @@ void Chunk::generateBlocks()
 				uint8_t lighting = getLightingAtSideCheck(x, y, z, x == -1 ? 1 : 0) & 15;
 				if (lighting > 1)
 				{
-					lightingFloodFillQueue.emplace_back
+					lightingFloodFillVector.emplace_back
 					(
 						globalX, globalY, globalZ,
 						lighting, false
@@ -243,7 +243,7 @@ void Chunk::generateBlocks()
 				uint8_t lighting = getLightingAtSideCheck(x, y, z, y == -1 ? 3 : 2) & 15;
 				if (lighting > 1)
 				{
-					lightingFloodFillQueue.emplace_back
+					lightingFloodFillVector.emplace_back
 					(
 						globalX, globalY, globalZ,
 						lighting, false
@@ -265,7 +265,7 @@ void Chunk::generateBlocks()
 					uint8_t lighting = getLightingAtSideCheck(x, y, z, z == -1 ? 5 : 4) & 15;
 					if (lighting > 1)
 					{
-						lightingFloodFillQueue.emplace_back
+						lightingFloodFillVector.emplace_back
 						(
 							globalX, globalY, globalZ,
 							lighting, false

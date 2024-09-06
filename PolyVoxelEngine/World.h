@@ -35,9 +35,9 @@ struct Int3
 
 	Int3();
 	Int3(int x, int y, int z);
-	size_t operator()(const Int3& pos) const;
-	size_t operator()(const glm::ivec3& pos) const;
-	bool operator==(const Int3& pos) const;
+	size_t operator()(const Int3& pos) const noexcept;
+	size_t operator()(const glm::ivec3& pos) const noexcept;
+	bool operator==(const Int3& pos) const noexcept;
 };
 
 struct WorldData
