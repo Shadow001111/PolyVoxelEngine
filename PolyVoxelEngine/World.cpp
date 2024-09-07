@@ -241,14 +241,13 @@ void World::update(const glm::vec3& pos, bool isMoving)
 
 void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 {
-	size_t generateCount = chunkGenerateVector.size();
 	const size_t chunksCount = chunkGenerateVector.size();
 	sortGenerateChunksQueueTick++;
-	if (generateCount == 0)
+	if (chunksCount == 0)
 	{
 		return;
 	}
-	generateCount = std::min(generateCount, size_t(isMoving ? DynamicSettings::generateChunksPerTickMoving : DynamicSettings::generateChunksPerTickStationary));
+	const size_t generateCount = std::min(chunksCount, size_t(isMoving ? DynamicSettings::generateChunksPerTickMoving : DynamicSettings::generateChunksPerTickStationary));
 
 	// sort
 	if (sortGenerateChunksQueueTick > 20)

@@ -39,8 +39,8 @@ struct BlockData
 	bool createFaces = false;
 	bool transparent = false;
 	bool colliding = false;
-	unsigned int textures[6] = { 0, 0, 0, 0, 0, 0 };
 	uint8_t lightPower = 0;
+	unsigned int textures[6] = { 0, 0, 0, 0, 0, 0 };
 };
 
 extern const BlockData ALL_BLOCK_DATA[(size_t)Block::Count];
