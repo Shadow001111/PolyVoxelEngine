@@ -127,9 +127,9 @@ void Game::run()
 	//
 	std::string guiPerfomanceText;
 
-	const std::string debugViewModeNames[4] =
+	const std::string debugViewModeNames[5] =
 	{
-		"Normal", "Light", "Polygon", "Black"
+		"Normal", "Light", "Polygon", "Black", "FullLight"
 	};
 
 	float frameDelay;

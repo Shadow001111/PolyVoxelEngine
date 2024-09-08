@@ -387,16 +387,20 @@ void Player::keyCallback(int key, int scancode, int action, int mods)
 	}
 	else if (key == GLFW_KEY_P)
 	{
-		GraphicController::zPrePass ^= 1;
+		GraphicController::zPrePass = !GraphicController::zPrePass;
 		std::cout << "zPrePass: " << std::to_string(GraphicController::zPrePass) << std::endl;
 	}
 	else if (key == GLFW_KEY_U)
 	{
 		physicEntity.world->regenerateChunks();
 	}
+	else if (key == GLFW_KEY_V)
+	{
+		physicEntity.collisionEnabled = !physicEntity.collisionEnabled;
+	}
 
 	// NUMPAD
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 5; i++)
 	{
 		if (key == GLFW_KEY_KP_0 + i)
 		{

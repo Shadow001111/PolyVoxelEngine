@@ -22,7 +22,7 @@ namespace Settings
 	const std::string WORLD_DATA_PATH = worldPath + "/data.bin";
 	
 	// Chunk
-	constexpr int CHUNK_LOAD_RADIUS = 8;
+	constexpr int CHUNK_LOAD_RADIUS = 4;
 	constexpr int CHUNK_SIZE = 16;
 	constexpr size_t MAX_ENTITIES_PER_CHUNK = 256;
 

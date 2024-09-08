@@ -15,6 +15,7 @@ public:
 	bool isGrounded = false;
 
 	bool gravityEnabled = true;
+	bool collisionEnabled = true;
 	float airResistanceMultiplier = 1.0f;
 
 	PhysicEntity(glm::vec3 position, glm::vec3 colliderSize, glm::vec3 colliderDpos);

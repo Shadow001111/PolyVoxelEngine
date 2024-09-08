@@ -44,6 +44,10 @@ void main()
 	{
 		color = vec4(0.0, 0.0, 0.0, 1.0);
 	}
+	else if (debugViewMode == 4)
+	{
+		color = texture(diffuse0, vec3(uv, textureID));
+	}
 	else
 	{
 		color = texture(diffuse0, vec3(uv, textureID));

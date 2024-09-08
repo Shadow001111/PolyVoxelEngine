@@ -146,21 +146,21 @@ Block TerrainGenerator::getBlock(int x, int y, int z, int height, Biome biome)
 	}
 	else if (y < height - 10)
 	{
-		return Block::Stone;
+		return IsCave(x, y, z) ? Block::Air : Block::Stone;
 	}
 	else if (y < height)
 	{
 		int level = mountainStoneLevel + sinf((x + z) * mountainStoneLevelVariationFreq) * mountainStoneLevelVariationAmpl;
-		return y < level ? Block::Dirt : Block::Stone;
+		return y < level ? Block::Dirt : (IsCave(x, y, z) ? Block::Air : Block::Stone);
 	}
 	return Block::Stone;
 }
 
 bool TerrainGenerator::IsCave(int x, int y, int z)
 {
-	return false;
 	// TODO: few chunks are 'closed' because caves are too frequent
-	return fabsf(noise(x * 0.02f + 0.1f, y * 0.02f - 0.33423f, z * 0.02f + 0.2344f)) < 0.2f;
+	float cheese = getLayeredNoise3D(x, y, z, 3, 1.0f, 0.02f, 0.5f, 2.0f, 0.0f, 0.0f, 0.0f);
+	return cheese < 0.5f;
 }
 
 Biome TerrainGenerator::getBiome(int chunkX, int chunkZ)

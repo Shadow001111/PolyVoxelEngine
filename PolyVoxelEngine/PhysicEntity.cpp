@@ -45,76 +45,83 @@ void PhysicEntity::physicUpdate(float dt)
 	// movement and collision
 	glm::vec3 dpos = velocity * dt;
 
-	glm::uvec3 axisPointSamples = glm::ceil(colliderSize) + 1.0f;
-	glm::uvec3 axisCheckTimes = glm::ceil(glm::abs(dpos));
-	isGrounded = false;
-
-	glm::vec3 colliderPosition = position + colliderDpos;
-
-	for (size_t axis = 0; axis < 3; axis++)
+	if (collisionEnabled)
 	{
-		size_t j = (axis + 1) % 3;
-		size_t k = (j + 1) % 3;
-		float jIncr = colliderSize[j] * 2.0f / (axisPointSamples[j] - 1);
-		float kIncr = colliderSize[k] * 2.0f / (axisPointSamples[k] - 1);
+		glm::uvec3 axisPointSamples = glm::ceil(colliderSize) + 1.0f;
+		glm::uvec3 axisCheckTimes = glm::ceil(glm::abs(dpos));
+		isGrounded = false;
 
-		glm::vec3 axisSize = { 0.0f, 0.0f, 0.0f };
-		axisSize[axis] = colliderSize[axis];
+		glm::vec3 colliderPosition = position + colliderDpos;
 
-		bool isColliding = false;
-		float dposStep = dpos[axis] / axisCheckTimes[axis];
-		bool dposStepSign = dposStep > 0.0f;
-		for (unsigned int axisCheckI = 0; (axisCheckI < axisCheckTimes[axis]) && !isColliding; axisCheckI++)
+		for (size_t axis = 0; axis < 3; axis++)
 		{
-			colliderPosition[axis] += dposStep;
+			size_t j = (axis + 1) % 3;
+			size_t k = (j + 1) % 3;
+			float jIncr = colliderSize[j] * 2.0f / (axisPointSamples[j] - 1);
+			float kIncr = colliderSize[k] * 2.0f / (axisPointSamples[k] - 1);
 
-			isColliding = false;
-			for (unsigned int j_ = 0; (j_ < axisPointSamples[j]) && !isColliding; j_++)
+			glm::vec3 axisSize = { 0.0f, 0.0f, 0.0f };
+			axisSize[axis] = colliderSize[axis];
+
+			bool isColliding = false;
+			float dposStep = dpos[axis] / axisCheckTimes[axis];
+			bool dposStepSign = dposStep > 0.0f;
+			for (unsigned int axisCheckI = 0; (axisCheckI < axisCheckTimes[axis]) && !isColliding; axisCheckI++)
 			{
-				axisSize[j] = -colliderSize[j] + j_ * jIncr;
-				for (unsigned int k_ = 0; k_ < axisPointSamples[k]; k_++)
+				colliderPosition[axis] += dposStep;
+
+				isColliding = false;
+				for (unsigned int j_ = 0; (j_ < axisPointSamples[j]) && !isColliding; j_++)
 				{
-					axisSize[k] = -colliderSize[k] + k_ * kIncr;
+					axisSize[j] = -colliderSize[j] + j_ * jIncr;
+					for (unsigned int k_ = 0; k_ < axisPointSamples[k]; k_++)
+					{
+						axisSize[k] = -colliderSize[k] + k_ * kIncr;
 
-					glm::ivec3 voxelPos;
-					if (dposStepSign)
-					{
-						voxelPos = glm::floor(colliderPosition + axisSize);
-					}
-					else
-					{
-						voxelPos = glm::floor(colliderPosition - axisSize);
-					}
+						glm::ivec3 voxelPos;
+						if (dposStepSign)
+						{
+							voxelPos = glm::floor(colliderPosition + axisSize);
+						}
+						else
+						{
+							voxelPos = glm::floor(colliderPosition - axisSize);
+						}
 
-					Block block = world->getBlockAt(voxelPos.x, voxelPos.y, voxelPos.z);
-					if (ALL_BLOCK_DATA[(size_t)block].colliding)
-					{
-						isColliding = true;
-						break;
+						Block block = world->getBlockAt(voxelPos.x, voxelPos.y, voxelPos.z);
+						if (ALL_BLOCK_DATA[(size_t)block].colliding)
+						{
+							isColliding = true;
+							break;
+						}
 					}
 				}
 			}
+
+			if (isColliding)
+			{
+				if (dposStepSign)
+				{
+					colliderPosition[axis] = floorf(colliderPosition[axis] + colliderSize[axis]) - (colliderSize[axis] + 1e-3f);
+				}
+				else
+				{
+					colliderPosition[axis] = ceilf(colliderPosition[axis] - colliderSize[axis]) + (colliderSize[axis] + 1e-3f);
+					if (axis == 1)
+					{
+						isGrounded = true;
+					}
+				}
+				velocity[axis] = 0.0f;
+			}
 		}
 
-		if (isColliding)
-		{
-			if (dposStepSign)
-			{
-				colliderPosition[axis] = floorf(colliderPosition[axis] + colliderSize[axis]) - (colliderSize[axis] + 1e-3f);
-			}
-			else
-			{
-				colliderPosition[axis] = ceilf(colliderPosition[axis] - colliderSize[axis]) + (colliderSize[axis] + 1e-3f);
-				if (axis == 1)
-				{
-					isGrounded = true;
-				}
-			}
-			velocity[axis] = 0.0f;
-		}
+		position = colliderPosition - colliderDpos;
 	}
-
-	position = colliderPosition - colliderDpos;
+	else
+	{
+		position += dpos;
+	}
 
 	// move to other chunk
 	{
