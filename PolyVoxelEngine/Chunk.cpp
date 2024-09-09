@@ -431,18 +431,12 @@ char Chunk::getAO(int x, int y, int z, char side, const char* packOffsets) const
 
 size_t Chunk::getIndex(size_t x, size_t y, size_t z)
 {
-	//return x + y * Settings::CHUNK_SIZE + z * Settings::CHUNK_SIZE_SQUARED;
 	constexpr size_t shift = floorlog2(Settings::CHUNK_SIZE);
 	return x | (y << shift) | (z << (shift << 1));
 }
 
 SizeT3 Chunk::getCoordinatesByIndex(size_t index)
 {
-	/*size_t z = index / Settings::CHUNK_SIZE_SQUARED;
-	size_t index_xy = index - z * Settings::CHUNK_SIZE_SQUARED;
-	size_t y = index_xy / Settings::CHUNK_SIZE;
-	size_t x = index_xy - y * Settings::CHUNK_SIZE;
-	return SizeT3(x, y, z);*/
 	constexpr size_t shift = floorlog2(Settings::CHUNK_SIZE);
 	return 
 	{
