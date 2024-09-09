@@ -1,5 +1,7 @@
 #include "SimplexNoise.h"
 #include <iostream>
+#include <numeric>
+#include <random>
 
 inline int fastfloor(float x)
 {
@@ -125,9 +127,9 @@ float SimplexNoise::noise(float xin, float yin, float zin) const
     float x2 = x0 - i2 + 2.0f * G3;
     float y2 = y0 - j2 + 2.0f * G3;
     float z2 = z0 - k2 + 2.0f * G3;
-    float x3 = x0 - 1.0f + 3.0f * G3;
-    float y3 = y0 - 1.0f + 3.0f * G3;
-    float z3 = z0 - 1.0f + 3.0f * G3;
+    float x3 = x0 + (3.0f * G3 - 1.0f);
+    float y3 = y0 + (3.0f * G3 - 1.0f);
+    float z3 = z0 + (3.0f * G3 - 1.0f);
 
     int gi0 = getPerm(i + getPerm(j + getPerm(k))) % 12;
     int gi1 = getPerm(i + i1 + getPerm(j + j1 + getPerm(k + k1))) % 12;
@@ -169,7 +171,7 @@ float SimplexNoise::noise(float xin, float yin, float zin) const
     return 32.0f * (n0 + n1 + n2 + n3);
 }
 
-unsigned char SimplexNoise::getPerm(int index) const
+unsigned char SimplexNoise::getPerm(unsigned char index) const
 {
-    return perm[index & 255];
+    return perm[index];
 }

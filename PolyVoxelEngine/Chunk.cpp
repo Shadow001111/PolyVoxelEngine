@@ -39,6 +39,7 @@ int pos3_hash(int x, int y, int z) noexcept
 Chunk::Chunk(unsigned int ID) : blocks{}, lightingMap{}, X(0), Y(0), Z(0), neighbours{ nullptr, nullptr, nullptr, nullptr, nullptr, nullptr }
 {
 	drawCommand.offset = unsigned int(ID * Settings::FACE_INSTANCES_PER_CHUNK);
+	blocksCount = 0;
 }
 
 Chunk::~Chunk()
@@ -82,11 +83,6 @@ void Chunk::destroy()
 void Chunk::generateBlocks()
 {
 	Profiler::start(BLOCK_GENERATION_INDEX);
-	blocksCount = 0;
-	for (size_t i = 0; i < Settings::CHUNK_SIZE_CUBED; i++)
-	{
-		blocks[i] = Block::Air;
-	}
 
 	Biome biome = TerrainGenerator::getBiome(X, Z);
 	int chunkMaxY;
@@ -98,39 +94,21 @@ void Chunk::generateBlocks()
 	}
 
 	const HeightMap* heightMap = TerrainGenerator::getHeightMap(X, Z);
+
+	constexpr size_t LOD = 0;
+	constexpr size_t coordShift = 1u << LOD;
 	if (Y <= chunkMaxY)
 	{
-		constexpr size_t LOD = 0;
-		constexpr size_t lodMask = (1u << LOD) - 1;
-
-		for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
+		for (size_t z = 0; z < Settings::CHUNK_SIZE; z += coordShift)
 		{
-			if ((z & lodMask) > 0)
-			{
-				continue;
-			}
-
 			int globalZ = Z * Settings::CHUNK_SIZE + z;
-			for (size_t x = 0; x < Settings::CHUNK_SIZE; x++)
+			for (size_t x = 0; x < Settings::CHUNK_SIZE; x += coordShift)
 			{
-				if ((x & lodMask) > 0)
-				{
-					continue;
-				}
-
 				int globalX = X * Settings::CHUNK_SIZE + x;
 
 				int globalHeight = heightMap->getHeightAt(x, z);
-				int localHeight = globalHeight - Y * Settings::CHUNK_SIZE;
-
-				size_t height = clamp_int(localHeight, 0, Settings::CHUNK_SIZE);
-				for (size_t y = 0; y < Settings::CHUNK_SIZE; y++)
+				for (size_t y = 0; y < Settings::CHUNK_SIZE; y += coordShift)
 				{
-					if ((y & lodMask) > 0)
-					{
-						continue;
-					}
-
 					int globalY = Y * Settings::CHUNK_SIZE + y;
 					Block block = TerrainGenerator::getBlock(globalX, globalY, globalZ, globalHeight, biome);
 					setBlockAtNoSave(x, y, z, block);
@@ -161,6 +139,19 @@ void Chunk::generateBlocks()
 							}
 						}
 					}
+				}
+			}
+		}
+	}
+	else
+	{
+		for (size_t x = 0; x < Settings::CHUNK_SIZE; x++)
+		{
+			for (size_t y = 0; y < Settings::CHUNK_SIZE; y++)
+			{
+				for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
+				{
+					setBlockAtNoSave(x, y, z, Block::Air);
 				}
 			}
 		}
