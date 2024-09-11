@@ -1,8 +1,7 @@
 #pragma once
 #include <chrono>
-#include <unordered_map>
 #include <cstdint>
-#include <glm/glm.hpp>
+#include <glm/ext/vector_float3.hpp>
 
 struct ProfilerData
 {
@@ -11,15 +10,16 @@ struct ProfilerData
 };
 
 constexpr size_t PROFILER_MEMORY_TABLE_SIZE = 50;
-constexpr size_t PROFILER_SAMPLES_COUNT = 7;
+constexpr size_t PROFILER_SAMPLES_COUNT = 8;
 
-#define BLOCK_GENERATION_INDEX 0
-#define BLOCK_LIGHT_UPDATE_INDEX 1
-#define SKY_LIGHT_UPDATE_INDEX 2
-#define MESH_GENERATION_INDEX 3
-#define LOAD_CHUNKS_INDEX 4
-#define CHUNK_LOAD_DATA_INDEX 5
-#define CHUNK_LIGHTING_INDEX 6
+constexpr size_t BLOCK_GENERATION_INDEX = 0;
+constexpr size_t BLOCK_LIGHT_UPDATE_INDEX = 1;
+constexpr size_t SKY_LIGHT_UPDATE_INDEX = 2;
+constexpr size_t MESH_GENERATION_INDEX = 3;
+constexpr size_t LOAD_CHUNKS_INDEX = 4;
+constexpr size_t CHUNK_LOAD_DATA_INDEX = 5;
+constexpr size_t CHUNK_LIGHTING_INDEX = 6;
+constexpr size_t NOISE_3D_INDEX = 7;
 
 constexpr float PROFILER_DRAW_WIDTH = 0.5f;
 constexpr float PROFILER_DRAW_HEIGHT = 0.5f;

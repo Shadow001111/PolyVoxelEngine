@@ -9,14 +9,14 @@ struct Box
 	Box(glm::vec3 center, glm::vec3 extents);
 };
 
-struct Sphere
-{
-	glm::vec3 center;
-	float radius;
-
-	Sphere();
-	Sphere(glm::vec3 center, float radius);
-};
+//struct Sphere
+//{
+//	glm::vec3 center;
+//	float radius;
+//
+//	Sphere();
+//	Sphere(glm::vec3 center, float radius);
+//};
 
 struct Plane
 {
@@ -28,5 +28,5 @@ struct Plane
 
 inline float distanceToPlane(const glm::vec3& point, const Plane& plane);
 
-bool isSphereOnOrForwardPlane(const Sphere& sphere, const Plane& plane);
+//bool isSphereOnOrForwardPlane(const Sphere& sphere, const Plane& plane);
 bool isBoxOnOrForwardPlane(const Box& box, const Plane& plane);

@@ -32,6 +32,5 @@ int calcVolume(int radius)
 
 float calculateFogDensity(float distance, float fogGradient)
 {
-	float fogDensity = powf(-logf(1e-8f), 1.0f / fogGradient) / distance;
-	return fogDensity;
+	return powf(-logf(1e-8f), 1.0f / fogGradient) / distance;
 }

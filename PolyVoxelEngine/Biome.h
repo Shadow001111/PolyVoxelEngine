@@ -1,7 +1,6 @@
 #pragma once
-#include <cstdint>
 
-enum class Biome : uint8_t
+enum class Biome : char
 {
 	Grass,
 	Tundra,

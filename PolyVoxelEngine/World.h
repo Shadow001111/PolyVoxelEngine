@@ -51,7 +51,7 @@ class World
 	Chunk** chunkPool = nullptr;
 	size_t chunkPoolIndex = 0;
 	glm::ivec3 lastPlayerLoadChunkPos;
-	uint8_t sortGenerateChunksQueueTick = 9999999;
+	uint8_t sortGenerateChunksQueueTick = (uint8_t)20;
 
 	std::vector<Chunk*> chunkGenerateVector;
 	std::unordered_set<Chunk*> generateFacesSet;

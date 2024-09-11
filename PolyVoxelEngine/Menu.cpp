@@ -1,20 +1,22 @@
 #include "Menu.h"
 #include <chrono>
 #include <thread>
+#include "GraphicController.h"
+#include "Game.h"
 
-void menuKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+static void menuKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	Menu* menu = (Menu*)glfwGetWindowUserPointer(window);
 	menu->keyCallback(key, scancode, action, mods);
 }
 
-void menuMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+static void menuMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
 	Menu* menu = (Menu*)glfwGetWindowUserPointer(window);
 	menu->mouseButtonCallback(button, action);
 }
 
-void menuScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+static void menuScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	Menu* menu = (Menu*)glfwGetWindowUserPointer(window);
 	menu->scrollCallback(yoffset);

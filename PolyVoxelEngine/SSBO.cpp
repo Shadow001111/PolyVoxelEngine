@@ -8,7 +8,7 @@ SSBO::SSBO(size_t size)
 	glBufferData(GL_SHADER_STORAGE_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
 }
 
-void SSBO::setData(const char* data, size_t size)
+void SSBO::setData(const char* data, size_t size) const
 {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ID);
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, size, data);

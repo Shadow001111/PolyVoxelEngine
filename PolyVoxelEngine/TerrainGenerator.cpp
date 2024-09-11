@@ -1,7 +1,7 @@
 #include "TerrainGenerator.h"
-#include <cmath>
 #include "settings.h"
-#include <algorithm>
+#include "Profiler.h"
+#include <iostream>
 
 SimplexNoise* TerrainGenerator::simplexNoise = nullptr;
 std::unordered_map<int, HeightMap*> TerrainGenerator::heightMaps;
@@ -104,7 +104,10 @@ float TerrainGenerator::noise(float x, float y)
 
 float TerrainGenerator::noise(float x, float y, float z)
 {
-	return simplexNoise->noise(x, y, z);
+	Profiler::start(NOISE_3D_INDEX);
+	float value = simplexNoise->noise(x, y, z);
+	Profiler::end(NOISE_3D_INDEX);
+	return value;
 }
 
 HeightMap* TerrainGenerator::getHeightMap(int chunkX, int chunkZ)
@@ -125,11 +128,6 @@ Block TerrainGenerator::getBlock(int x, int y, int z, int height, Biome biome)
 	constexpr int mountainStoneLevel = 130;
 	constexpr float mountainStoneLevelVariationAmpl = 5.0f;
 	constexpr float mountainStoneLevelVariationFreq = 0.1f;
-
-	if (y > height)
-	{
-		return Block::Air;
-	}
 
 	if (y == height)
 	{

@@ -1,11 +1,8 @@
 #pragma once
 #include <glad/glad.h>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <cerrno>
 #include <unordered_map>
-#include <glm/glm.hpp>
+#include <glm/fwd.hpp>
+#include <string>
 
 std::vector<std::string> splitString(const std::string& input, char delimiter = ' ');
 

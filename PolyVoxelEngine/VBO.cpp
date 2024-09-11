@@ -1,9 +1,8 @@
 #include "VBO.h"
 #include <glad/glad.h>
 
-VBO::VBO()
-{
-}
+VBO::VBO() : ID(0)
+{}
 
 VBO::VBO(const char* data, size_t size, unsigned int usage) : ID(0)
 {

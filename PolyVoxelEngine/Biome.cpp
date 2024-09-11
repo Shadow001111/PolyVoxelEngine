@@ -1,5 +1,4 @@
 #include "Biome.h"
-#include <float.h>
 
 const BiomePoint biomePoints[(size_t)Biome::Count] =
 {
@@ -20,7 +19,7 @@ const BiomeData biomeData[(size_t)Biome::Count] =
 Biome getBiomeByTH(float temperature, float humidity)
 {
 	Biome closest = Biome::Grass;
-	float minDistance2 = FLT_MAX;
+	float minDistance2 = 9999999999999999.0f;
 	for (const auto& point : biomePoints)
 	{
 		float dt = temperature - point.temperature;

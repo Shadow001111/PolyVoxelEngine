@@ -1,4 +1,6 @@
-#include"Camera.h"
+#include "Camera.h"
+#include "GraphicController.h"
+#include <glm/gtc/matrix_transform.hpp>
 
 glm::vec3 Camera::GlobalUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -71,15 +73,15 @@ bool Camera::isOnFrustum(const Box& shape) const
 	);
 }
 
-bool Camera::isOnFrustum(const Sphere& shape) const
-{
-	return 
-	(
-		isSphereOnOrForwardPlane(shape, frustum.near)  &&
-		isSphereOnOrForwardPlane(shape, frustum.far)   &&
-		isSphereOnOrForwardPlane(shape, frustum.right) &&
-		isSphereOnOrForwardPlane(shape, frustum.left)  &&
-		isSphereOnOrForwardPlane(shape, frustum.top)   &&
-		isSphereOnOrForwardPlane(shape, frustum.bottom)
-	);
-}
+//bool Camera::isOnFrustum(const Sphere& shape) const
+//{
+//	return 
+//	(
+//		isSphereOnOrForwardPlane(shape, frustum.near)  &&
+//		isSphereOnOrForwardPlane(shape, frustum.far)   &&
+//		isSphereOnOrForwardPlane(shape, frustum.right) &&
+//		isSphereOnOrForwardPlane(shape, frustum.left)  &&
+//		isSphereOnOrForwardPlane(shape, frustum.top)   &&
+//		isSphereOnOrForwardPlane(shape, frustum.bottom)
+//	);
+//}

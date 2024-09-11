@@ -13,22 +13,22 @@ std::vector<Light> Chunk::lightingFloodFillVector;
 std::vector<Light> Chunk::darknessFloodFillVector;
 std::vector<LightUpdate> Chunk::lightingUpdateVector;
 
-inline constexpr int min_int(int a, int b)
+static inline constexpr int min_int(int a, int b)
 {
 	return a < b ? a : b;
 }
 
-inline constexpr int max_int(int a, int b)
+static inline constexpr int max_int(int a, int b)
 {
 	return a > b ? a : b;
 }
 
-inline constexpr int clamp_int(int value, int min_, int max_)
+static inline constexpr int clamp_int(int value, int min_, int max_)
 {
 	return min_int(max_, max_int(min_, value));
 }
 
-constexpr size_t floorlog2(size_t x)
+static constexpr size_t floorlog2(size_t x)
 {
 	return x == 1 ? 0 : 1 + floorlog2(x >> 1);
 }
@@ -44,6 +44,10 @@ Chunk::Chunk(unsigned int ID) : blocks{}, lightingMap{}, X(0), Y(0), Z(0), neigh
 {
 	drawCommand.offset = unsigned int(ID * Settings::FACE_INSTANCES_PER_CHUNK);
 	blocksCount = 0;
+	for (size_t i = 0; i < Settings::CHUNK_SIZE_CUBED; i++)
+	{
+		blocks[i] = Block::Air;
+	}
 }
 
 Chunk::~Chunk()
@@ -99,21 +103,21 @@ void Chunk::generateBlocks()
 
 	const HeightMap* heightMap = TerrainGenerator::getHeightMap(X, Z);
 
-	constexpr size_t LOD = 0;
-	constexpr size_t coordShift = 1u << LOD;
 	if (Y <= chunkMaxY)
 	{
+		constexpr size_t LOD = 0;
+		constexpr size_t coordShift = (size_t)1 << LOD;
 		for (size_t z = 0; z < Settings::CHUNK_SIZE; z += coordShift)
 		{
-			int globalZ = Z * Settings::CHUNK_SIZE + z;
+			int globalZ = Z * Settings::CHUNK_SIZE + (int)z;
 			for (size_t x = 0; x < Settings::CHUNK_SIZE; x += coordShift)
 			{
-				int globalX = X * Settings::CHUNK_SIZE + x;
+				int globalX = X * Settings::CHUNK_SIZE + (int)x;
 
 				int globalHeight = heightMap->getHeightAt(x, z);
 				for (size_t y = 0; y < Settings::CHUNK_SIZE; y += coordShift)
 				{
-					int globalY = Y * Settings::CHUNK_SIZE + y;
+					int globalY = Y * Settings::CHUNK_SIZE + (int)y;
 					Block block = TerrainGenerator::getBlock(globalX, globalY, globalZ, globalHeight, biome);
 					setBlockAtNoSave(x, y, z, block);
 				}
@@ -122,7 +126,7 @@ void Chunk::generateBlocks()
 	
 		if constexpr (LOD > 0)
 		{
-			const size_t blocksInChunkRow = 1 << LOD;
+			const size_t blocksInChunkRow = (size_t)1 << LOD;
 			for (size_t chx = 0; chx < Settings::CHUNK_SIZE; chx += blocksInChunkRow)
 			{
 				for (size_t chy = 0; chy < Settings::CHUNK_SIZE; chy += blocksInChunkRow)
@@ -299,11 +303,11 @@ void Chunk::generateFaces()
 	};
 
 	// get grid face  data
-	for (int x = 0; x < Settings::CHUNK_SIZE; x++)
+	for (size_t x = 0; x < Settings::CHUNK_SIZE; x++)
 	{
-		for (int y = 0; y < Settings::CHUNK_SIZE; y++)
+		for (size_t y = 0; y < Settings::CHUNK_SIZE; y++)
 		{
-			for (int z = 0; z < Settings::CHUNK_SIZE; z++)
+			for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
 			{
 				Block block = getBlockAtInBoundaries(x, y, z);
 				BlockData blockData = ALL_BLOCK_DATA[(size_t)block];
@@ -320,9 +324,9 @@ void Chunk::generateFaces()
 					size_t planeIndex = normalID >> 1;
 					offsets[planeIndex] = ((normalID & 1 ^ 1) << 1) - 1;
 
-					const int offX = x + offsets[0];
-					const int offY = y + offsets[1];
-					const int offZ = z + offsets[2];
+					const int offX = (int)x + offsets[0];
+					const int offY = (int)y + offsets[1];
+					const int offZ = (int)z + offsets[2];
 
 					Block faceBlock = getBlockAtSideCheck(offX, offY, offZ, normalID);
 					if (faceBlock != Block::Void && faceBlock != block && ALL_BLOCK_DATA[(size_t)faceBlock].transparent)
@@ -357,7 +361,7 @@ void Chunk::generateFaces()
 	}
 }
 
-void Chunk::updateFacesData()
+void Chunk::updateFacesData() const
 {
 	for (size_t i = 0; i < 6; i++)
 	{
@@ -541,7 +545,7 @@ char Chunk::getAOandSmoothLighting(bool maxAO, int x, int y, int z, size_t side,
 
 	if (maxAO)
 	{
-		return 255;
+		return (char)255;
 	}
 
 	char ao0 = ba + bb + bc;

@@ -21,7 +21,7 @@ Spline::Spline(const char* filepath)
 		return;
 	}
 
-	unsigned int count;
+	unsigned int count = 0;
 	file.read(reinterpret_cast<char*>(&count), sizeof(count));
 	if (count == 0)
 	{

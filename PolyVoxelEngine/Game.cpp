@@ -77,21 +77,21 @@ struct Tick
 	}
 };
 
-void gameKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+static void gameKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	Game* game = (Game*)glfwGetWindowUserPointer(window);
 	Player* player = game->player;
 	player->keyCallback(key, scancode, action, mods);
 }
 
-void gameMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+static void gameMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
 	Game* game = (Game*)glfwGetWindowUserPointer(window);
 	Player* player = game->player;
 	player->mouseButtonCallback(button, action);
 }
 
-void gameScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+static void gameScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	Game* game = (Game*)glfwGetWindowUserPointer(window);
 	Player* player = game->player;

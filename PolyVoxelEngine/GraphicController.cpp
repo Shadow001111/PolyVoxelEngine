@@ -1,6 +1,7 @@
 #include "GraphicController.h"
 #include "settings.h"
 #include <stb/stb_image.h>
+#include <iostream>
 
 int GraphicController::width = 0;
 int GraphicController::height = 0;
@@ -21,7 +22,7 @@ int GraphicController::gameMaxFps = 0;
 GameSettings GraphicController::gameSettings;
 bool GraphicController::zPrePass = false;
 
-void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
+static void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 {
 	GraphicController::resizeWindow(width, height);
 }

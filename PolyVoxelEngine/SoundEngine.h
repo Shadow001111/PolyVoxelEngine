@@ -1,7 +1,6 @@
 #pragma once
 #include <AL/al.h>
-#include <AL/alc.h>]
-#include <iostream>
+#include <AL/alc.h>
 #include <vector>
 
 class SoundSource
@@ -15,7 +14,7 @@ public:
 	SoundSource();
 	~SoundSource();
 
-	void load(const std::string& path);
+	void load(const char* path);
 	void play() const;
 	void stop() const;
 	void pause() const;

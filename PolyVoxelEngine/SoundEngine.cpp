@@ -1,8 +1,6 @@
 #include "SoundEngine.h"
 #include <sndfile.h>
-#include <thread>
-#include <chrono>
-#include <GLFW/glfw3.h>
+#include <iostream>
 
 std::vector<SoundSource*> SoundSource::soundSources;
 
@@ -26,10 +24,10 @@ SoundSource::~SoundSource()
     clean();
 }
 
-void SoundSource::load(const std::string& path)
+void SoundSource::load(const char* path)
 {
     SF_INFO sfInfo;
-    SNDFILE* sndFile = sf_open(path.c_str(), SFM_READ, &sfInfo);
+    SNDFILE* sndFile = sf_open(path, SFM_READ, &sfInfo);
     if (!sndFile)
     {
         std::cerr << "Failed to open sound file: " << path << std::endl;

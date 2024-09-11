@@ -1,12 +1,7 @@
 #pragma once
-#include<glad/glad.h>
-#include "GraphicController.h"
-#include<glm/gtc/matrix_transform.hpp>
-#include<glm/gtc/type_ptr.hpp>
-#include<glm/gtx/rotate_vector.hpp>
-#include<glm/gtx/vector_angle.hpp>
 #include "Shader.h"
 #include "Shapes.h"
+#include <GLFW/glfw3.h>
 
 #undef far
 #undef near
@@ -53,6 +48,6 @@ public:
 	void passPositionToShader(Shader* shader, const char* uniform) const;
 
 	bool isOnFrustum(const Box& shape) const;
-	bool isOnFrustum(const Sphere& shape) const;
+	//bool isOnFrustum(const Sphere& shape) const;
 };
 

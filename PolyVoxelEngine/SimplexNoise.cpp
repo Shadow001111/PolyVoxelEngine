@@ -1,19 +1,18 @@
 #include "SimplexNoise.h"
-#include <iostream>
 #include <numeric>
 #include <random>
 
-inline int fastfloor(float x)
+static inline int fastfloor(float x)
 {
     return x > 0 ? (int)x : (int)x - 1;
 }
 
-inline float dot(const int* g, float x, float y)
+static inline float dot(const int* g, float x, float y)
 {
     return g[0] * x + g[1] * y;
 }
 
-inline float dot(const int* g, float x, float y, float z)
+static inline float dot(const int* g, float x, float y, float z)
 {
     return g[0] * x + g[1] * y + g[2] * z;
 }

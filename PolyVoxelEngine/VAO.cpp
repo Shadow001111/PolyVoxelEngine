@@ -1,5 +1,4 @@
 #include "VAO.h"
-#include "VBO.h"
 #include <glad/glad.h>
 
 VAO::VAO() : ID(0)

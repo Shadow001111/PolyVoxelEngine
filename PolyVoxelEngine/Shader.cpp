@@ -1,6 +1,9 @@
 #include "Shader.h"
 #include <glm/gtc/type_ptr.hpp>
+#include <iostream>
+#include <fstream>
 #include <sstream>
+#include <cerrno>
 
 std::vector<std::string> splitString(const std::string& input, char delimiter)
 {

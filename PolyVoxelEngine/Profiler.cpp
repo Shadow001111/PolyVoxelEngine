@@ -1,5 +1,4 @@
 #include "Profiler.h"
-#include <iostream>
 
 ProfilerData Profiler::profilerData[PROFILER_SAMPLES_COUNT];
 uint16_t Profiler::memoryTable[PROFILER_MEMORY_TABLE_SIZE][PROFILER_SAMPLES_COUNT] = {};
@@ -15,7 +14,8 @@ const std::string profilerSamplesNames[PROFILER_SAMPLES_COUNT] =
 	"MeshGeneration",
 	"LoadChunks",
 	"ChunkLoadData",
-	"ChunkLighting"
+	"ChunkLighting",
+	"Noise3D"
 };
 
 const glm::vec3 profilerSamplesColors[PROFILER_SAMPLES_COUNT] =
@@ -23,10 +23,13 @@ const glm::vec3 profilerSamplesColors[PROFILER_SAMPLES_COUNT] =
 	{1.0f, 0.0f, 0.0f},
 	{0.0f, 1.0f, 0.0f},
 	{0.0f, 0.0f, 1.0f},
+
 	{1.0f, 1.0f, 0.0f},
 	{0.0f, 1.0f, 1.0f},
 	{1.0f, 0.0f, 1.0f},
-	{0.5f, 0.5f, 0.5f}
+
+	{0.5f, 0.5f, 0.5f},
+	{1.0f, 1.0f, 1.0f}
 };
 
 void Profiler::start(size_t index)

@@ -1,9 +1,9 @@
 #include "Player.h"
-#include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtx/compatibility.hpp>
 #include "SoundEngine.h"
+#include "GraphicController.h"
 
-constexpr int intCeil(float x_)
+static constexpr int intCeil(float x_)
 {
 	int x = (int)x_;
 	return x < x_ ? x + 1 : x;

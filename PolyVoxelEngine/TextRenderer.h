@@ -1,13 +1,13 @@
 #pragma once
-#include <ft2build.h>
 #include <freetype/freetype.h>
-#include <glm/glm.hpp>
 #include <unordered_map>
 #include "Shader.h"
 #include "VAO.h"
 #include "VBO.h"
-#include "GraphicController.h"
 #include "SSBO.h"
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
 enum class AligmentX : char
 {

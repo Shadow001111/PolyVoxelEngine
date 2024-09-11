@@ -8,7 +8,7 @@ IndirectBuffer::IndirectBuffer(size_t count) : ID(0)
 	glBufferData(GL_DRAW_INDIRECT_BUFFER, count * sizeof(DrawArraysIndirectCommand), nullptr, GL_DYNAMIC_DRAW);
 }
 
-void IndirectBuffer::setData(const DrawArraysIndirectCommand* data, size_t count)
+void IndirectBuffer::setData(const DrawArraysIndirectCommand* data, size_t count) const
 {
 	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, ID);
 	glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, count * sizeof(DrawArraysIndirectCommand), data);

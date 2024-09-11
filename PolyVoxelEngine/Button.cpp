@@ -1,6 +1,5 @@
 #include "Button.h"
 #include <glad/glad.h>
-#include "GraphicController.h"
 
 struct ButtonVertex
 {
@@ -9,7 +8,8 @@ struct ButtonVertex
 	{}
 };
 
-Button::Button()
+Button::Button() :
+	x(0.0f), y(0.0f), width(0.0f), height(0.0f), label("")
 {}
 
 Button::Button(float x_, float y_, float width, float height, const std::string& label, std::function<void()> onClick, AligmentX aligmentX, AligmentY aligmentY) :

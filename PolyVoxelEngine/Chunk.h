@@ -4,7 +4,8 @@
 #include <unordered_map>
 #include "Block.h"
 #include "Vector.h"
-#include <glm/vec3.hpp>
+#include <glm/ext/vector_int3.hpp>
+#include <glm/ext/vector_float3.hpp>
 
 int pos3_hash(int x, int y, int z) noexcept;
 
@@ -22,12 +23,12 @@ struct DrawCommand
 struct Face
 {
 	bool none = true;
-	bool transparent;
-	char ao;
-	unsigned int textureID;
-	uint8_t lighting;
+	bool transparent = false;
+	char ao = 0;
+	unsigned int textureID = 0;
+	uint8_t lighting = 0;
 #if ENABLE_SMOOTH_LIGHTING
-	uint8_t smoothLighting[4];
+	uint8_t smoothLighting[4] = {0, 0, 0, 0};
 #endif
 
 	bool operator==(const Face& other) const;
@@ -123,7 +124,7 @@ public:
 
 	void generateBlocks();
 	void generateFaces();
-	void updateFacesData();
+	void updateFacesData() const;
 
 	Block getBlockAtInBoundaries(size_t x, size_t y, size_t z) const;
 	bool setBlockAtInBoundaries(size_t x, size_t y, size_t z, Block block);

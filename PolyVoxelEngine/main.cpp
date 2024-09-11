@@ -1,8 +1,10 @@
 #include "Menu.h"
 #include "IniParser.h"
 #include "SoundEngine.h"
+#include "GraphicController.h"
+#include "HardwareUsageInfo.h"
 
-#include "SimplexNoise.h"
+//#include "SimplexNoise.h"
 
 int main()
 {

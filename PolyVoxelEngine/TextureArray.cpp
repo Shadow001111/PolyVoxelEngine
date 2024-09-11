@@ -1,5 +1,6 @@
 #include "TextureArray.h"
-#include "settings.h"
+#include <iostream>
+#include <stb/stb_image.h>
 
 TextureArray::TextureArray(const char* filePath, GLint slot, int textureSize, int rowSize, int texturesCount, int desiredChannels, int textureWrapMode, bool createMipmaps) : ID(0), unit(slot)
 {

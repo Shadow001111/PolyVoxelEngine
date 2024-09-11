@@ -1,7 +1,6 @@
 #include "FBO.h"
 #include <iostream>
 #include <glm/glm.hpp>
-#include "settings.h"
 
 struct FBOVertex
 {

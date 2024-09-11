@@ -50,7 +50,7 @@ class Vector
 
 		if (newCapacity < size)
 		{
-			size = newCapacity;
+			size = (SizeType)newCapacity;
 		}
 		size_t t_size = (size_t)size;
 		for (size_t i = 0; i < t_size; i++)
@@ -61,7 +61,7 @@ class Vector
 
 		::operator delete(data, capacity * sizeof(T));
 		data = newData;
-		capacity = newCapacity;
+		capacity = (SizeType)newCapacity;
 	}
 public:
 	Vector()
