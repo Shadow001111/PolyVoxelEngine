@@ -1,16 +1,10 @@
 #pragma once
-#include <cstdint>
 #include "settings.h"
 #include "FaceInstancesVBO.h"
-#include "Shapes.h"
 #include <unordered_map>
-#include <unordered_set>
-#include <iostream>
-#include <fstream>
-#include <filesystem>
 #include "Block.h"
-#include "Camera.h"
 #include "Vector.h"
+#include <glm/vec3.hpp>
 
 int pos3_hash(int x, int y, int z) noexcept;
 
@@ -147,7 +141,7 @@ public:
 	BlockAndLighting getBlockAndLightingAtSideCheck(int x, int y, int z, size_t side) const;
 	
 	static Chunk* getChunkAt(int x, int y, int z);
-	bool canSideBeSeen(const Camera& camera, size_t side) const;
+	bool canSideBeSeen(const glm::vec3& position, size_t side) const;
 
 	int posHash() const;
 	static size_t getIndex(size_t x, size_t y, size_t z);

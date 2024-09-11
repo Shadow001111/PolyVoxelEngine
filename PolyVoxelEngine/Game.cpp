@@ -5,6 +5,23 @@
 #include "TerrainGenerator.h"
 #include "Profiler.h"
 #include <format>
+#include <thread>
+#include <math.h>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <glm/fwd.hpp>
+#include <glm/gtx/norm.inl>
+#include "GraphicController.h"
+#include "HardwareUsageInfo.h"
+#include "PhysicEntity.h"
+#include "Player.h"
+#include "TextRenderer.h"
+#include "VAO.h"
+#include "VBO.h"
+#include <chrono>
+#include <climits>
+#include <exception>
+#include <string>
 
 struct Tick
 {

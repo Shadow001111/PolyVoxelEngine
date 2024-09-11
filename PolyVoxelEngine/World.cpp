@@ -1,12 +1,12 @@
+#pragma once
 #include "World.h"
 #include <iostream>
 #include <unordered_set>
-#include <chrono>
 #include <glad/glad.h>
 #include "GraphicController.h"
-#include "TimeMeasurer.h"
 #include "TerrainGenerator.h"
 #include "Profiler.h"
+#include <filesystem>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -774,7 +774,7 @@ void World::getDrawCommands(const std::vector<ChunkDistance>& renderChunks, cons
 		for (size_t normalID = 0; normalID < 6; normalID++)
 		{
 			GLuint facesCount = command.facesCount[normalID + normalOffset];
-			if (facesCount > 0 && chunk->canSideBeSeen(camera, normalID))
+			if (facesCount > 0 && chunk->canSideBeSeen(camera.position, normalID))
 			{
 				size_t index = commandsCount++;
 				chunkPositionIndexes[index] = positionsCount;

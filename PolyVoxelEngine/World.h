@@ -1,14 +1,11 @@
 #pragma once
-#include "Chunk.h"
 #include <vector>
-#include <queue>
+#include <unordered_set>
+#include "Chunk.h"
 #include "Camera.h"
-#include "SSBO.h"
-#include <thread>
-#include <mutex>
-#include <condition_variable>
 #include "TextureArray.h"
 
+#include "SSBO.h"
 #include "IBO.h"
 #include "VBO.h"
 #include "VAO.h"

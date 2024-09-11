@@ -1,5 +1,6 @@
 /// @ref gtx_norm
 
+#pragma once
 #include "../detail/qualifier.hpp"
 
 namespace glm{

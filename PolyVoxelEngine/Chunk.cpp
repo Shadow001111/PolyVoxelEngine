@@ -1,10 +1,9 @@
 #include "Chunk.h"
-#include <cstring>
-#include <string>
 #include <iostream>
 #include "TerrainGenerator.h"
-#include <unordered_set>
 #include "Profiler.h"
+#include <filesystem>
+#include <fstream>
 
 Face* Chunk::facesData = nullptr;
 FaceInstanceData* Chunk::faceInstancesData = nullptr;
@@ -1046,31 +1045,31 @@ Block Chunk::getBlockAt(int x, int y, int z) const
 	return chunk->getBlockAtInBoundaries(x, y, z);
 }
 
-bool Chunk::canSideBeSeen(const Camera& camera, size_t side) const
+bool Chunk::canSideBeSeen(const glm::vec3& position, size_t side) const
 {
 	if (side == 0)
 	{
-		return camera.position.x > X * Settings::CHUNK_SIZE + 1;
+		return position.x > X * Settings::CHUNK_SIZE + 1;
 	}
 	else if (side == 1)
 	{
-		return camera.position.x < (X + 1) * Settings::CHUNK_SIZE - 1;
+		return position.x < (X + 1) * Settings::CHUNK_SIZE - 1;
 	}
 	else if (side == 2)
 	{
-		return camera.position.y > Y * Settings::CHUNK_SIZE + 1;
+		return position.y > Y * Settings::CHUNK_SIZE + 1;
 	}
 	else if (side == 3)
 	{
-		return camera.position.y < (Y + 1) * Settings::CHUNK_SIZE - 1;
+		return position.y < (Y + 1) * Settings::CHUNK_SIZE - 1;
 	}
 	else if (side == 4)
 	{
-		return camera.position.z > Z * Settings::CHUNK_SIZE + 1;
+		return position.z > Z * Settings::CHUNK_SIZE + 1;
 	}
 	else
 	{
-		return camera.position.z < (Z + 1) * Settings::CHUNK_SIZE - 1;
+		return position.z < (Z + 1) * Settings::CHUNK_SIZE - 1;
 	}
 }
 

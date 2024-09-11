@@ -66,9 +66,6 @@
     <ClCompile Include="SSBO.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="TimeMeasurer.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="TerrainGenerator.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
@@ -156,9 +153,6 @@
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="SSBO.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="TimeMeasurer.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="TerrainGenerator.h">

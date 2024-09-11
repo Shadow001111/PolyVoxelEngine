@@ -1,6 +1,5 @@
 #include "FaceInstancesVBO.h"
 #include <glad/glad.h>
-#include <iostream>
 
 FaceInstancesVBO::FaceInstancesVBO(size_t instancesCount, size_t layoutOffset)
 {
