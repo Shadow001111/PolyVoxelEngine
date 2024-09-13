@@ -6,13 +6,14 @@
 #include "SimplexNoise.h"
 #include "Spline.h"
 
-struct HeightMap
+class HeightMap
 {
 	int heightMap[Settings::CHUNK_SIZE_SQUARED];
 	int skyLightMaxHeight[Settings::CHUNK_SIZE_SQUARED];
-
+public:
 	void setHeightAt(size_t x, size_t z, int height);
 	int getHeightAt(size_t x, size_t z) const;
+	int getHeightAtByIndex(size_t index) const;
 
 	void setSlMHAt(size_t x, size_t z, int height);
 	int getSlMHAt(size_t x, size_t z) const;

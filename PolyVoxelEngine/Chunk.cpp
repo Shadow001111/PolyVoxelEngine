@@ -92,19 +92,23 @@ void Chunk::generateBlocks()
 {
 	Profiler::start(BLOCK_GENERATION_INDEX);
 
-	Biome biome = TerrainGenerator::getBiome(X, Z);
+	const HeightMap* heightMap = TerrainGenerator::getHeightMap(X, Z);
 	int chunkMaxY;
 	{
-		// TODO: implement chunkMaxY
-		chunkMaxY = INT_MAX;
-		//BiomeData biomeData_ = biomeData[(size_t)biome];
-		//chunkMaxY = ceilf((float)biomeData_.maxHeight / (float)Settings::CHUNK_SIZE);
+		int globalY = Y * Settings::CHUNK_SIZE;
+		int globalMaxY = INT_MIN;
+		chunkMaxY = INT_MIN;
+		for (size_t index = 0; index < Settings::CHUNK_SIZE_SQUARED; index++)
+		{
+			globalMaxY = std::max(globalMaxY, heightMap->getHeightAtByIndex(index));
+		}
+		chunkMaxY = floorf((float)globalMaxY / (float)Settings::CHUNK_SIZE);
 	}
-
-	const HeightMap* heightMap = TerrainGenerator::getHeightMap(X, Z);
 
 	if (Y <= chunkMaxY)
 	{
+		Biome biome = TerrainGenerator::getBiome(X, Z);
+
 		constexpr size_t LOD = 0;
 		constexpr size_t coordShift = (size_t)1 << LOD;
 		for (size_t z = 0; z < Settings::CHUNK_SIZE; z += coordShift)

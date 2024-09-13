@@ -129,6 +129,11 @@ Block TerrainGenerator::getBlock(int x, int y, int z, int height, Biome biome)
 	constexpr float mountainStoneLevelVariationAmpl = 5.0f;
 	constexpr float mountainStoneLevelVariationFreq = 0.1f;
 
+	if (y > height)
+	{
+		return Block::Air;
+	}
+
 	if (y == height)
 	{
 		int level = snowLevel + sinf((x + z) * mountainStoneLevelVariationFreq) * mountainStoneLevelVariationAmpl;
@@ -390,6 +395,11 @@ void HeightMap::setHeightAt(size_t x, size_t z, int height)
 int HeightMap::getHeightAt(size_t x, size_t z) const
 {
 	return heightMap[x + z * Settings::CHUNK_SIZE];
+}
+
+int HeightMap::getHeightAtByIndex(size_t index) const
+{
+	return heightMap[index];
 }
 
 void HeightMap::setSlMHAt(size_t x, size_t z, int height)
