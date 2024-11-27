@@ -1,12 +1,6 @@
 #pragma once
 #include <string>
 
-struct DynamicSettings
-{
-	static int generateChunksPerTickStationary;
-	static int generateChunksPerTickMoving;
-};
-
 int calcArea(int radius);
 
 int calcVolume(int radius);
@@ -15,12 +9,18 @@ float calculateFogDensity(float distance, float fogGradient);
 
 namespace Settings
 {
+	struct DynamicSettings
+	{
+		static int generateChunksPerTickStationary;
+		static int generateChunksPerTickMoving;
+	};
+
 	// World
 	const std::string worldPath = "Worlds/Test";
 	const std::string WORLD_DATA_PATH = worldPath + "/data.bin";
 	
 	// Chunk
-	constexpr int CHUNK_LOAD_RADIUS = 4;
+	extern int CHUNK_LOAD_RADIUS;
 	constexpr int CHUNK_SIZE = 16;
 	constexpr size_t MAX_ENTITIES_PER_CHUNK = 256;
 
@@ -54,8 +54,8 @@ namespace Settings
 	constexpr int CHUNK_SIZE_CUBED = CHUNK_SIZE_SQUARED * CHUNK_SIZE;
 	//constexpr size_t SINGLE_TYPE_FACE_INSTANCES_PER_CHUNK = (CHUNK_SIZE_CUBED / 2 * 6);
 	constexpr size_t FACE_INSTANCES_PER_CHUNK = (CHUNK_SIZE_CUBED / 2 * 6) + (CHUNK_SIZE_SQUARED / 2 * 6); // solid + additionalTransparent
-	const size_t MAX_RENDERED_CHUNKS_COUNT = calcVolume(CHUNK_LOAD_RADIUS);
-	const size_t MAX_CHUNK_DRAW_COMMANDS_COUNT = MAX_RENDERED_CHUNKS_COUNT * 6;
+	extern size_t MAX_RENDERED_CHUNKS_COUNT;
+	extern size_t MAX_CHUNK_DRAW_COMMANDS_COUNT;
 
 	const std::string chunkSavesPath = worldPath + "/Chunks/";
 

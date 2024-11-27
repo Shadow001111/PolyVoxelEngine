@@ -109,10 +109,10 @@ World::World(const WorldData& worldData)
 	//
 	TerrainGenerator::init(worldData.seed);
 
-	chunkPool = new Chunk*[Settings::MAX_RENDERED_CHUNKS_COUNT];
+	chunkPool.reserve(Settings::MAX_RENDERED_CHUNKS_COUNT);
 	for (size_t i = 0; i < Settings::MAX_RENDERED_CHUNKS_COUNT; i++)
 	{
-		chunkPool[i] = new Chunk((unsigned int)i);
+		chunkPool.push_back(new Chunk((unsigned int)i));
 	}
 
 	drawCommands = new DrawArraysIndirectCommand[Settings::MAX_CHUNK_DRAW_COMMANDS_COUNT];
@@ -170,7 +170,6 @@ World::~World()
 	}
 	Chunk::chunkMap.clear();
 
-	delete[] chunkPool;
 	delete[] drawCommands;
 	delete[] chunkPositions;
 	delete[] chunkPositionIndexes;
@@ -247,7 +246,7 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 	{
 		return;
 	}
-	const size_t generateCount = std::min(chunksCount, size_t(isMoving ? DynamicSettings::generateChunksPerTickMoving : DynamicSettings::generateChunksPerTickStationary));
+	const size_t generateCount = std::min(chunksCount, size_t(isMoving ? Settings::DynamicSettings::generateChunksPerTickMoving : Settings::DynamicSettings::generateChunksPerTickStationary));
 
 	// sort
 	if (sortGenerateChunksQueueTick > 20)

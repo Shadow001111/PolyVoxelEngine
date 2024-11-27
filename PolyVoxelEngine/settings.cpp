@@ -1,8 +1,5 @@
 #include "settings.h"
 
-int DynamicSettings::generateChunksPerTickStationary = 200;
-int DynamicSettings::generateChunksPerTickMoving = 100;
-
 int calcArea(int radius)
 {
 	int P = 0;
@@ -33,4 +30,14 @@ int calcVolume(int radius)
 float calculateFogDensity(float distance, float fogGradient)
 {
 	return powf(-logf(1e-8f), 1.0f / fogGradient) / distance;
+}
+
+namespace Settings
+{
+	int DynamicSettings::generateChunksPerTickStationary = 200;
+	int DynamicSettings::generateChunksPerTickMoving = 100;
+
+	int CHUNK_LOAD_RADIUS = 5;
+	size_t MAX_RENDERED_CHUNKS_COUNT = calcVolume(CHUNK_LOAD_RADIUS);
+	size_t MAX_CHUNK_DRAW_COMMANDS_COUNT = MAX_RENDERED_CHUNKS_COUNT * 6;
 }

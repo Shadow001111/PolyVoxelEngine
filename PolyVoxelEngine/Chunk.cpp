@@ -313,8 +313,8 @@ void Chunk::generateFaces()
 		{
 			for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
 			{
-				Block block = getBlockAtInBoundaries(x, y, z);
-				BlockData blockData = ALL_BLOCK_DATA[(size_t)block];
+				const Block& block = getBlockAtInBoundaries(x, y, z);
+				const BlockData& blockData = ALL_BLOCK_DATA[(size_t)block];
 				if (!blockData.createFaces)
 				{
 					continue;
@@ -332,7 +332,7 @@ void Chunk::generateFaces()
 					const int offY = (int)y + offsets[1];
 					const int offZ = (int)z + offsets[2];
 
-					Block faceBlock = getBlockAtSideCheck(offX, offY, offZ, normalID);
+					const Block& faceBlock = getBlockAtSideCheck(offX, offY, offZ, normalID);
 					if (faceBlock != Block::Void && faceBlock != block && ALL_BLOCK_DATA[(size_t)faceBlock].transparent)
 					{
 						auto& face = facesData[normalID + (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6];

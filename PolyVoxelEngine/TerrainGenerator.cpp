@@ -162,7 +162,8 @@ Block TerrainGenerator::getBlock(int x, int y, int z, int height, Biome biome)
 bool TerrainGenerator::IsCave(int x, int y, int z)
 {
 	// TODO: few chunks are 'closed' because caves are too frequent
-	float cheese = getLayeredNoise3D(x, y, z, 3, 1.0f, 0.02f, 0.5f, 2.0f, 0.0f, 0.0f, 0.0f);
+	//float cheese = getLayeredNoise3D(x, y, z, 3, 1.0f, 0.02f, 0.5f, 2.0f, 0.0f, 0.0f, 0.0f);
+	float cheese = (float)rand() / (float)RAND_MAX;
 	return cheese < 0.5f;
 }
 

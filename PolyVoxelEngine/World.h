@@ -48,7 +48,7 @@ struct WorldData
 
 class World
 {
-	Chunk** chunkPool = nullptr;
+	std::vector<Chunk*> chunkPool;
 	size_t chunkPoolIndex = 0;
 	glm::ivec3 lastPlayerLoadChunkPos;
 	uint8_t sortGenerateChunksQueueTick = (uint8_t)20;
