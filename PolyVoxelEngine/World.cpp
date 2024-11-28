@@ -241,43 +241,11 @@ void World::update(const glm::vec3& pos, bool isMoving)
 void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 {
 	const size_t chunksCount = chunkGenerateVector.size();
-	sortGenerateChunksQueueTick++;
 	if (chunksCount == 0)
 	{
 		return;
 	}
 	const size_t generateCount = std::min(chunksCount, size_t(isMoving ? Settings::DynamicSettings::generateChunksPerTickMoving : Settings::DynamicSettings::generateChunksPerTickStationary));
-
-	// sort
-	if (sortGenerateChunksQueueTick > 20)
-	{
-		sortGenerateChunksQueueTick = 0;
-
-		// sort chunks in ascending order by distance
-		// later chunks will be generated from back to front
-		std::vector<ChunkDistance> chunkDistances;
-		chunkDistances.reserve(chunksCount);
-
-		for (Chunk* chunk : chunkGenerateVector)
-		{
-			float X = chunk->X * Settings::CHUNK_SIZE;
-			float Y = chunk->Y * Settings::CHUNK_SIZE;
-			float Z = chunk->Z * Settings::CHUNK_SIZE;
-			auto dpos = glm::vec3(X, Y, Z) - pos;
-			float distance = glm::dot(dpos, dpos);
-			chunkDistances.emplace_back(chunk, distance);
-		}
-
-		std::sort(chunkDistances.begin(), chunkDistances.end(), [&](const ChunkDistance& a, const ChunkDistance& b)
-		{
-			return a.distance > b.distance;
-		});
-
-		for (size_t i = 0; i < chunksCount; i++)
-		{
-			chunkGenerateVector[i] = chunkDistances[i].chunk;
-		}
-	}
 
 	// generate
 	const int range = int(chunksCount - generateCount);
@@ -289,6 +257,32 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 		addSurroundingChunksToGenerateFaces(chunk);
 	}
 	chunkGenerateVector.resize(chunksCount - generateCount);
+}
+
+void World::sortGenerateChunksQueue(const glm::vec3& playerChunkPos)
+{
+	// sort chunks in ascending order by distance
+	// later chunks will be generated from back to front
+	const size_t chunksCount = chunkGenerateVector.size();
+	std::vector<ChunkDistance> chunkDistances;
+	chunkDistances.reserve(chunksCount);
+
+	for (Chunk* chunk : chunkGenerateVector)
+	{
+		auto dpos = glm::vec3(chunk->X, chunk->Y, chunk->Z) - playerChunkPos;
+		float distance = glm::dot(dpos, dpos);
+		chunkDistances.emplace_back(chunk, distance);
+	}
+
+	std::sort(chunkDistances.begin(), chunkDistances.end(), [&](const ChunkDistance& a, const ChunkDistance& b)
+			  {
+				  return a.distance > b.distance;
+			  });
+
+	for (size_t i = 0; i < chunksCount; i++)
+	{
+		chunkGenerateVector[i] = chunkDistances[i].chunk;
+	}
 }
 
 void World::generateChunksFaces()
@@ -630,6 +624,9 @@ bool World::loadChunks(int x, int y, int z, bool forced)
 			}
 		} 
 	}
+
+	sortGenerateChunksQueue({ x, y, z });
+
 	return true;
 }
 

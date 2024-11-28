@@ -186,6 +186,7 @@
     <ClCompile Include="TerrainGenerator.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="TextureArray.cpp" />
+    <ClCompile Include="ThreadPool.cpp" />
     <ClCompile Include="VAO.cpp" />
     <ClCompile Include="VBO.cpp" />
     <ClCompile Include="World.cpp" />
@@ -217,6 +218,7 @@
     <ClInclude Include="TerrainGenerator.h" />
     <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="TextureArray.h" />
+    <ClInclude Include="ThreadPool.h" />
     <ClInclude Include="VAO.h" />
     <ClInclude Include="VBO.h" />
     <ClInclude Include="Vector.h" />

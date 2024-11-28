@@ -51,7 +51,6 @@ class World
 	std::vector<Chunk*> chunkPool;
 	size_t chunkPoolIndex = 0;
 	glm::ivec3 lastPlayerLoadChunkPos;
-	uint8_t sortGenerateChunksQueueTick = (uint8_t)20;
 
 	std::vector<Chunk*> chunkGenerateVector;
 	std::unordered_set<Chunk*> generateFacesSet;
@@ -103,6 +102,7 @@ public:
 
 	void update(const glm::vec3& pos, bool isMoving);
 	void generateChunksBlocks(const glm::vec3& pos, bool isMoving);
+	void sortGenerateChunksQueue(const glm::vec3& playerChunkPos);
 	void generateChunksFaces();
 	RaycastHit raycast(const glm::vec3& startPos, const glm::vec3& dir, float length);
 	void setBlockAt(int x, int y, int z, Block block);
