@@ -201,6 +201,7 @@
     <ClInclude Include="HardwareUsageInfo.h" />
     <ClInclude Include="IniParser.h" />
     <ClInclude Include="Menu.h" />
+    <ClInclude Include="ObjectPool.h" />
     <ClInclude Include="PhysicEntity.h" />
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="SoundEngine.h" />

@@ -6,6 +6,7 @@
 #include "Vector.h"
 #include <glm/ext/vector_int3.hpp>
 #include <glm/ext/vector_float3.hpp>
+#include <mutex>
 
 int pos3_hash(int x, int y, int z) noexcept;
 
@@ -84,6 +85,16 @@ struct BlockAndLighting
 	uint8_t lighting;
 };
 
+enum class ChunkState
+{
+	NotLoaded,
+	InLoadingQueue,
+	Loading,
+	Loaded
+};
+
+std::string toString(ChunkState state);
+
 class Chunk
 {
 	Block blocks[Settings::CHUNK_SIZE_CUBED];
@@ -109,7 +120,9 @@ public:
 	static std::vector<Light> lightingFloodFillVector;
 	static std::vector<Light> darknessFloodFillVector;
 	static std::vector<LightUpdate> lightingUpdateVector;
+	static std::mutex lightingMutex;
 
+	ChunkState state = ChunkState::NotLoaded;
 	bool hasAnyFaces = false; // Removing it doesnt change class size
 	uint16_t blocksCount = 0;
 	int X, Y, Z;
@@ -117,8 +130,9 @@ public:
 	Chunk* neighbours[6];
 	Vector<const PhysicEntityCollider*, Settings::MAX_ENTITIES_PER_CHUNK> physicEntities;
 
-	Chunk(unsigned int ID);
+	Chunk();
 	~Chunk();
+	void setDrawID(unsigned int ID);
 	void init(int x, int y, int z);
 	void destroy();
 

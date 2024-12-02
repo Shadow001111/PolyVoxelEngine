@@ -10,6 +10,9 @@
 #include "VBO.h"
 #include "VAO.h"
 
+#include "ThreadPool.h"
+#include "ObjectPool.h"
+
 struct RaycastHit
 {
 	bool hit = false;
@@ -48,17 +51,15 @@ struct WorldData
 
 class World
 {
-	std::vector<Chunk*> chunkPool;
-	size_t chunkPoolIndex = 0;
-	glm::ivec3 lastPlayerLoadChunkPos;
+	ObjectPool<Chunk> chunkPool;
+	glm::ivec3 chunkLoaderPosition;
+	glm::ivec3 lastChunkLoaderPosition;
 
 	std::vector<Chunk*> chunkGenerateVector;
 	std::unordered_set<Chunk*> generateFacesSet;
 
 	std::unordered_map<int, std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_SIZE_CUBED>>> temporalChunkBlockChanges;
 	std::unordered_set<Int3, Int3> temporalSaveDataChunks;
-
-	bool shutdown = false;
 
 	VAO quadInstanceVAO;
 	VBO quadInstanceVBO;
@@ -71,6 +72,11 @@ class World
 	unsigned int* chunkPositionIndexes = nullptr;
 
 	uint8_t dataShrinkingTick = 0;
+
+	ThreadPoolSpace::ThreadPool threadPool;
+	std::mutex chunkPoolMutex;
+	std::mutex generateFacesSetMutex;
+	std::mutex chunkMapMutex;
 
 
 	Chunk* getChunk(int x, int y, int z);
@@ -102,13 +108,17 @@ public:
 
 	void update(const glm::vec3& pos, bool isMoving);
 	void generateChunksBlocks(const glm::vec3& pos, bool isMoving);
-	void sortGenerateChunksQueue(const glm::vec3& playerChunkPos);
+	void generateChunkBlocksThread(Chunk* chunk);
+	void sortGenerateChunksQueue();
 	void generateChunksFaces();
 	RaycastHit raycast(const glm::vec3& startPos, const glm::vec3& dir, float length);
 	void setBlockAt(int x, int y, int z, Block block);
 	Block getBlockAt(int x, int y, int z) const;
 
-	bool loadChunks(int x, int y, int z, bool forced);
+	float getDistanceToChunkLoader(glm::vec3 chunkPos) const;
+	float getSquaredDistanceToChunkLoader(glm::vec3 chunkPos) const;
+
+	bool loadChunks(bool forced);
 
 	static WorldData loadWorldData();
 	static void saveWorldData(const WorldData& worldData);

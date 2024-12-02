@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include "SimplexNoise.h"
 #include "Spline.h"
+#include <vector>
+#include "ObjectPool.h"
 
 class HeightMap
 {
@@ -23,11 +25,7 @@ class TerrainGenerator
 {
 	static SimplexNoise* simplexNoise;
 	static std::unordered_map<int, HeightMap*> heightMaps;
-	static HeightMap** heightMapPool;
-	static size_t heightMapPoolSize;
-	static size_t heightMapPoolIndex;
-
-	static float* noise2Values;
+	static ObjectPool<HeightMap> heightMapPool;
 
 	static Spline continentalSpline;
 

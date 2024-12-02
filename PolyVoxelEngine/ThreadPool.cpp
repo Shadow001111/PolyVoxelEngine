@@ -70,7 +70,7 @@ void ThreadPoolSpace::Worker::run()
 	}
 }
 
-void ThreadPoolSpace::Worker::stop()
+void ThreadPoolSpace::Worker::joinThread()
 {
 	thread.join();
 }
@@ -86,14 +86,23 @@ ThreadPoolSpace::ThreadPool::ThreadPool(size_t threadCount) : threadCount(thread
 
 ThreadPoolSpace::ThreadPool::~ThreadPool()
 {
-	taskQueue.stop();
-	for (Worker& worker : workers)
+	if (!workers.empty())
 	{
-		worker.stop();
+		destroy();
 	}
 }
 
 void ThreadPoolSpace::ThreadPool::waitForCompletion()
 {
 	taskQueue.waitForCompletion();
+}
+
+void ThreadPoolSpace::ThreadPool::destroy()
+{
+	taskQueue.stop();
+	for (Worker& worker : workers)
+	{
+		worker.joinThread();
+	}
+	workers.clear();
 }

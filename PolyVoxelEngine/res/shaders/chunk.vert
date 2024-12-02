@@ -23,8 +23,6 @@ const float aoValues[4] = float[4]
 );
 #endif
 
-const float extending = 0.03;
-
 uniform mat4 camMatrix;
 
 #ifndef Z_PRE_PASS
@@ -85,16 +83,12 @@ void main()
 	#ifndef Z_PRE_PASS
 	uv = localPos.xz;
 	#endif
-	
-	const vec2 center = unpackedSize * 0.5f;
 
 	if (normalID == 0) // right
 	{
 		localPos.y = localPos.x;
 		localPos.x = 1.0;
 		localPos.z = unpackedSize.y - localPos.z;
-
-		localPos.yz += normalize(localPos.yz - center) * extending;
 
 		#ifndef Z_PRE_PASS
 		uv = uv.yx;
@@ -104,8 +98,6 @@ void main()
 	{
 		localPos.xy = localPos.yx;
 
-		localPos.yz += normalize(localPos.yz - center) * extending;
-
 		#ifndef Z_PRE_PASS
 		uv = uv.yx;
 		#endif
@@ -114,8 +106,6 @@ void main()
 	{
 		localPos.y = 1.0;
 
-		localPos.xz += normalize(localPos.xz - center) * extending;
-
 		#ifndef Z_PRE_PASS
 		uv.y = unpackedSize.y - uv.y;
 		#endif
@@ -123,8 +113,6 @@ void main()
 	else if (normalID == 3) // down
 	{
 		localPos.x = unpackedSize.x - localPos.x;
-
-		localPos.xz += normalize(localPos.xz - center) * extending;
 
 		#ifndef Z_PRE_PASS
 		uv.x = unpackedSize.x - uv.x;
@@ -136,8 +124,6 @@ void main()
 		localPos.z = 1.0;
 		localPos.x = unpackedSize.x - localPos.x;
 
-		localPos.xy += normalize(localPos.xy - center) * extending;
-
 		#ifndef Z_PRE_PASS
 		uv.x = unpackedSize.x - uv.x;
 		#endif
@@ -145,7 +131,6 @@ void main()
 	else // back
 	{
 		localPos.zy = localPos.yz;
-		localPos.xy += normalize(localPos.xy - center) * extending;
 
 		#ifndef Z_PRE_PASS
 		uv.x = unpackedSize.x - uv.x;
@@ -153,7 +138,6 @@ void main()
 	}
 
 	#ifndef Z_PRE_PASS
-	uv += normalize(uv - center) * extending;
 
 	gottenAOValues[0] = aoValues[ao & 3];
 	gottenAOValues[1] = aoValues[(ao >> 2) & 3];

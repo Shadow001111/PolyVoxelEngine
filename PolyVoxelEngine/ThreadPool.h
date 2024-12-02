@@ -53,7 +53,7 @@ namespace ThreadPoolSpace
 
 		void run();
 
-		void stop();
+		void joinThread();
 	};
 
 	class ThreadPool
@@ -92,6 +92,8 @@ namespace ThreadPoolSpace
 				addTask([&task, start, end]() { task(start, end); });
 			}
 		}
+
+		void destroy();
 	};
 }
 

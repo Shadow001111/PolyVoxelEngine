@@ -5,12 +5,9 @@
 
 SimplexNoise* TerrainGenerator::simplexNoise = nullptr;
 std::unordered_map<int, HeightMap*> TerrainGenerator::heightMaps;
-HeightMap** TerrainGenerator::heightMapPool = nullptr;
-size_t TerrainGenerator::heightMapPoolSize = 0;
-size_t TerrainGenerator::heightMapPoolIndex = 0;
+ObjectPool<HeightMap> TerrainGenerator::heightMapPool(0);
 
 constexpr int noise2ValuesRes = 1;
-float* TerrainGenerator::noise2Values = nullptr;
 
 Spline TerrainGenerator::continentalSpline = {"res/Splines/continental.bin"};
 
@@ -299,21 +296,8 @@ void TerrainGenerator::init(unsigned int seed)
 {
 	simplexNoise = new SimplexNoise(seed);
 
-	heightMapPoolSize = calcArea(Settings::CHUNK_LOAD_RADIUS);
-	heightMapPool = new HeightMap*[heightMapPoolSize];
-	for (size_t i = 0; i < heightMapPoolSize; i++)
-	{
-		heightMapPool[i] = new HeightMap();
-	}
-
-	noise2Values = new float[noise2ValuesRes * noise2ValuesRes];
-	for (int y = 0; y < noise2ValuesRes; y++)
-	{
-		for (int x = 0; x < noise2ValuesRes; x++)
-		{
-			noise2Values[x + y * noise2ValuesRes] = simplexNoise->noise((float)x / noise2ValuesRes, (float)y / noise2ValuesRes);
-		}
-	}
+	size_t heightMapPoolSize = calcArea(Settings::CHUNK_LOAD_RADIUS);
+	heightMapPool.reserve(heightMapPoolSize);
 }
 
 void TerrainGenerator::clear()
@@ -324,18 +308,7 @@ void TerrainGenerator::clear()
 	{
 		delete pair.second;
 	}
-	size_t left = heightMapPoolSize - heightMapPoolIndex;
-	if (left > 0)
-	{
-		std::cout << "Height maps left in pool:" << left << std::endl;
-		for (size_t i = heightMapPoolIndex; i < heightMapPoolSize; i++)
-		{
-			delete[] heightMapPool[i];
-		}
-	}
-	delete[] heightMapPool;
-
-	delete[] noise2Values;
+	heightMapPool.clear();
 }
 
 void TerrainGenerator::loadHeightMap(int chunkX, int chunkZ)
@@ -346,13 +319,7 @@ void TerrainGenerator::loadHeightMap(int chunkX, int chunkZ)
 	{
 		return;
 	}
-#ifdef _DEBUG
-	if (heightMapPoolIndex == heightMapPoolSize)
-	{
-		throw std::exception("Height map pool is empty");
-	}
-#endif
-	HeightMap* heightMap = heightMapPool[heightMapPoolIndex++];
+	HeightMap* heightMap = heightMapPool.acquire();
 	int globalChunkX = chunkX * Settings::CHUNK_SIZE;
 	int globalChunkZ = chunkZ * Settings::CHUNK_SIZE;
 
@@ -378,13 +345,7 @@ void TerrainGenerator::unloadHeightMap(int chunkX, int chunkZ)
 		//std::cout << "height map was already unloaded" << std::endl;
 		return;
 	}
-#ifdef _DEBUG
-	if (heightMapPoolIndex == 0)
-	{
-		throw std::exception("Height map pool is full");
-	}
-#endif
-	heightMapPool[--heightMapPoolIndex] = it->second;
+	heightMapPool.release(it->second);
 	heightMaps.erase(it);
 }
 
