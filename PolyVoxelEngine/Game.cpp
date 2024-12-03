@@ -345,7 +345,7 @@ void Game::run()
 						);
 					}
 
-					TextRenderer::renderText(std::to_string(Profiler::maxTime) + " ms",
+					TextRenderer::renderText(std::to_string(int(Profiler::maxTime)) + " ms",
 						left + PROFILER_DRAW_WIDTH + 0.01f,
 						bottom + PROFILER_DRAW_HEIGHT,
 						0.025f,

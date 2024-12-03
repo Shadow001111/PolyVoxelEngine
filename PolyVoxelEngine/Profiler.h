@@ -2,11 +2,13 @@
 #include <chrono>
 #include <cstdint>
 #include <glm/ext/vector_float3.hpp>
+#include <mutex>
+#include <unordered_map>
 
 struct ProfilerData
 {
 	std::chrono::steady_clock::time_point lastTimeSample;
-	uint32_t timeNS = 0;
+	uint32_t timeMS = 0;
 };
 
 constexpr size_t PROFILER_MEMORY_TABLE_SIZE = 50;
@@ -31,12 +33,18 @@ extern const glm::vec3 profilerSamplesColors[PROFILER_SAMPLES_COUNT];
 
 class Profiler
 {
-	static ProfilerData profilerData[PROFILER_SAMPLES_COUNT];
+	struct PerThreadData
+	{
+		ProfilerData profilerData[PROFILER_SAMPLES_COUNT];
+	};
+
+	static std::unordered_map<std::thread::id, PerThreadData> threadProfilerData;
 public:
-	static uint16_t memoryTable[PROFILER_MEMORY_TABLE_SIZE][PROFILER_SAMPLES_COUNT];
+	static uint32_t memoryTable[PROFILER_MEMORY_TABLE_SIZE][PROFILER_SAMPLES_COUNT];
 	static size_t memoryTableIndex;
-	static uint16_t maxTimeTable[PROFILER_MEMORY_TABLE_SIZE];
-	static uint16_t maxTime;
+	static uint32_t maxTimeTable[PROFILER_MEMORY_TABLE_SIZE];
+	static uint32_t maxTime;
+	static std::mutex addDataMutex;
 
 	static void start(size_t index);
 	static void end(size_t index);
