@@ -164,6 +164,7 @@ void TerrainGenerator::getLayeredNoiseArray2D(float* array, float x, float y, in
 
 void TerrainGenerator::getInitialHeightArray(int* heightArray, int chunkX, int chunkZ, Biome biome)
 {
+	// TODO: add height interpolating
 	int globalChunkX = chunkX * Settings::CHUNK_SIZE;
 	int globalChunkZ = chunkZ * Settings::CHUNK_SIZE;
 
@@ -280,6 +281,7 @@ Biome TerrainGenerator::getBiome(int chunkX, int chunkZ)
 
 int TerrainGenerator::calculateHeight(int globalX, int globalZ)
 {
+	return 0;
 	/*int chunkX = floorf((float)globalX / (float)Settings::CHUNK_SIZE);
 	int chunkZ = floorf((float)globalZ / (float)Settings::CHUNK_SIZE);
 

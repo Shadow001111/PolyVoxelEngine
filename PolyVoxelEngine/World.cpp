@@ -350,7 +350,7 @@ void World::generateChunksFaces()
 	}
 	Chunk::faceInstancesVBO->bind();
 	
-	//Profiler::start(MESH_GENERATION_INDEX);
+	Profiler::start(MESH_GENERATION_INDEX);
 
 	for (Chunk* chunk : generateFacesSet)
 	{
@@ -358,7 +358,7 @@ void World::generateChunksFaces()
 	}
 	generateFacesSet.clear();
 
-	//Profiler::end(MESH_GENERATION_INDEX);
+	Profiler::end(MESH_GENERATION_INDEX);
 }
 
 RaycastHit World::raycast(const glm::vec3& startPos, const glm::vec3& dir, float length)
