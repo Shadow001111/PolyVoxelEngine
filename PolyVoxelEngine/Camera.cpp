@@ -2,7 +2,7 @@
 #include "GraphicController.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-glm::vec3 Camera::GlobalUp = glm::vec3(0.0f, 1.0f, 0.0f);
+const glm::vec3 Camera::GLOBAL_UP = glm::vec3(0.0f, 1.0f, 0.0f);
 
 Camera::Camera(glm::vec3 position, float fov, float near, float far) : position(position), nearPlane(near), farPlane(far)
 {
@@ -14,7 +14,7 @@ Camera::Camera(glm::vec3 position, float fov, float near, float far) : position(
 void Camera::updateVectors()
 {
 	Forward = glm::normalize(Forward);
-	Right = glm::normalize(glm::cross(Forward, GlobalUp));
+	Right = glm::normalize(glm::cross(Forward, GLOBAL_UP));
 	Up = glm::normalize(glm::cross(Right, Forward));
 }
 

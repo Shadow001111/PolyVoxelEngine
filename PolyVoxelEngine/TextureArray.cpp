@@ -2,7 +2,7 @@
 #include <iostream>
 #include <stb/stb_image.h>
 
-TextureArray::TextureArray(const char* filePath, GLint slot, int textureSize, int rowSize, int texturesCount, int desiredChannels, int textureWrapMode, bool createMipmaps) : ID(0), unit(slot)
+TextureArray::TextureArray(const char* filePath, int slot, int textureSize, int rowSize, int texturesCount, int desiredChannels, int textureWrapMode, bool createMipmaps) : ID(0), unit(slot)
 {
 	int width = 0, height = 0, numChannels = desiredChannels;
 
@@ -21,10 +21,10 @@ TextureArray::TextureArray(const char* filePath, GLint slot, int textureSize, in
 		return;
 	}
 
-	constexpr GLint numChannelsToFormat[4][2] = { {GL_RED, GL_R8}, {GL_RG, GL_RG8}, {GL_RGB, GL_RGB8}, {GL_RGBA, GL_RGBA8} };
+	constexpr int numChannelsToFormat[4][2] = { {GL_RED, GL_R8}, {GL_RG, GL_RG8}, {GL_RGB, GL_RGB8}, {GL_RGBA, GL_RGBA8} };
 
-	GLint format = numChannelsToFormat[numChannels - 1][0];
-	GLint formatByte = numChannelsToFormat[numChannels - 1][1];
+	int format = numChannelsToFormat[numChannels - 1][0];
+	int formatByte = numChannelsToFormat[numChannels - 1][1];
 	int mipmapLevels = 1 + (createMipmaps ? ceilf(log2f(textureSize)) : 0);
 
 	glGenTextures(1, &ID);

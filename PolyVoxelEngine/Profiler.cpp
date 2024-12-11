@@ -17,7 +17,7 @@ const std::string profilerSamplesNames[PROFILER_SAMPLES_COUNT] =
 	"LoadChunks",
 	"ChunkLoadData",
 	"ChunkLighting",
-	"Noise3D"
+	"GreedyMeshing"
 };
 
 const glm::vec3 profilerSamplesColors[PROFILER_SAMPLES_COUNT] =
@@ -49,8 +49,8 @@ void Profiler::end(size_t index)
 	}
 	std::lock_guard<std::mutex> lock(addDataMutex);
 	ProfilerData& data = threadProfilerData[std::this_thread::get_id()].profilerData[index];
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - data.lastTimeSample);
-	data.timeMS += duration.count();
+	auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - data.lastTimeSample);
+	data.timeNS += duration.count();
 	data.lastTimeSample = end;
 }
 
@@ -65,7 +65,7 @@ void Profiler::reset(size_t index)
 	{
 		for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
 		{
-			it.second.profilerData[i].timeMS = 0.0f;
+			it.second.profilerData[i].timeNS = 0.0f;
 		}
 	}
 }
@@ -90,9 +90,9 @@ void Profiler::saveToMemory()
 		for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
 		{
 			ProfilerData& data = perThreadData.profilerData[i];
-			timeSum += data.timeMS;
-			memoryTable[memoryTableIndex][i] += data.timeMS;
-			data.timeMS = 0;
+			timeSum += data.timeNS;
+			memoryTable[memoryTableIndex][i] += data.timeNS;
+			data.timeNS = 0;
 		}
 	}
 	maxTimeTable[memoryTableIndex] = timeSum;

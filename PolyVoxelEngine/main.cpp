@@ -4,37 +4,9 @@
 #include "GraphicController.h"
 #include "HardwareUsageInfo.h"
 
-//#include "SimplexNoise.h"
 
 int main()
 {
-	//auto start = std::chrono::steady_clock::now();
-	//// NOISE TEST
-	//int size = 64;
-	//float scale = 1.0f / size;
-	//unsigned int times = (1 << 10);
-	//for (unsigned int i = 0; i < times; i++)
-	//{
-	//	SimplexNoise noise(i);
-	//	for (int x = 0; x < size; x++)
-	//	{
-	//		for (int y = 0; y < size; y++)
-	//		{
-	//			for (int z = 0; z < size; z++)
-	//			{
-	//				float value = noise.noise(x * scale, y * scale, z * scale);
-	//			}
-	//		}
-	//	}
-	//}
-
-	////
-	//auto end = std::chrono::steady_clock::now();
-	//auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-	//std::cout << duration.count() / times << std::endl;
-	//return 0;
-
-
 	{
 		HWND hwnd = GetConsoleWindow();
 		ShowWindow(hwnd, 1); // show console
@@ -87,7 +59,7 @@ int main()
 			return result;
 		}
 
-		result = SoundEngine::init();
+		result = Sound::SoundEngine::init();
 		if (result != 0)
 		{
 			HardwareUsageInfo::destroy();
@@ -104,6 +76,6 @@ int main()
 	GraphicController::clean();
 	HardwareUsageInfo::destroy();
 	TextRenderer::destroy();
-	SoundEngine::clean();
+	Sound::SoundEngine::clean();
 	return 0;
 }

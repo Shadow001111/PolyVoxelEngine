@@ -6,7 +6,6 @@
 #include "VBO.h"
 #include "SSBO.h"
 #include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
 enum class AligmentX : char
@@ -23,24 +22,24 @@ enum class AligmentY : char
 	Top
 };
 
-struct Character
-{
-	unsigned int textureID;
-	glm::ivec2 size;
-	glm::ivec2 bearing;
-	unsigned int advance;
-};
-
-struct RenderCharacterData
-{
-	glm::vec4 transform;
-	unsigned int textureID;
-};
-
-constexpr size_t TEXT_SSBO_SIZE = 400;
-
 class TextRenderer
 {
+	static const size_t TEXT_SSBO_SIZE = 400;
+
+	struct Character
+	{
+		unsigned int textureID;
+		glm::ivec2 size;
+		glm::ivec2 bearing;
+		unsigned int advance;
+	};
+
+	struct RenderCharacterData
+	{
+		glm::vec4 transform;
+		unsigned int textureID;
+	};
+
 	static FT_Library ft;
 	static FT_Face face;
 	static std::unordered_map<char, Character> characters;

@@ -1,14 +1,13 @@
 #pragma once
-#include <glad/glad.h>
 #include "Shader.h"
 
 class TextureArray
 {
 public:
 	unsigned int ID;
-	GLuint unit;
+	unsigned int unit;
 
-	TextureArray(const char* filePath, GLint slot, int textureSize, int rowSize, int texturesCount, int desiredChannels, int textureWrapMode, bool createMipmaps);
+	TextureArray(const char* filePath, int slot, int textureSize, int rowSize, int texturesCount, int desiredChannels, int textureWrapMode, bool createMipmaps);
 
 	void passToShader(Shader* shader, const char* uniform, unsigned int unit) const;
 	

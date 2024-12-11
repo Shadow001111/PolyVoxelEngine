@@ -2,14 +2,15 @@
 #include "Shader.h"
 #include "Shapes.h"
 #include <GLFW/glfw3.h>
+#include <glm/mat4x4.hpp>
 
 #undef far
 #undef near
 
-constexpr glm::vec3 GLOBAL_UP(0.0f, 1.0f, 0.0f);
-
 class Camera
 {
+	static const glm::vec3 GLOBAL_UP;
+
 	struct Frustum
 	{
 		Plane top;
@@ -22,7 +23,6 @@ class Camera
 		Frustum() {};
 	};
 
-	static glm::vec3 GlobalUp;
 	glm::mat4 cameraMatrix = glm::mat4(1.0f);
 
 	Frustum frustum;

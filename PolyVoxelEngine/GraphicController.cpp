@@ -225,6 +225,7 @@ void GraphicController::afterRender()
 	framebufferProgram->bind();
 	framebufferProgram->setUniformFloat("aspectRatio", aspectRatio);
 	fbo->draw();
+	//glFinish(); TODO: high cpu usage
 	glfwSwapBuffers(window);
 }
 

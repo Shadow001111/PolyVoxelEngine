@@ -5,12 +5,6 @@
 #include <mutex>
 #include <unordered_map>
 
-struct ProfilerData
-{
-	std::chrono::steady_clock::time_point lastTimeSample;
-	uint32_t timeMS = 0;
-};
-
 constexpr size_t PROFILER_MEMORY_TABLE_SIZE = 50;
 constexpr size_t PROFILER_SAMPLES_COUNT = 8;
 
@@ -21,7 +15,7 @@ constexpr size_t MESH_GENERATION_INDEX = 3;
 constexpr size_t LOAD_CHUNKS_INDEX = 4;
 constexpr size_t CHUNK_LOAD_DATA_INDEX = 5;
 constexpr size_t CHUNK_LIGHTING_INDEX = 6;
-constexpr size_t NOISE_3D_INDEX = 7;
+constexpr size_t GREEDY_MESHING_INDEX = 7;
 
 constexpr float PROFILER_DRAW_WIDTH = 0.5f;
 constexpr float PROFILER_DRAW_HEIGHT = 0.5f;
@@ -33,6 +27,12 @@ extern const glm::vec3 profilerSamplesColors[PROFILER_SAMPLES_COUNT];
 
 class Profiler
 {
+	struct ProfilerData
+	{
+		std::chrono::steady_clock::time_point lastTimeSample;
+		uint32_t timeNS = 0;
+	};
+
 	struct PerThreadData
 	{
 		ProfilerData profilerData[PROFILER_SAMPLES_COUNT];

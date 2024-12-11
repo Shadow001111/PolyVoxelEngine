@@ -1,4 +1,5 @@
 #include "Shapes.h"
+#include <glm/glm.hpp>
 
 Box::Box() : center(0.0f, 0.0f, 0.0f), extents(0.0f, 0.0f, 0.0f)
 {}
@@ -15,9 +16,9 @@ Plane::Plane() : center(0.0f, 0.0f, 0.0f), normal(0.0f, 0.0f, 0.0f)
 Plane::Plane(glm::vec3 center, glm::vec3 normal) : center(center), normal(glm::normalize(normal)) 
 {}
 
-inline float distanceToPlane(const glm::vec3& point, const Plane& plane)
+float Plane::distanceToPoint(const glm::vec3 & point) const
 {
-	return glm::dot(plane.normal, point - plane.center);
+	return glm::dot(normal, point - center);
 }
 
 //bool isSphereOnOrForwardPlane(const Sphere& sphere, const Plane& plane)
@@ -27,5 +28,5 @@ inline float distanceToPlane(const glm::vec3& point, const Plane& plane)
 
 bool isBoxOnOrForwardPlane(const Box& box, const Plane& plane)
 {
-	return distanceToPlane(box.center, plane) >= -glm::dot(box.extents, glm::abs(plane.normal));
+	return plane.distanceToPoint(box.center) >= -glm::dot(box.extents, glm::abs(plane.normal));
 }

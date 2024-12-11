@@ -1,5 +1,6 @@
 #include "PhysicEntity.h"
 
+const glm::vec3 PhysicEntity::GLOBAL_UP = glm::vec3(0.0f, 1.0f, 0.0f);
 World* PhysicEntity::world = nullptr;
 
 PhysicEntity::PhysicEntity(glm::vec3 position, glm::vec3 colliderSize, glm::vec3 colliderDpos)

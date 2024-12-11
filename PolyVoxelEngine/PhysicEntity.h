@@ -3,6 +3,8 @@
 
 class PhysicEntity
 {
+	static const glm::vec3 GLOBAL_UP;
+
 	Chunk* chunk = nullptr;
 	PhysicEntityCollider collider;
 public:

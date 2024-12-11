@@ -1,12 +1,13 @@
 #include "TextRenderer.h"
 #include <iostream>
+#include <glm/glm.hpp>
 
-std::unordered_map<char, Character> TextRenderer::characters;
+std::unordered_map<char, TextRenderer::Character> TextRenderer::characters;
 unsigned int TextRenderer::spaceAdvance = 0;
 VAO* TextRenderer::textVAO = nullptr;
 VBO* TextRenderer::textVBO = nullptr;
 unsigned int TextRenderer::textureArray = 0;
-RenderCharacterData TextRenderer::renderCharactersData[TEXT_SSBO_SIZE] = {};
+TextRenderer::RenderCharacterData TextRenderer::renderCharactersData[TEXT_SSBO_SIZE] = {};
 SSBO* TextRenderer::textSSBO = nullptr;
 
 size_t TextRenderer::fontSize = 32;

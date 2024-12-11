@@ -3,13 +3,16 @@
 #include "Profiler.h"
 #include <iostream>
 
-SimplexNoise* TerrainGenerator::simplexNoise = nullptr;
-std::unordered_map<int, HeightMap*> TerrainGenerator::heightMaps;
-ObjectPool<HeightMap> TerrainGenerator::heightMapPool(0);
-
-constexpr int noise2ValuesRes = 1;
+int TerrainGenerator::seed = 0;
+FastNoise::SmartNode<FastNoise::Simplex> TerrainGenerator::simplexNoise;
+std::unordered_map<int, ChunkColumnData*> TerrainGenerator::heightMaps;
+AllocatedObjectPool<ChunkColumnData> TerrainGenerator::heightMapPool(0);
 
 Spline TerrainGenerator::continentalSpline = {"res/Splines/continental.bin"};
+
+thread_local float TerrainGenerator::chunkCaveNoiseArray[Settings::CHUNK_SIZE_CUBED];
+float TerrainGenerator::chunkNoiseCalculationsArray2D[Settings::CHUNK_SIZE_SQUARED];
+
 
 int pos2_hash(int x, int y)
 {
@@ -59,8 +62,17 @@ inline float step(float x, float steps)
 	return floorf(x * steps) / (steps - 1.0f);
 }
 
+float TerrainGenerator::noise(float x, float y)
+{
+	return simplexNoise->GenSingle2D(x, y, seed);
+}
 
-float TerrainGenerator::getLayeredNoise(float x, float y, int layers, float amp0, float freq0, float f_amp, float f_freq, float dx, float dy)
+float TerrainGenerator::noise(float x, float y, float z)
+{
+	return simplexNoise->GenSingle3D(x, y, z, seed);
+}
+
+float TerrainGenerator::getLayeredNoise2D(float x, float y, int layers, float amp0, float freq0, float f_amp, float f_freq, float dx, float dy)
 {
 	float amp = amp0;
 	float freq = freq0;
@@ -94,20 +106,112 @@ float TerrainGenerator::getLayeredNoise3D(float x, float y, float z, int layers,
 	return layered_value * inv_max_sum;
 }
 
-float TerrainGenerator::noise(float x, float y)
+void TerrainGenerator::getNoiseArray2D(float* array, float x, float y, int sizeX, int sizeY, float frequency)
 {
-	return simplexNoise->noise(x, y);
+	simplexNoise->GenUniformGrid2D(array, x, y, sizeX, sizeY, frequency, seed);
 }
 
-float TerrainGenerator::noise(float x, float y, float z)
+void TerrainGenerator::getNoiseArray3D(float* array, float x, float y, float z, int sizeX, int sizeY, int sizeZ, float frequency)
 {
-	Profiler::start(NOISE_3D_INDEX);
-	float value = simplexNoise->noise(x, y, z);
-	Profiler::end(NOISE_3D_INDEX);
-	return value;
+	simplexNoise->GenUniformGrid3D(array, x, y, z, sizeX, sizeY, sizeZ, frequency, seed);
 }
 
-HeightMap* TerrainGenerator::getHeightMap(int chunkX, int chunkZ)
+void TerrainGenerator::getLayeredNoiseArray2D(float* array, float x, float y, int sizeX, int sizeY, float amplitude, float frequency, int layers, float amplitudeFactor, float frequencyFactor)
+{
+	for (int y = 0; y < sizeY; y++)
+	{
+		for (int x = 0; x < sizeX; x++)
+		{
+			size_t index = x + y * sizeX;
+			array[index] = 0;
+		}
+	}
+	for (int i = 0; i < layers; i++)
+	{
+		getNoiseArray2D(chunkNoiseCalculationsArray2D, x, y, sizeX, sizeY, frequency);
+		for (int y = 0; y < sizeY; y++)
+		{
+			for (int x = 0; x < sizeX; x++)
+			{
+				size_t index = x + y * sizeX;
+				float value = chunkNoiseCalculationsArray2D[index];
+				value = (value + 1.0f) * 0.5f * amplitude;
+				array[index] += value;
+			}
+		}
+		amplitude *= amplitudeFactor;
+		frequency *= frequencyFactor;
+	}
+
+	float inv_max_sum = (amplitudeFactor == 1.0f || layers == 1) ? layers : (1.0f - amplitudeFactor) / (1.0f - powf(amplitudeFactor, layers));
+	if (inv_max_sum != 1.0f)
+	{
+		for (int y = 0; y < sizeY; y++)
+		{
+			for (int x = 0; x < sizeX; x++)
+			{
+				size_t index = x + y * sizeX;
+				array[index] *= inv_max_sum;
+			}
+		}
+	}
+}
+
+void TerrainGenerator::getLayeredNoiseArray2D(float* array, float x, float y, int sizeX, int sizeY, const LayeredNoiseData& data)
+{
+	return getLayeredNoiseArray2D(array, x, y, sizeX, sizeY, data.amplitude, data.frequency, data.layersCount, data.amplitudeFactor, data.frequencyFactor);
+}
+
+void TerrainGenerator::getInitialHeightArray(int* heightArray, int chunkX, int chunkZ, Biome biome)
+{
+	int globalChunkX = chunkX * Settings::CHUNK_SIZE;
+	int globalChunkZ = chunkZ * Settings::CHUNK_SIZE;
+
+	const BiomeData& biomeData_ = biomeData[(size_t)biome];
+
+	float continentalNoiseArray[Settings::CHUNK_SIZE_SQUARED];
+	getLayeredNoiseArray2D(continentalNoiseArray, globalChunkX, globalChunkZ, Settings::CHUNK_SIZE, Settings::CHUNK_SIZE, biomeData_.continentalLayer);
+
+	float erosionNoiseArray[Settings::CHUNK_SIZE_SQUARED];
+	getLayeredNoiseArray2D(erosionNoiseArray, globalChunkX, globalChunkZ, Settings::CHUNK_SIZE, Settings::CHUNK_SIZE, biomeData_.erosionLayer);
+
+	float weirdnessNoiseArray[Settings::CHUNK_SIZE_SQUARED];
+	getLayeredNoiseArray2D(weirdnessNoiseArray, globalChunkX, globalChunkZ, Settings::CHUNK_SIZE, Settings::CHUNK_SIZE, biomeData_.weirdnessLayer);
+
+	for (int y = 0; y < Settings::CHUNK_SIZE; y++)
+	{
+		for (int x = 0; x < Settings::CHUNK_SIZE; x++)
+		{
+			size_t index = x + y * Settings::CHUNK_SIZE;
+			float continental = continentalSpline.get(continentalNoiseArray[index]) * biomeData_.continentalAmplitude;
+			float erosion = erosionNoiseArray[index];
+			float weirdness = weirdnessNoiseArray[index];
+
+			float value = continental;
+			if (erosion > biomeData_.erosionThreshold)
+			{
+				value -= (erosion - biomeData_.erosionThreshold) / (1.0f - biomeData_.erosionThreshold) * biomeData_.erosionAmplitude;
+			}
+
+			float pv = (1 - fabsf(3 * fabsf(weirdness) - 2)) * biomeData_.weirdnessAmplitude;
+
+			value += pv;
+
+			heightArray[index] = value;
+		}
+	}
+}
+
+void TerrainGenerator::generateChunkCaveNoise(int chunkX, int chunkY, int chunkZ)
+{
+	float x = (float)chunkX * Settings::CHUNK_SIZE;
+	float y = (float)chunkY * Settings::CHUNK_SIZE;
+	float z = (float)chunkZ * Settings::CHUNK_SIZE;
+	float scale = 0.08f;
+	getNoiseArray3D(chunkCaveNoiseArray, x, y, z, Settings::CHUNK_SIZE, Settings::CHUNK_SIZE, Settings::CHUNK_SIZE, scale);
+}
+
+ChunkColumnData* TerrainGenerator::getHeightMap(int chunkX, int chunkZ)
 {
 	const auto& it = heightMaps.find(pos2_hash(chunkX, chunkZ));
 #ifdef _DEBUG
@@ -130,8 +234,7 @@ Block TerrainGenerator::getBlock(int x, int y, int z, int height, Biome biome)
 	{
 		return Block::Air;
 	}
-
-	if (y == height)
+	else if (y == height)
 	{
 		int level = snowLevel + sinf((x + z) * mountainStoneLevelVariationFreq) * mountainStoneLevelVariationAmpl;
 		if (y > level)
@@ -146,60 +249,38 @@ Block TerrainGenerator::getBlock(int x, int y, int z, int height, Biome biome)
 	}
 	else if (y < height - 10)
 	{
-		return IsCave(x, y, z) ? Block::Air : Block::Stone;
+		return IsCaveInChunk(x, y, z) ? Block::Air : Block::Stone;
 	}
 	else if (y < height)
 	{
 		int level = mountainStoneLevel + sinf((x + z) * mountainStoneLevelVariationFreq) * mountainStoneLevelVariationAmpl;
-		return y < level ? Block::Dirt : (IsCave(x, y, z) ? Block::Air : Block::Stone);
+		return y < level ? Block::Dirt : (IsCaveInChunk(x, y, z) ? Block::Air : Block::Stone);
 	}
 	return Block::Stone;
 }
 
-bool TerrainGenerator::IsCave(int x, int y, int z)
+bool TerrainGenerator::IsCaveInChunk(int x, int y, int z)
 {
 	// TODO: few chunks are 'closed' because caves are too frequent
-	//float cheese = getLayeredNoise3D(x, y, z, 3, 1.0f, 0.02f, 0.5f, 2.0f, 0.0f, 0.0f, 0.0f);
-	float cheese = (float)rand() / (float)RAND_MAX;
+	x &= (Settings::CHUNK_SIZE - 1);
+	y &= (Settings::CHUNK_SIZE - 1);
+	z &= (Settings::CHUNK_SIZE - 1);
+
+	float cheese = chunkCaveNoiseArray[x + y * Settings::CHUNK_SIZE + z * Settings::CHUNK_SIZE_SQUARED];
 	return cheese < 0.5f;
 }
 
 Biome TerrainGenerator::getBiome(int chunkX, int chunkZ)
 {
 	float frequency = 0.01f;
-	float temperature = TerrainGenerator::getLayeredNoise(chunkX, chunkZ, 3, 1.0f, frequency, 0.5f, 2.0f, 0.0f, 0.0f);
-	float humidity = TerrainGenerator::getLayeredNoise(chunkX, chunkZ, 3, 1.0f, frequency, 0.5f, 2.0f, 0.525f, 0.176f);
+	float temperature = TerrainGenerator::getLayeredNoise2D(chunkX, chunkZ, 3, 1.0f, frequency, 0.5f, 2.0f, 0.0f, 0.0f);
+	float humidity = TerrainGenerator::getLayeredNoise2D(chunkX, chunkZ, 3, 1.0f, frequency, 0.5f, 2.0f, 0.525f, 0.176f);
 	return getBiomeByTH(temperature, humidity);
-}
-
-float TerrainGenerator::calculateInitialHeight(int globalX, int globalZ, Biome biome)
-{
-	int chunkX = floorf((float)globalX / (float)Settings::CHUNK_SIZE);
-	int chunkZ = floorf((float)globalZ / (float)Settings::CHUNK_SIZE);
-
-	float erosionThreshold = 0.8f;
-	float erosionAmpl = 10.0f;
-	float erosionFreq = 0.01f;
-	float erosion = getLayeredNoise(globalX, globalZ, 1, 1.0f, erosionFreq, 0.0f, 0.0f, -0.235626f, 0.5252562f);;
-
-	float continentalAmpl = 200.0f;
-	float continentalFreq = 0.001f;
-	float continental = getLayeredNoise(globalX, globalZ, 1, 1.0f, continentalFreq, 0.0f, 1.0f, 0.0f, 0.0f);
-	continental += getLayeredNoise(globalX, globalZ, 2, 0.5f, continentalFreq * 2.0f, 0.5f, 2.0f, 0.0f, 0.0f);
-	continental /= 1.5f;
-	continental = continentalSpline.get(continental) * continentalAmpl -(erosion > erosionThreshold ? (erosion - erosionThreshold) / (1.0f - erosionThreshold) * erosionAmpl : 0.0f);
-
-	float pvAmpl = 20.0f;
-	float weirdnessFreq = 0.0025f;
-	float weirdness = getLayeredNoise(globalX, globalZ, 3, 1.0f, weirdnessFreq, 0.25f, 4.0f, 0.1764f, -0.14151f);
-	float pv = (1 - fabsf(3 * fabsf(weirdness) - 2)) * pvAmpl;
-
-	return continental + pv;
 }
 
 int TerrainGenerator::calculateHeight(int globalX, int globalZ)
 {
-	int chunkX = floorf((float)globalX / (float)Settings::CHUNK_SIZE);
+	/*int chunkX = floorf((float)globalX / (float)Settings::CHUNK_SIZE);
 	int chunkZ = floorf((float)globalZ / (float)Settings::CHUNK_SIZE);
 
 	Biome biome = getBiome(chunkX, chunkZ);
@@ -289,12 +370,13 @@ int TerrainGenerator::calculateHeight(int globalX, int globalZ)
 			Biome biome = getBiome(chunkX, chunkZ);
 			return TerrainGenerator::calculateInitialHeight(globalX, globalZ, biome);
 		}
-	}
+	}*/
 }
 
-void TerrainGenerator::init(unsigned int seed)
+void TerrainGenerator::init(unsigned int seed_)
 {
-	simplexNoise = new SimplexNoise(seed);
+	seed = seed_;
+	simplexNoise = FastNoise::New<FastNoise::Simplex>();
 
 	size_t heightMapPoolSize = calcArea(Settings::CHUNK_LOAD_RADIUS);
 	heightMapPool.reserve(heightMapPoolSize);
@@ -302,8 +384,6 @@ void TerrainGenerator::init(unsigned int seed)
 
 void TerrainGenerator::clear()
 {
-	delete simplexNoise;
-
 	for (const auto& pair : heightMaps)
 	{
 		delete pair.second;
@@ -319,21 +399,24 @@ void TerrainGenerator::loadHeightMap(int chunkX, int chunkZ)
 	{
 		return;
 	}
-	HeightMap* heightMap = heightMapPool.acquire();
-	int globalChunkX = chunkX * Settings::CHUNK_SIZE;
-	int globalChunkZ = chunkZ * Settings::CHUNK_SIZE;
 
+	ChunkColumnData* columnChunkData = heightMapPool.acquire();
+	columnChunkData->biome = getBiome(chunkX, chunkZ);
+
+	// height
+	getInitialHeightArray(columnChunkData->heightMap, chunkX, chunkZ, columnChunkData->biome);
+
+	// slmh
 	for (int z = 0; z < Settings::CHUNK_SIZE; z++)
 	{
-		int globalZ = globalChunkZ + z;
 		for (int x = 0; x < Settings::CHUNK_SIZE; x++)
 		{
-			int globalX = globalChunkX + x;
-			heightMap->setHeightAt(x, z, calculateHeight(globalX, globalZ));
-			heightMap->setSlMHAt(x, z, INT_MIN);
+			columnChunkData->setSlMHAt(x, z, INT_MIN);
 		}
 	}
-	heightMaps[hash] = heightMap;
+
+	//
+	heightMaps[hash] = columnChunkData;
 }
 
 void TerrainGenerator::unloadHeightMap(int chunkX, int chunkZ)
@@ -349,27 +432,32 @@ void TerrainGenerator::unloadHeightMap(int chunkX, int chunkZ)
 	heightMaps.erase(it);
 }
 
-void HeightMap::setHeightAt(size_t x, size_t z, int height)
+void ChunkColumnData::setHeightAt(size_t x, size_t z, int height)
 {
 	heightMap[x + z * Settings::CHUNK_SIZE] = height;
 }
 
-int HeightMap::getHeightAt(size_t x, size_t z) const
+int ChunkColumnData::getHeightAt(size_t x, size_t z) const
 {
 	return heightMap[x + z * Settings::CHUNK_SIZE];
 }
 
-int HeightMap::getHeightAtByIndex(size_t index) const
+int ChunkColumnData::getHeightAtByIndex(size_t index) const
 {
 	return heightMap[index];
 }
 
-void HeightMap::setSlMHAt(size_t x, size_t z, int height)
+void ChunkColumnData::setSlMHAt(size_t x, size_t z, int height)
 {
 	skyLightMaxHeight[x + z * Settings::CHUNK_SIZE] = height;
 }
 
-int HeightMap::getSlMHAt(size_t x, size_t z) const
+int ChunkColumnData::getSlMHAt(size_t x, size_t z) const
 {
 	return skyLightMaxHeight[x + z * Settings::CHUNK_SIZE];
+}
+
+Biome ChunkColumnData::getBiome() const
+{
+	return biome;
 }

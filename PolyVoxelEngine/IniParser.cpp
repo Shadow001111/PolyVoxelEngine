@@ -70,7 +70,7 @@ std::string IniParser::ParseSectionName(const std::string& line)
 	return "";
 }
 
-Variable IniParser::ParseVariable(const std::string& line)
+IniParser::Variable IniParser::ParseVariable(const std::string& line)
 {
 	Variable var;
 

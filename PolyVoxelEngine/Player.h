@@ -2,15 +2,17 @@
 #include "PhysicEntity.h"
 #include "SoundEngine.h"
 
-enum class Gamemode : char
-{
-	Survival,
-	Creative,
-	Spectator
-};
-
 class Player
 {
+	enum class Gamemode : char
+	{
+		Survival,
+		Creative,
+		Spectator
+	};
+
+	static const glm::vec3 GLOBAL_UP;
+
 	bool in_window = true;
 	bool isGrounded = false;
 
@@ -54,8 +56,8 @@ class Player
 
 	Chunk* debugChunk = nullptr;
 
-	SoundSource blockPlaceSoundSource;
-	SoundSource blockBreakSoundSource;
+	Sound::SoundSource blockPlaceSoundSource;
+	Sound::SoundSource blockBreakSoundSource;
 
 	void Inputs(float dt, float time);
 	void Accelerate(const glm::vec3& vec);

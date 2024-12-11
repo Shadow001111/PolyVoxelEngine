@@ -11,7 +11,7 @@
 #include "VAO.h"
 
 #include "ThreadPool.h"
-#include "ObjectPool.h"
+#include "AllocatedObjectPool.h"
 
 struct RaycastHit
 {
@@ -19,25 +19,6 @@ struct RaycastHit
 	glm::ivec3 globalPos{0, 0, 0};
 	glm::ivec3 normal{0, 0, 0};
 	Block block = Block::Air;
-};
-
-struct ChunkDistance
-{
-	Chunk* chunk = nullptr;
-	float distance = 0.0f;
-
-	ChunkDistance(Chunk* chunk, float distance);
-};
-
-struct Int3
-{
-	int x = 0, y = 0, z = 0;
-
-	Int3();
-	Int3(int x, int y, int z);
-	size_t operator()(const Int3& pos) const noexcept;
-	size_t operator()(const glm::ivec3& pos) const noexcept;
-	bool operator==(const Int3& pos) const noexcept;
 };
 
 struct WorldData
@@ -51,7 +32,28 @@ struct WorldData
 
 class World
 {
-	ObjectPool<Chunk> chunkPool;
+	struct ChunkDistance
+	{
+		Chunk* chunk = nullptr;
+		float distance = 0.0f;
+
+		ChunkDistance(Chunk* chunk, float distance);
+	};
+
+	struct Int3
+	{
+		int x = 0, y = 0, z = 0;
+
+		Int3();
+		Int3(int x, int y, int z);
+		size_t operator()(const Int3& pos) const noexcept;
+		size_t operator()(const glm::ivec3& pos) const noexcept;
+		bool operator==(const Int3& pos) const noexcept;
+	};
+
+	AllocatedObjectPool<Chunk> chunkPool;
+	unsigned int* chunkIDPool;
+	size_t chunkIDPoolIndex;
 	glm::ivec3 chunkLoaderPosition;
 	glm::ivec3 lastChunkLoaderPosition;
 
@@ -73,8 +75,9 @@ class World
 
 	uint8_t dataShrinkingTick = 0;
 
-	ThreadPoolSpace::ThreadPool threadPool;
+	ThreadPool threadPool;
 	std::mutex chunkPoolMutex;
+	std::mutex chunkIDPoolMutex;
 	std::mutex generateFacesSetMutex;
 	std::mutex chunkMapMutex;
 
@@ -85,7 +88,7 @@ class World
 	void getRenderChunks(std::vector<ChunkDistance>& renderChunks, const Camera& camera) const;
 	void getDrawCommands(const std::vector<ChunkDistance>& renderChunks, const Camera& camera, size_t& commandsCount, size_t& positionsCount, bool transparent);
 
-	inline void addChunkToGenerateFaces(Chunk* chunk);
+	void addChunkToGenerateFaces(Chunk* chunk);
 	void addSurroundingChunksToGenerateFaces(const Chunk* chunk);
 
 	uint8_t getLightingAt(int x, int y, int z) const;
@@ -115,8 +118,8 @@ public:
 	void setBlockAt(int x, int y, int z, Block block);
 	Block getBlockAt(int x, int y, int z) const;
 
-	float getDistanceToChunkLoader(glm::vec3 chunkPos) const;
-	float getSquaredDistanceToChunkLoader(glm::vec3 chunkPos) const;
+	float getDistanceToChunkLoader(const glm::vec3& chunkPos) const;
+	float getSquaredDistanceToChunkLoader(const glm::vec3& chunkPos) const;
 
 	bool loadChunks(bool forced);
 

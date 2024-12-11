@@ -4,9 +4,8 @@
 #include <unordered_map>
 #include "Block.h"
 #include "Vector.h"
-#include <glm/ext/vector_int3.hpp>
-#include <glm/ext/vector_float3.hpp>
 #include <mutex>
+#include <glm/vec3.hpp>
 
 int pos3_hash(int x, int y, int z) noexcept;
 
@@ -72,31 +71,14 @@ struct LightUpdate
 	LightUpdate(void* chunk, uint8_t x, uint8_t y, uint8_t z, Block block, Block prevBlock);
 };
 
-struct TransparentSortFaceData
-{
-	uint8_t dataXY;
-	uint8_t dataZ;
-	uint8_t dataWH;
-};
-
-struct BlockAndLighting
-{
-	Block block;
-	uint8_t lighting;
-};
-
-enum class ChunkState
-{
-	NotLoaded,
-	InLoadingQueue,
-	Loading,
-	Loaded
-};
-
-std::string toString(ChunkState state);
-
 class Chunk
 {
+	struct BlockAndLighting
+	{
+		Block block;
+		uint8_t lighting;
+	};
+
 	Block blocks[Settings::CHUNK_SIZE_CUBED];
 	uint8_t lightingMap[Settings::CHUNK_SIZE_CUBED]; // sky lighting in left bits, source lighting in right bits
 	std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_SIZE_CUBED>> blockChanges;
@@ -112,6 +94,14 @@ class Chunk
 	void updateLightingAt(size_t x, size_t y, size_t z, Block block, Block prevBlock);
 	static std::string getFilepath(int X, int Y, int Z);
 public:
+	enum class State
+	{
+		NotLoaded,
+		InLoadingQueue,
+		Loading,
+		Loaded
+	};
+
 	static Face* facesData;
 	static FaceInstanceData* faceInstancesData;
 	static FaceInstancesVBO* faceInstancesVBO;
@@ -122,7 +112,7 @@ public:
 	static std::vector<LightUpdate> lightingUpdateVector;
 	static std::mutex lightingMutex;
 
-	ChunkState state = ChunkState::NotLoaded;
+	State state = State::NotLoaded;
 	bool hasAnyFaces = false; // Removing it doesnt change class size
 	uint16_t blocksCount = 0;
 	int X, Y, Z;
@@ -164,3 +154,5 @@ public:
 	static void loadData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_SIZE_CUBED>>& blockChanges, int X, int Y, int Z);
 	static void saveData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_SIZE_CUBED>>& blockChanges, int X, int Y, int Z);
 };
+
+std::string toString(Chunk::State state);

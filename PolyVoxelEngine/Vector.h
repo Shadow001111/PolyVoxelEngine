@@ -1,8 +1,6 @@
 #pragma once
 #include <type_traits>
-#include <stdexcept>
 #include <iostream>
-#include <algorithm>
 
 template<size_t count, typename Enable = void>
 class VectorSizeTypeSelector;

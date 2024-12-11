@@ -1,7 +1,7 @@
 #include "ThreadPool.h"
 #include <iostream>
 
-void ThreadPoolSpace::TaskQueue::getTask(std::function<void()>& task)
+void ThreadPool::TaskQueue::getTask(std::function<void()>& task)
 {
 	std::unique_lock<std::mutex> lock(taskMutex);
 	taskAvailableSignal.wait(lock, [this]() { return !tasks.empty() || stopThreads; });
@@ -14,7 +14,7 @@ void ThreadPoolSpace::TaskQueue::getTask(std::function<void()>& task)
 	tasks.pop();
 }
 
-void ThreadPoolSpace::TaskQueue::waitForCompletion()
+void ThreadPool::TaskQueue::waitForCompletion()
 {
 	std::unique_lock<std::mutex> lock(completionMutex);
 	isWaitingForCompletion = true;
@@ -22,7 +22,7 @@ void ThreadPoolSpace::TaskQueue::waitForCompletion()
 	isWaitingForCompletion = false;
 }
 
-void ThreadPoolSpace::TaskQueue::workDone()
+void ThreadPool::TaskQueue::workDone()
 {
 	activeTasks--;
 	if (activeTasks > 0)
@@ -36,20 +36,20 @@ void ThreadPoolSpace::TaskQueue::workDone()
 	}
 }
 
-void ThreadPoolSpace::TaskQueue::stop()
+void ThreadPool::TaskQueue::stop()
 {
 	stopThreads = true;
 	taskAvailableSignal.notify_all();
 }
 
-ThreadPoolSpace::Worker::Worker(TaskQueue& taskQueue) : taskQueue(taskQueue)
+ThreadPool::Worker::Worker(TaskQueue& taskQueue) : taskQueue(taskQueue)
 {
 	thread = std::thread([this]() {
 		run();
 	});
 }
 
-void ThreadPoolSpace::Worker::run()
+void ThreadPool::Worker::run()
 {
 	std::function<void()> task = nullptr;
 	while (true)
@@ -61,6 +61,10 @@ void ThreadPoolSpace::Worker::run()
 			{
 				break;
 			}
+			else
+			{
+				std::cerr << "Thread busy waiting" << std::endl;
+			}
 		}
 		else
 		{
@@ -70,12 +74,12 @@ void ThreadPoolSpace::Worker::run()
 	}
 }
 
-void ThreadPoolSpace::Worker::joinThread()
+void ThreadPool::Worker::joinThread()
 {
 	thread.join();
 }
 
-ThreadPoolSpace::ThreadPool::ThreadPool(size_t threadCount) : threadCount(threadCount)
+ThreadPool::ThreadPool(size_t threadCount) : threadCount(threadCount)
 {
 	workers.reserve(threadCount);
 	for (size_t i = 0; i < threadCount; i++)
@@ -84,7 +88,7 @@ ThreadPoolSpace::ThreadPool::ThreadPool(size_t threadCount) : threadCount(thread
 	}
 }
 
-ThreadPoolSpace::ThreadPool::~ThreadPool()
+ThreadPool::~ThreadPool()
 {
 	if (!workers.empty())
 	{
@@ -92,12 +96,12 @@ ThreadPoolSpace::ThreadPool::~ThreadPool()
 	}
 }
 
-void ThreadPoolSpace::ThreadPool::waitForCompletion()
+void ThreadPool::waitForCompletion()
 {
 	taskQueue.waitForCompletion();
 }
 
-void ThreadPoolSpace::ThreadPool::destroy()
+void ThreadPool::destroy()
 {
 	taskQueue.stop();
 	for (Worker& worker : workers)

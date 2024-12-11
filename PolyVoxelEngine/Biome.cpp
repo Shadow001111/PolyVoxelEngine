@@ -10,10 +10,10 @@ const BiomePoint biomePoints[(size_t)Biome::Count] =
 
 const BiomeData biomeData[(size_t)Biome::Count] = 
 {
-	{3, 70, 110, 0.5f, 0.005f, 2.0f, 0.01f, 0.95f}, // Grass
-	{3, 60, 100, 0.5f, 0.005f, 2.0f, 0.01f, 0.95f}, // Tundra
-	{3, 60, 100, 0.5f, 0.01f, 2.0f, 0.01f, 0.95f}, // Desert
-	{3, 60, 100, 0.5f, 0.01f, 2.0f, 0.01f, 0.95f}, // Tropic
+	{200.0f,{3, 1.0f, 0.001f, 0.5f, 2.0f}, 10.0f, 0.8f, {1, 1.0f, 0.01f, 1.0f, 1.0f}, 20.0f, {3, 1.0f, 0.0025f, 0.25f, 4.0f}}, // Grass
+	{200.0f,{3, 1.0f, 0.001f, 0.5f, 2.0f}, 10.0f, 0.8f, {1, 1.0f, 0.01f, 1.0f, 1.0f}, 20.0f, {3, 1.0f, 0.0025f, 0.25f, 4.0f}}, // Tundra
+	{200.0f,{3, 1.0f, 0.001f, 0.5f, 2.0f}, 10.0f, 0.8f, {1, 1.0f, 0.01f, 1.0f, 1.0f}, 20.0f, {3, 1.0f, 0.0025f, 0.25f, 4.0f}}, // Desert
+	{200.0f,{3, 1.0f, 0.001f, 0.5f, 2.0f}, 10.0f, 0.8f, {1, 1.0f, 0.01f, 1.0f, 1.0f}, 20.0f, {3, 1.0f, 0.0025f, 0.25f, 4.0f}}, // Tropic
 };
 
 Biome getBiomeByTH(float temperature, float humidity)

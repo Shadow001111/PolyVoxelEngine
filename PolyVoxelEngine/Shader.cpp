@@ -5,7 +5,7 @@
 #include <sstream>
 #include <cerrno>
 
-std::vector<std::string> splitString(const std::string& input, char delimiter)
+static std::vector<std::string> splitString(const std::string& input, char delimiter)
 {
 	std::vector<std::string> result;
 	std::istringstream iss(input);
@@ -17,7 +17,7 @@ std::vector<std::string> splitString(const std::string& input, char delimiter)
 	return result;
 }
 
-std::string ReadFile(const char* filepath)
+static std::string ReadFile(const char* filepath)
 {
 	std::ifstream file(filepath);
 	if (!file.is_open()) {
@@ -30,7 +30,7 @@ std::string ReadFile(const char* filepath)
 	return buffer.str();
 }
 
-GLuint CreateShader(GLuint type, const char* filepath, const std::vector<std::string>& flags)
+static GLuint CreateShader(GLuint type, const char* filepath, const std::vector<std::string>& flags)
 {
 	std::string code = ReadFile(filepath);
 	if (!flags.empty())

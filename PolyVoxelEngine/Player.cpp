@@ -97,6 +97,8 @@ const UIVertex uiVertices[6] =
 	{0.0, 0.0, 0.0, 0.0},
 };
 
+const glm::vec3 Player::GLOBAL_UP = glm::vec3(0.0f, 1.0f, 0.0f);
+
 void Player::Accelerate(const glm::vec3& vec)
 {
 	physicEntity.accelerate(vec);
@@ -183,9 +185,9 @@ void Player::update(float intelpolation)
 	camera.updateVectors();
 
 	// update listener
-	SoundEngine::setListenerPosition(camera.position.x, camera.position.y, camera.position.z);
-	SoundEngine::setListenerVelocity(physicEntity.velocity.x, physicEntity.velocity.y, physicEntity.velocity.z);
-	SoundEngine::setListenerOrientation(newForward.x, newForward.y, newForward.z, camera.Up.x, camera.Up.y, camera.Up.z);
+	Sound::SoundEngine::setListenerPosition(camera.position.x, camera.position.y, camera.position.z);
+	Sound::SoundEngine::setListenerVelocity(physicEntity.velocity.x, physicEntity.velocity.y, physicEntity.velocity.z);
+	Sound::SoundEngine::setListenerOrientation(newForward.x, newForward.y, newForward.z, camera.Up.x, camera.Up.y, camera.Up.z);
 }
 
 void Player::BeforeRender()

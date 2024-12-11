@@ -1,5 +1,5 @@
 #pragma once
-#include <glm/glm.hpp>
+#include <glm/vec3.hpp>
 
 struct Box
 {
@@ -24,9 +24,9 @@ struct Plane
 
 	Plane();
 	Plane(glm::vec3 center, glm::vec3 normal);
-};
 
-inline float distanceToPlane(const glm::vec3& point, const Plane& plane);
+	float distanceToPoint(const glm::vec3& point) const;
+};
 
 //bool isSphereOnOrForwardPlane(const Sphere& sphere, const Plane& plane);
 bool isBoxOnOrForwardPlane(const Box& box, const Plane& plane);

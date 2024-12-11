@@ -1,7 +1,6 @@
 #include "World.h"
 #include <iostream>
 #include <unordered_set>
-#include <glad/glad.h>
 #include "GraphicController.h"
 #include "TerrainGenerator.h"
 #include "Profiler.h"
@@ -36,7 +35,7 @@ template <typename T> int signum(T val)
 	return (T(0) < val) - (val < T(0));
 }
 
-ChunkDistance::ChunkDistance(Chunk* chunk, float distance) : chunk(chunk), distance(distance) {}
+World::ChunkDistance::ChunkDistance(Chunk* chunk, float distance) : chunk(chunk), distance(distance) {}
 
 static float intbound(float s, float ds)
 {
@@ -71,7 +70,7 @@ void World::releaseChunk(Chunk* chunk)
 	std::lock_guard<std::mutex> lock(chunkPoolMutex);
 	chunkPool.release(chunk);
 	chunk->destroy();
-	if (chunk->state == ChunkState::InLoadingQueue)
+	if (chunk->state == Chunk::State::InLoadingQueue)
 	{
 		size_t count = chunkGenerateVector.size();
 		for (size_t i = 0; i < count; i++)
@@ -85,7 +84,14 @@ void World::releaseChunk(Chunk* chunk)
 			}
 		}
 	}
-	chunk->state = ChunkState::NotLoaded;
+	else if (chunk->state == Chunk::State::Loaded)
+	{
+		std::lock_guard<std::mutex> lock(chunkIDPoolMutex);
+		//std::cout << "Returned: " << chunk->drawCommand.offset / Settings::FACE_INSTANCES_PER_CHUNK << std::endl;
+		chunkIDPool[++chunkIDPoolIndex] = chunk->drawCommand.offset / Settings::FACE_INSTANCES_PER_CHUNK;
+		chunk->drawCommand.offset = 0;
+	}
+	chunk->state = Chunk::State::NotLoaded;
 }
 
 World::World(const WorldData& worldData)
@@ -104,9 +110,16 @@ World::World(const WorldData& worldData)
 	blockTextures("res/Textures.png", 0, Settings::BLOCK_TEXTURE_SIZE, Settings::BLOCK_TEXTURES_IN_ROW, Settings::BLOCK_TEXTURES_COUNT, Settings::BLOCK_TEXTURES_NUM_CHANNELS, GL_REPEAT, true),
 	numberTextures("res/Numbers.png", 1, 8, 4, 16, 1, GL_CLAMP_TO_BORDER, false),
 
-	threadPool(3),
+	threadPool(4),
 	chunkPool(Settings::MAX_RENDERED_CHUNKS_COUNT)
 {
+	chunkIDPool = new unsigned int[Settings::MAX_RENDERED_CHUNKS_COUNT];
+	for (size_t i = 0; i < Settings::MAX_RENDERED_CHUNKS_COUNT; i++)
+	{
+		chunkIDPool[i] = i;
+	}
+	chunkIDPoolIndex = Settings::MAX_RENDERED_CHUNKS_COUNT - 1;
+
 	GraphicController::chunkProgram->bind();
 	GraphicController::chunkProgram->setUniformInt("diffuse0", 0);
 	GraphicController::chunkProgram->setUniformInt("numbers", 1);
@@ -171,6 +184,7 @@ World::~World()
 	}
 	Chunk::chunkMap.clear();
 
+	delete[] chunkIDPool;
 	delete[] drawCommands;
 	delete[] chunkPositions;
 	delete[] chunkPositionIndexes;
@@ -242,47 +256,61 @@ void World::update(const glm::vec3& pos, bool isMoving)
 
 void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 {
-	const size_t chunksCount = chunkGenerateVector.size();
+	size_t chunksCount = chunkGenerateVector.size();
 	if (chunksCount == 0)
 	{
 		return;
 	}
-	const size_t generateCount = std::min(chunksCount, size_t(isMoving ? Settings::DynamicSettings::generateChunksPerTickMoving : Settings::DynamicSettings::generateChunksPerTickStationary));
+	size_t generateCount = std::min(chunksCount, size_t(isMoving ? Settings::DynamicSettings::generateChunksPerTickMoving : Settings::DynamicSettings::generateChunksPerTickStationary));
 
 	// generate
-	const int range = int(chunksCount - generateCount);
-	for (int i = chunksCount - 1; i >= range; i--)
+	size_t range = chunksCount - generateCount;
+
+	std::vector<std::function<void()>> tasks;
+	tasks.reserve(generateCount);
+	for (size_t i = range; i < chunksCount; i++)
 	{
 		Chunk* chunk = chunkGenerateVector[i];
-		threadPool.addTask([this, chunk]() {
+		if (chunk->state != Chunk::State::InLoadingQueue)
+		{
+			std::cout << toString(chunk->state);
+			continue;
+		}
+		tasks.push_back([this, chunk]() {
 			generateChunkBlocksThread(chunk);
-						   });
+							});
 	}
-	threadPool.waitForCompletion();
-	chunkGenerateVector.resize(chunksCount - generateCount);
+	threadPool.addTasks(tasks);
+
+	threadPool.waitForCompletion(); // TODO: remove and fix errors
+	chunkGenerateVector.resize(range);
 }
 
 void World::generateChunkBlocksThread(Chunk* chunk)
 {
-	// TODO: remove
-	if (chunk->state != ChunkState::InLoadingQueue)
-	{
-		std::cerr << std::format("Chunk state mismatch in generateChunkBlocksThread. State: {}, should be: {}", toString(chunk->state), toString(ChunkState::InLoadingQueue)) << std::endl;
-	}
 	if (getSquaredDistanceToChunkLoader(glm::vec3(chunk->X, chunk->Y, chunk->Z)) > Settings::CHUNK_LOAD_RADIUS * Settings::CHUNK_LOAD_RADIUS)
 	{
 		releaseChunk(chunk);
 		return;
 	}
-	chunk->state = ChunkState::Loading;
+	
+	chunk->state = Chunk::State::Loading;
 	chunk->generateBlocks();
-	// TODO: add case when chunk is out of loading range
+	
 	if (getSquaredDistanceToChunkLoader(glm::vec3(chunk->X, chunk->Y, chunk->Z)) > Settings::CHUNK_LOAD_RADIUS * Settings::CHUNK_LOAD_RADIUS)
 	{
 		releaseChunk(chunk);
 		return;
 	}
-	chunk->state = ChunkState::Loaded;
+	chunk->state = Chunk::State::Loaded;
+
+	{
+		std::lock_guard<std::mutex> lock(chunkIDPoolMutex);
+		chunk->setDrawID(chunkIDPool[chunkIDPoolIndex]);
+		chunkIDPool[chunkIDPoolIndex] = 0;
+		chunkIDPoolIndex--;
+	}
+
 	addChunkToGenerateFaces(chunk);
 	addSurroundingChunksToGenerateFaces(chunk);
 }
@@ -321,13 +349,16 @@ void World::generateChunksFaces()
 		return;
 	}
 	Chunk::faceInstancesVBO->bind();
-	Profiler::start(MESH_GENERATION_INDEX);
+	
+	//Profiler::start(MESH_GENERATION_INDEX);
+
 	for (Chunk* chunk : generateFacesSet)
 	{
 		chunk->generateFaces();
 	}
-	Profiler::end(MESH_GENERATION_INDEX);
 	generateFacesSet.clear();
+
+	//Profiler::end(MESH_GENERATION_INDEX);
 }
 
 RaycastHit World::raycast(const glm::vec3& startPos, const glm::vec3& dir, float length)
@@ -588,12 +619,12 @@ Block World::getBlockAt(int x, int y, int z) const
 	return chunk->getBlockAtInBoundaries(x, y, z);
 }
 
-float World::getDistanceToChunkLoader(glm::vec3 chunkPos) const
+float World::getDistanceToChunkLoader(const glm::vec3& chunkPos) const
 {
 	return glm::distance(chunkPos, glm::vec3(chunkLoaderPosition));
 }
 
-float World::getSquaredDistanceToChunkLoader(glm::vec3 chunkPos) const
+float World::getSquaredDistanceToChunkLoader(const glm::vec3& chunkPos) const
 {
 	glm::vec3 dpos = chunkPos - glm::vec3(chunkLoaderPosition);
 	return glm::dot(dpos, dpos);
@@ -619,7 +650,7 @@ bool World::loadChunks(bool forced)
 		for (auto it = Chunk::chunkMap.begin(); it != Chunk::chunkMap.end();)
 		{
 			Chunk* chunk = it->second;
-			if (chunk->state != ChunkState::Loaded && chunk->state != ChunkState::InLoadingQueue)
+			if (chunk->state != Chunk::State::Loaded && chunk->state != Chunk::State::InLoadingQueue)
 			{
 				it++;
 				continue;
@@ -668,11 +699,11 @@ bool World::loadChunks(bool forced)
 
 					chunk = getChunk(chunkLoaderPosition.x + dx, chunkLoaderPosition.y + dy, chunkLoaderPosition.z + dz);
 					// TODO: remove
-					if (chunk->state != ChunkState::NotLoaded)
+					if (chunk->state != Chunk::State::NotLoaded)
 					{
-						std::cerr << std::format("Chunk state mismatch in loadChunks. State: {}, should be: {}", toString(chunk->state), toString(ChunkState::NotLoaded)) << std::endl;
+						std::cerr << std::format("Chunk state mismatch in loadChunks. State: {}, should be: {}", toString(chunk->state), toString(Chunk::State::NotLoaded)) << std::endl;
 					}
-					chunk->state = ChunkState::InLoadingQueue;
+					chunk->state = Chunk::State::InLoadingQueue;
 					chunkGenerateVector.push_back(chunk);
 				}
 			}
@@ -779,9 +810,11 @@ void World::regenerateChunks()
 	for (const auto& pair : Chunk::chunkMap)
 	{
 		Chunk* chunk = pair.second;
-		chunk->destroy();
-		chunk->init(chunk->X, chunk->Y, chunk->Z);
-		chunkGenerateVector.push_back(chunk);
+		if (chunk->state != Chunk::State::Loaded)
+		{
+			continue;
+		}
+		addChunkToGenerateFaces(chunk);
 	}
 }
 
@@ -855,10 +888,13 @@ void World::getDrawCommands(const std::vector<ChunkDistance>& renderChunks, cons
 	}
 }
 
-inline void World::addChunkToGenerateFaces(Chunk* chunk)
+void World::addChunkToGenerateFaces(Chunk* chunk)
 {
-	std::lock_guard<std::mutex> lock(generateFacesSetMutex);
-	generateFacesSet.emplace(chunk);
+	if (chunk->state == Chunk::State::Loaded)
+	{
+		std::lock_guard<std::mutex> lock(generateFacesSetMutex);
+		generateFacesSet.emplace(chunk);
+	}
 }
 
 void World::addSurroundingChunksToGenerateFaces(const Chunk* chunk)
@@ -872,7 +908,11 @@ void World::addSurroundingChunksToGenerateFaces(const Chunk* chunk)
 		{
 			for (int dz = -1; dz <= 1; dz += 2)
 			{
-				Chunk* chunk = Chunk::getChunkAt(chX + dx, chY + dy, chZ + dz);
+				Chunk* chunk;
+				{
+					std::lock_guard<std::mutex> lock(chunkMapMutex);
+					chunk = Chunk::getChunkAt(chX + dx, chY + dy, chZ + dz);
+				}
 				if (chunk)
 				{
 					addChunkToGenerateFaces(chunk);
@@ -1288,7 +1328,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	int globalY = (int)y + Y * Settings::CHUNK_SIZE;
 	int globalZ = (int)z + Z * Settings::CHUNK_SIZE;
 
-	HeightMap* heightMap = TerrainGenerator::getHeightMap(X, Z);
+	ChunkColumnData* heightMap = TerrainGenerator::getHeightMap(X, Z);
 	const int skyLightMaxHeight = heightMap->getSlMHAt(x, z);
 
 	uint8_t fillLightPower = 0;
@@ -1472,25 +1512,25 @@ void World::saveWorldData(const WorldData& worldData)
 	file.close();
 }
 
-Int3::Int3() : x(0), y(0), z(0)
+World::Int3::Int3() : x(0), y(0), z(0)
 {
 }
 
-Int3::Int3(int x, int y, int z) : x(x), y(y), z(z)
+World::Int3::Int3(int x, int y, int z) : x(x), y(y), z(z)
 {
 }
 
-size_t Int3::operator()(const Int3& pos) const noexcept
-{
-	return pos3_hash(pos.x, pos.y, pos.z);
-}
-
-size_t Int3::operator()(const glm::ivec3& pos) const noexcept
+size_t World::Int3::operator()(const Int3& pos) const noexcept
 {
 	return pos3_hash(pos.x, pos.y, pos.z);
 }
 
-bool Int3::operator==(const Int3& pos) const noexcept
+size_t World::Int3::operator()(const glm::ivec3& pos) const noexcept
+{
+	return pos3_hash(pos.x, pos.y, pos.z);
+}
+
+bool World::Int3::operator==(const Int3& pos) const noexcept
 {
 	return (x == pos.x) && (y == pos.y) && (z == pos.z);
 }

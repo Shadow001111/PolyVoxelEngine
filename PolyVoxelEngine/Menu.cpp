@@ -87,7 +87,7 @@ void Menu::run()
 			float frameTime = glfwGetTime() - frameStart;
 			if (frameTime < frameDelay)
 			{
-				std::chrono::milliseconds duration(int((frameDelay - frameTime) * 1000.0f));
+				std::chrono::milliseconds duration(int((frameDelay - frameTime) * 1000));
 				std::this_thread::sleep_for(duration);
 			}
 		}

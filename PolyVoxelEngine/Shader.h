@@ -4,11 +4,6 @@
 #include <glm/fwd.hpp>
 #include <string>
 
-std::vector<std::string> splitString(const std::string& input, char delimiter = ' ');
-
-std::string ReadFile(const char* filepath);
-GLuint CreateShader(GLuint type, const char* filepath, const std::vector<std::string>& flags);
-
 class Shader
 {
 	std::string name;

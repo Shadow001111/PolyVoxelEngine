@@ -4,14 +4,14 @@
 #include <iostream>
 #include <sstream>
 
-struct Variable
-{
-	std::string name = "";
-	std::string value = "";
-};
-
 class IniParser
 {
+	struct Variable
+	{
+		std::string name = "";
+		std::string value = "";
+	};
+
 	std::unordered_map<std::string, std::unordered_map<std::string, std::string>> data;
 
 	std::string ParseSectionName(const std::string& line);
