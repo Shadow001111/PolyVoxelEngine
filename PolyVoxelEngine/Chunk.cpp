@@ -102,6 +102,7 @@ void Chunk::destroy()
 	}
 	physicEntities.clear();
 
+	// TODO: chunk may save while init
 	saveData(blockChanges, X, Y, Z);
 }
 
@@ -329,7 +330,6 @@ void Chunk::generateFaces()
 						face.none = false;
 						face.transparent = blockData.transparent;
 						face.textureID = textures[normalID];
-						// TODO: can remove 'lighting' from data, when not in light debug
 						face.lighting = getLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], normalID);
 #if ENABLE_SMOOTH_LIGHTING
 						char ao = getAOandSmoothLighting(maxAO, offCoords[0], offCoords[1], offCoords[2], planeIndex, packOffsets[normalID], face.smoothLighting);

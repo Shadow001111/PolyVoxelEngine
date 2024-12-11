@@ -80,6 +80,7 @@ class World
 	std::mutex chunkIDPoolMutex;
 	std::mutex generateFacesSetMutex;
 	std::mutex chunkMapMutex;
+	std::mutex generateChunkVectorMutex;
 
 
 	Chunk* getChunk(int x, int y, int z);

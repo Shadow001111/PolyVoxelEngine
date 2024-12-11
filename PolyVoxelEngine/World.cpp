@@ -67,11 +67,14 @@ Chunk* World::getChunk(int x, int y, int z)
 
 void World::releaseChunk(Chunk* chunk)
 {
-	std::lock_guard<std::mutex> lock(chunkPoolMutex);
-	chunkPool.release(chunk);
+	{
+		std::lock_guard<std::mutex> lock(chunkPoolMutex);
+		chunkPool.release(chunk);
+	}
 	chunk->destroy();
 	if (chunk->state == Chunk::State::InLoadingQueue)
 	{
+		std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
 		size_t count = chunkGenerateVector.size();
 		for (size_t i = 0; i < count; i++)
 		{
@@ -268,17 +271,20 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 
 	std::vector<std::function<void()>> tasks;
 	tasks.reserve(generateCount);
-	for (size_t i = range; i < chunksCount; i++)
 	{
-		Chunk* chunk = chunkGenerateVector[i];
-		if (chunk->state != Chunk::State::InLoadingQueue)
+		std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
+		for (size_t i = range; i < chunksCount; i++)
 		{
-			std::cout << toString(chunk->state);
-			continue;
-		}
-		tasks.push_back([this, chunk]() {
-			generateChunkBlocksThread(chunk);
+			Chunk* chunk = chunkGenerateVector[i];
+			if (chunk->state != Chunk::State::InLoadingQueue)
+			{
+				std::cout << toString(chunk->state);
+				continue;
+			}
+			tasks.push_back([this, chunk]() {
+				generateChunkBlocksThread(chunk);
 							});
+		}
 	}
 	threadPool.addTasks(tasks);
 
@@ -703,8 +709,11 @@ bool World::loadChunks(bool forced)
 					{
 						std::cerr << std::format("Chunk state mismatch in loadChunks. State: {}, should be: {}", toString(chunk->state), toString(Chunk::State::NotLoaded)) << std::endl;
 					}
-					chunk->state = Chunk::State::InLoadingQueue;
-					chunkGenerateVector.push_back(chunk);
+					{
+						std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
+						chunk->state = Chunk::State::InLoadingQueue;
+						chunkGenerateVector.push_back(chunk);
+					}
 				}
 			}
 		}
