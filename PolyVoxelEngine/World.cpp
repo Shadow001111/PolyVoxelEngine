@@ -65,36 +65,50 @@ Chunk* World::getChunk(int x, int y, int z)
 	return ret;
 }
 
-void World::releaseChunk(Chunk* chunk)
+void World::releaseChunk(Chunk* chunk, bool returnDrawIdToPool = true)
 {
-	{
-		std::lock_guard<std::mutex> lock(chunkPoolMutex);
-		chunkPool.release(chunk);
-	}
-	chunk->destroy();
 	if (chunk->state == Chunk::State::InLoadingQueue)
 	{
-		std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
-		size_t count = chunkGenerateVector.size();
-		for (size_t i = 0; i < count; i++)
 		{
-			auto& item = chunkGenerateVector[i];
-			if (item == chunk)
+			std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
+			size_t count = chunkGenerateVector.size();
+			for (size_t i = 0; i < count; i++)
 			{
-				chunkGenerateVector[i] = chunkGenerateVector.back();
-				chunkGenerateVector.pop_back();
-				break;
+				auto& item = chunkGenerateVector[i];
+				if (item == chunk)
+				{
+					chunkGenerateVector[i] = chunkGenerateVector.back();
+					chunkGenerateVector.pop_back();
+					break;
+				}
 			}
+		}
+		chunk->state = Chunk::State::NotLoaded;
+		{
+			std::lock_guard<std::mutex> lock(chunkPoolMutex);
+			chunkPool.release(chunk);
 		}
 	}
 	else if (chunk->state == Chunk::State::Loaded)
 	{
-		std::lock_guard<std::mutex> lock(chunkIDPoolMutex);
-		//std::cout << "Returned: " << chunk->drawCommand.offset / Settings::FACE_INSTANCES_PER_CHUNK << std::endl;
-		chunkIDPool[++chunkIDPoolIndex] = chunk->drawCommand.offset / Settings::FACE_INSTANCES_PER_CHUNK;
-		chunk->drawCommand.offset = 0;
+		chunk->destroy();
+		if (returnDrawIdToPool)
+		{
+			// TODO: switch to pool class
+			std::lock_guard<std::mutex> lock(chunkIDPoolMutex);
+			chunkIDPool[++chunkIDPoolIndex] = chunk->drawCommand.offset / Settings::FACE_INSTANCES_PER_CHUNK;
+		}
+		chunk->state = Chunk::State::NotLoaded;
+		{
+			std::lock_guard<std::mutex> lock(chunkPoolMutex);
+			chunkPool.release(chunk);
+		}
 	}
-	chunk->state = Chunk::State::NotLoaded;
+	else if (chunk->state == Chunk::State::Loading)
+	{
+		std::lock_guard<std::mutex> lock(releasedLoadingChunksMutex);
+		releasedLoadingChunks.push_back(chunk);
+	}
 }
 
 World::World(const WorldData& worldData)
@@ -217,6 +231,26 @@ void World::update(const glm::vec3& pos, bool isMoving)
 	}
 	temporalChunkBlockChanges.clear();
 
+	// released loading chunks
+	if (!releasedLoadingChunks.empty())
+	{
+		std::cout << releasedLoadingChunks.size() << std::endl;
+		std::lock_guard<std::mutex> lock(releasedLoadingChunksMutex);
+		for (auto it = releasedLoadingChunks.begin(); it != releasedLoadingChunks.end();)
+		{
+			Chunk* chunk = *it;
+			if (chunk->state == Chunk::State::Loaded)
+			{
+				releaseChunk(chunk, false);
+				it = releasedLoadingChunks.erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
+	}
+
 	// load chunks
 	chunkLoaderPosition = glm::ivec3(pos / (float)Settings::CHUNK_SIZE);
 	Profiler::start(LOAD_CHUNKS_INDEX);
@@ -278,7 +312,7 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 			Chunk* chunk = chunkGenerateVector[i];
 			if (chunk->state != Chunk::State::InLoadingQueue)
 			{
-				std::cout << toString(chunk->state);
+				std::cout << "GenerateChunksBlocks: " << toString(chunk->state) << std::endl;
 				continue;
 			}
 			tasks.push_back([this, chunk]() {
@@ -288,7 +322,7 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 	}
 	threadPool.addTasks(tasks);
 
-	threadPool.waitForCompletion(); // TODO: remove and fix errors
+	//threadPool.waitForCompletion(); // TODO: remove and fix errors
 	chunkGenerateVector.resize(range);
 }
 
@@ -300,7 +334,6 @@ void World::generateChunkBlocksThread(Chunk* chunk)
 		return;
 	}
 	
-	chunk->state = Chunk::State::Loading;
 	chunk->generateBlocks();
 	
 	if (getSquaredDistanceToChunkLoader(glm::vec3(chunk->X, chunk->Y, chunk->Z)) > Settings::CHUNK_LOAD_RADIUS * Settings::CHUNK_LOAD_RADIUS)
@@ -308,7 +341,6 @@ void World::generateChunkBlocksThread(Chunk* chunk)
 		releaseChunk(chunk);
 		return;
 	}
-	chunk->state = Chunk::State::Loaded;
 
 	{
 		std::lock_guard<std::mutex> lock(chunkIDPoolMutex);

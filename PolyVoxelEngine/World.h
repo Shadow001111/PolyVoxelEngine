@@ -56,6 +56,7 @@ class World
 	size_t chunkIDPoolIndex;
 	glm::ivec3 chunkLoaderPosition;
 	glm::ivec3 lastChunkLoaderPosition;
+	std::vector<Chunk*> releasedLoadingChunks;
 
 	std::vector<Chunk*> chunkGenerateVector;
 	std::unordered_set<Chunk*> generateFacesSet;
@@ -81,10 +82,11 @@ class World
 	std::mutex generateFacesSetMutex;
 	std::mutex chunkMapMutex;
 	std::mutex generateChunkVectorMutex;
+	std::mutex releasedLoadingChunksMutex;
 
 
 	Chunk* getChunk(int x, int y, int z);
-	void releaseChunk(Chunk* chunk);
+	void releaseChunk(Chunk* chunk, bool returnDrawIdToPool);
 
 	void getRenderChunks(std::vector<ChunkDistance>& renderChunks, const Camera& camera) const;
 	void getDrawCommands(const std::vector<ChunkDistance>& renderChunks, const Camera& camera, size_t& commandsCount, size_t& positionsCount, bool transparent);

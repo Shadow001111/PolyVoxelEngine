@@ -110,6 +110,8 @@ void Chunk::generateBlocks()
 {
 	Profiler::start(BLOCK_GENERATION_INDEX);
 
+	state = State::Loading;
+
 	const ChunkColumnData* heightMap = TerrainGenerator::getHeightMap(X, Z);
 	if (heightMap == nullptr)
 	{
@@ -272,6 +274,8 @@ void Chunk::generateBlocks()
 	//			}
 	//		}
 	//	}
+
+	state = State::Loaded;
 
 	//Profiler::end(CHUNK_LIGHTING_INDEX);
 }
