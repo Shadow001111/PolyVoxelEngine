@@ -360,9 +360,7 @@ void Chunk::generateFaces()
 
 	Profiler::end(FACE_FETCHING_INDEX);
 
-	Profiler::start(GREEDY_MESHING_INDEX);
 	greedyMeshing(facesData);
-	Profiler::end(GREEDY_MESHING_INDEX);
 
 	hasAnyFaces = drawCommand.anyFaces();
 	if (hasAnyFaces)
@@ -831,6 +829,8 @@ bool Chunk::isChunkClosed() const
 
 void Chunk::greedyMeshing(Face* facesData)
 {
+	Profiler::start(GREEDY_MESHING_INDEX);
+
 	auto getFaceIndex = [](const size_t* coords, size_t normalID)
 	{
 			return normalID + (coords[2] + (coords[1] + coords[0] * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6;
@@ -940,6 +940,8 @@ void Chunk::greedyMeshing(Face* facesData)
 			}
 		}
 	}
+
+	Profiler::end(GREEDY_MESHING_INDEX);
 }
 
 void Chunk::updateLightingAt(size_t x, size_t y, size_t z, Block block, Block prevBlock)
