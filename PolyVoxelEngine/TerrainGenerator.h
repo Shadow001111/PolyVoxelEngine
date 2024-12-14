@@ -6,6 +6,7 @@
 #include "FastNoise/FastNoise.h"
 #include "Spline.h"
 #include "AllocatedObjectPool.h"
+#include <atomic>
 
 class ChunkColumnData
 {
@@ -14,7 +15,10 @@ class ChunkColumnData
 	int heightMap[Settings::CHUNK_SIZE_SQUARED];
 	int skyLightMaxHeight[Settings::CHUNK_SIZE_SQUARED];
 	Biome biome;
+	std::atomic<uint32_t> usedBy;
 public:
+	ChunkColumnData();
+
 	void setHeightAt(size_t x, size_t z, int height);
 	int getHeightAt(size_t x, size_t z) const;
 	int getHeightAtByIndex(size_t index) const;
@@ -23,6 +27,9 @@ public:
 	int getSlMHAt(size_t x, size_t z) const;
 
 	Biome getBiome() const;
+
+	void startUsing();
+	void stopUsing();
 };
 
 class TerrainGenerator

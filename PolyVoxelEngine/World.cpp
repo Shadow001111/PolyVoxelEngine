@@ -54,13 +54,11 @@ Chunk* World::getChunk(int x, int y, int z)
 {
 	std::lock_guard<std::mutex> lock(chunkPoolMutex);
 	Chunk* ret = chunkPool.acquire();
-	static unsigned int drawID = 0;
-	drawID++;
-	if (drawID >= Settings::MAX_RENDERED_CHUNKS_COUNT)
+	// TODO: remove
+	if (ret->state != Chunk::State::NotLoaded)
 	{
-		drawID = 0;
+		std::cerr << "GetChunk: " << toString(ret->state) << std::endl;
 	}
-	ret->setDrawID(drawID);
 	ret->init(x, y, z);
 	return ret;
 }
@@ -106,6 +104,7 @@ void World::releaseChunk(Chunk* chunk, bool returnDrawIdToPool = true)
 	}
 	else if (chunk->state == Chunk::State::Loading)
 	{
+		std::cerr << "Chunk was added to releasedLoadingChunks" << std::endl;
 		std::lock_guard<std::mutex> lock(releasedLoadingChunksMutex);
 		releasedLoadingChunks.push_back(chunk);
 	}
@@ -293,6 +292,7 @@ void World::update(const glm::vec3& pos, bool isMoving)
 
 void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 {
+	std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
 	size_t chunksCount = chunkGenerateVector.size();
 	if (chunksCount == 0)
 	{
@@ -306,13 +306,13 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 	std::vector<std::function<void()>> tasks;
 	tasks.reserve(generateCount);
 	{
-		std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
 		for (size_t i = range; i < chunksCount; i++)
 		{
 			Chunk* chunk = chunkGenerateVector[i];
+			// TODO: remove
 			if (chunk->state != Chunk::State::InLoadingQueue)
 			{
-				std::cout << "GenerateChunksBlocks: " << toString(chunk->state) << std::endl;
+				std::cerr << "GenerateChunksBlocks: " << toString(chunk->state) << std::endl;
 				continue;
 			}
 			tasks.push_back([this, chunk]() {
@@ -335,6 +335,11 @@ void World::generateChunkBlocksThread(Chunk* chunk)
 	}
 	
 	chunk->generateBlocks();
+	// TODO: remove
+	if (chunk->state != Chunk::State::Loaded)
+	{
+		std::cerr << "GenerateChunkBlocksThread: " << toString(chunk->state) << std::endl;
+	}
 	
 	if (getSquaredDistanceToChunkLoader(glm::vec3(chunk->X, chunk->Y, chunk->Z)) > Settings::CHUNK_LOAD_RADIUS * Settings::CHUNK_LOAD_RADIUS)
 	{
@@ -357,6 +362,7 @@ void World::sortGenerateChunksQueue()
 {
 	// sort chunks in ascending order by distance
 	// later chunks will be generated from back to front
+	std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
 	const size_t chunksCount = chunkGenerateVector.size();
 	std::vector<ChunkDistance> chunkDistances;
 	chunkDistances.reserve(chunksCount);
@@ -387,16 +393,12 @@ void World::generateChunksFaces()
 		return;
 	}
 	Chunk::faceInstancesVBO->bind();
-	
-	Profiler::start(MESH_GENERATION_INDEX);
 
 	for (Chunk* chunk : generateFacesSet)
 	{
 		chunk->generateFaces();
 	}
 	generateFacesSet.clear();
-
-	Profiler::end(MESH_GENERATION_INDEX);
 }
 
 RaycastHit World::raycast(const glm::vec3& startPos, const glm::vec3& dir, float length)
@@ -742,8 +744,8 @@ bool World::loadChunks(bool forced)
 						std::cerr << std::format("Chunk state mismatch in loadChunks. State: {}, should be: {}", toString(chunk->state), toString(Chunk::State::NotLoaded)) << std::endl;
 					}
 					{
-						std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
 						chunk->state = Chunk::State::InLoadingQueue;
+						std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
 						chunkGenerateVector.push_back(chunk);
 					}
 				}

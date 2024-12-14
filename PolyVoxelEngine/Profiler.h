@@ -11,11 +11,11 @@ constexpr size_t PROFILER_SAMPLES_COUNT = 8;
 constexpr size_t BLOCK_GENERATION_INDEX = 0;
 constexpr size_t BLOCK_LIGHT_UPDATE_INDEX = 1;
 constexpr size_t SKY_LIGHT_UPDATE_INDEX = 2;
-constexpr size_t MESH_GENERATION_INDEX = 3;
-constexpr size_t LOAD_CHUNKS_INDEX = 4;
-constexpr size_t CHUNK_LOAD_DATA_INDEX = 5;
-constexpr size_t CHUNK_LIGHTING_INDEX = 6;
-constexpr size_t GREEDY_MESHING_INDEX = 7;
+constexpr size_t FACE_FETCHING_INDEX = 3;
+constexpr size_t GREEDY_MESHING_INDEX = 4;
+constexpr size_t LOAD_CHUNKS_INDEX = 5;
+constexpr size_t CHUNK_LOAD_DATA_INDEX = 6;
+constexpr size_t CHUNK_LIGHTING_INDEX = 7;
 
 constexpr float PROFILER_DRAW_WIDTH = 0.5f;
 constexpr float PROFILER_DRAW_HEIGHT = 0.5f;

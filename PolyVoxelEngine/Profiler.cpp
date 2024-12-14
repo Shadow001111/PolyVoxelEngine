@@ -13,11 +13,11 @@ const std::string profilerSamplesNames[PROFILER_SAMPLES_COUNT] =
 	"BlockGeneration",
 	"BlockLightUpdate",
 	"SkyLightUpdate",
-	"MeshGeneration",
+	"FetchingFaces",
+	"GreedyMeshing",
 	"LoadChunks",
 	"ChunkLoadData",
 	"ChunkLighting",
-	"GreedyMeshing"
 };
 
 const glm::vec3 profilerSamplesColors[PROFILER_SAMPLES_COUNT] =

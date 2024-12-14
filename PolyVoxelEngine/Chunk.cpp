@@ -112,12 +112,15 @@ void Chunk::generateBlocks()
 
 	state = State::Loading;
 
-	const ChunkColumnData* heightMap = TerrainGenerator::getHeightMap(X, Z);
-	if (heightMap == nullptr)
+	ChunkColumnData* chunkColumnData = TerrainGenerator::getHeightMap(X, Z);
+	if (chunkColumnData == nullptr)
 	{
 		std::cerr << "HeightMap is null" << std::endl;
 		return;
 	}
+
+	chunkColumnData->startUsing();
+
 	int chunkMaxY;
 	{
 		int globalY = Y * Settings::CHUNK_SIZE;
@@ -125,14 +128,17 @@ void Chunk::generateBlocks()
 		chunkMaxY = INT_MIN;
 		for (size_t index = 0; index < Settings::CHUNK_SIZE_SQUARED; index++)
 		{
-			globalMaxY = std::max(globalMaxY, heightMap->getHeightAtByIndex(index));
+			globalMaxY = std::max(globalMaxY, chunkColumnData->getHeightAtByIndex(index));
 		}
 		chunkMaxY = floorf((float)globalMaxY / (float)Settings::CHUNK_SIZE);
 	}
 
+	Biome biome = chunkColumnData->getBiome();
+
+	chunkColumnData->stopUsing();
+
 	if (Y <= chunkMaxY)
 	{
-		Biome biome = heightMap->getBiome();
 		TerrainGenerator::generateChunkCaveNoise(X, Y, Z);
 		for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
 		{
@@ -141,7 +147,7 @@ void Chunk::generateBlocks()
 			{
 				int globalX = X * Settings::CHUNK_SIZE + (int)x;
 
-				int globalHeight = heightMap->getHeightAt(x, z);
+				int globalHeight = chunkColumnData->getHeightAt(x, z);
 				for (size_t y = 0; y < Settings::CHUNK_SIZE; y++)
 				{
 					int globalY = Y * Settings::CHUNK_SIZE + (int)y;
@@ -302,6 +308,8 @@ void Chunk::generateFaces()
 		{1, 2, 3, 0}
 	};
 
+	Profiler::start(FACE_FETCHING_INDEX);
+
 	// get grid face  data
 	for (size_t x = 0; x < Settings::CHUNK_SIZE; x++)
 	{
@@ -309,16 +317,14 @@ void Chunk::generateFaces()
 		{
 			for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
 			{
-				const Block block = getBlockAtInBoundaries(x, y, z);
+				Block block = getBlockAtInBoundaries(x, y, z);
 				const BlockData& blockData = ALL_BLOCK_DATA[(size_t)block];
 				if (!blockData.createFaces)
 				{
 					continue;
 				}
 
-				const auto& textures = blockData.textures;
-
-				const bool maxAO = blockData.lightPower > 0;
+				bool maxAO = blockData.lightPower > 0;
 				for (size_t normalID = 0; normalID < 6; normalID++)
 				{
 					size_t planeIndex = normalID >> 1;
@@ -327,16 +333,17 @@ void Chunk::generateFaces()
 					offCoords[planeIndex] += ((normalID & 1 ^ 1) << 1) - 1;
 					// TODO: in other methods: replace offsets with offCoords
 
-					const Block& faceBlock = getBlockAtSideCheck(offCoords[0], offCoords[1], offCoords[2], normalID);
+					BlockAndLighting faceBAL = getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], normalID);
+					Block faceBlock = faceBAL.block;
 					if (faceBlock != Block::Void && faceBlock != block && ALL_BLOCK_DATA[(size_t)faceBlock].transparent)
 					{
 						auto& face = facesData[normalID + (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6];
 						face.none = false;
 						face.transparent = blockData.transparent;
-						face.textureID = textures[normalID];
-						face.lighting = getLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], normalID);
+						face.textureID = blockData.textures[normalID];
+						face.lighting = faceBAL.lighting;
 #if ENABLE_SMOOTH_LIGHTING
-						char ao = getAOandSmoothLighting(maxAO, offCoords[0], offCoords[1], offCoords[2], planeIndex, packOffsets[normalID], face.smoothLighting);
+						char ao = getAOandSmoothLighting(maxAO, offCoords[0], offCoords[1], offCoords[2], planeIndex, packOffsets[normalID], face.smoothLighting, faceBAL);
 #else
 						char ao = 255;
 						if (blockData.lightPower == 0)
@@ -350,6 +357,8 @@ void Chunk::generateFaces()
 			}
 		}
 	}
+
+	Profiler::end(FACE_FETCHING_INDEX);
 
 	Profiler::start(GREEDY_MESHING_INDEX);
 	greedyMeshing(facesData);
@@ -450,11 +459,9 @@ SizeT3 Chunk::getCoordinatesByIndex(size_t index)
 	};
 }
 
-char Chunk::getAOandSmoothLighting(bool maxAO, int x, int y, int z, size_t side, const char* packOffsets, uint8_t* smoothLighting) const
+char Chunk::getAOandSmoothLighting(bool maxAO, int x, int y, int z, size_t side, const char* packOffsets, uint8_t* smoothLighting, const BlockAndLighting& centerBal) const
 {
-	BlockAndLighting center, a, b, c, d, e, f, g, h;
-
-	center = getBlockAndLightingAt(x, y, z);
+	BlockAndLighting a, b, c, d, e, f, g, h;
 
 	switch (side)
 	{
@@ -490,7 +497,7 @@ char Chunk::getAOandSmoothLighting(bool maxAO, int x, int y, int z, size_t side,
 		break;
 	}
 
-	bool bcenter = ALL_BLOCK_DATA[(size_t)center.block].transparent;
+	bool bcenter = ALL_BLOCK_DATA[(size_t)centerBal.block].transparent;
 	bool ba = ALL_BLOCK_DATA[(size_t)a.block].transparent;
 	bool bb = ALL_BLOCK_DATA[(size_t)b.block].transparent;
 	bool bc = ALL_BLOCK_DATA[(size_t)c.block].transparent;
@@ -500,7 +507,7 @@ char Chunk::getAOandSmoothLighting(bool maxAO, int x, int y, int z, size_t side,
 	bool bg = ALL_BLOCK_DATA[(size_t)g.block].transparent;
 	bool bh = ALL_BLOCK_DATA[(size_t)h.block].transparent;
 
-	uint8_t lcenter = center.lighting;
+	uint8_t lcenter = centerBal.lighting;
 	uint8_t la = a.lighting;
 	uint8_t lb = b.lighting;
 	uint8_t lc = c.lighting;
@@ -510,24 +517,17 @@ char Chunk::getAOandSmoothLighting(bool maxAO, int x, int y, int z, size_t side,
 	uint8_t lg = g.lighting;
 	uint8_t lh = h.lighting;
 
-	/*if (
-		(!bcenter && lcenter > 0) ||
-		(!ba && la > 0) ||
-		(!bb && lb > 0) ||
-		(!bc && lc > 0) ||
-		(!bd && ld > 0) ||
-		(!be && le > 0) ||
-		(!bf && lf > 0) ||
-		(!bg && lg > 0) ||
-		(!bh && lh > 0))
-	{
-		std::cerr << "Lighting in solid block" << std::endl;
-	}*/
-
 	uint8_t sum0 = bcenter + ba + bb + bc;
 	uint8_t sum1 = bcenter + bg + bh + ba;
 	uint8_t sum2 = bcenter + be + bf + bg;
 	uint8_t sum3 = bcenter + bc + bd + be;
+
+	// TODO: make this thread safe
+	// TODO: implement zero handling
+	if (bcenter == 0)
+	{
+		std::cerr << "Chunk.cpp ao and smooth lighting AAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
+	}
 
 	uint8_t bl0 = ((lcenter & 15) + (la & 15) + (lb & 15) + (lc & 15)) / sum0;
 	uint8_t bl1 = ((lcenter & 15) + (lg & 15) + (lh & 15) + (la & 15)) / sum1;
@@ -1015,32 +1015,32 @@ Block Chunk::getBlockAt(int x, int y, int z) const
 	if (x < 0)
 	{
 		chX--;
-		x = Settings::CHUNK_SIZE - 1;
+		x += Settings::CHUNK_SIZE;
 	}
 	else if (x >= Settings::CHUNK_SIZE)
 	{
 		chX++;
-		x = 0;
+		x -= Settings::CHUNK_SIZE;
 	}
 	if (y < 0)
 	{
 		chY--;
-		y = Settings::CHUNK_SIZE - 1;
+		y += Settings::CHUNK_SIZE;
 	}
 	else if (y >= Settings::CHUNK_SIZE)
 	{
 		chY++;
-		y = 0;
+		y -= Settings::CHUNK_SIZE;
 	}
 	if (z < 0)
 	{
 		chZ--;
-		z = Settings::CHUNK_SIZE - 1;
+		z += Settings::CHUNK_SIZE;
 	}
 	else if (z >= Settings::CHUNK_SIZE)
 	{
 		chZ++;
-		z = 0;
+		z -= Settings::CHUNK_SIZE;
 	}
 
 	const Chunk* chunk = getChunkAt(chX, chY, chZ);
@@ -1102,26 +1102,32 @@ uint8_t Chunk::getLightingAt(int x, int y, int z) const
 	if (x < 0)
 	{
 		chX--;
+		x += Settings::CHUNK_SIZE;
 	}
 	else if (x >= Settings::CHUNK_SIZE)
 	{
 		chX++;
+		x -= Settings::CHUNK_SIZE;
 	}
 	if (y < 0)
 	{
 		chY--;
+		y += Settings::CHUNK_SIZE;
 	}
 	else if (y >= Settings::CHUNK_SIZE)
 	{
 		chY++;
+		y -= Settings::CHUNK_SIZE;
 	}
 	if (z < 0)
 	{
 		chZ--;
+		z += Settings::CHUNK_SIZE;
 	}
 	else if (z >= Settings::CHUNK_SIZE)
 	{
 		chZ++;
+		z -= Settings::CHUNK_SIZE;
 	}
 
 	const Chunk* chunk = getChunkAt(chX, chY, chZ);
@@ -1129,9 +1135,6 @@ uint8_t Chunk::getLightingAt(int x, int y, int z) const
 	{
 		return 0;
 	}
-	x &= Settings::CHUNK_SIZE - 1;
-	y &= Settings::CHUNK_SIZE - 1;
-	z &= Settings::CHUNK_SIZE - 1;
 	return chunk->getLightingAtInBoundaries(x, y, z);
 }
 
@@ -1237,26 +1240,32 @@ Chunk::BlockAndLighting Chunk::getBlockAndLightingAt(int x, int y, int z) const
 	if (x < 0)
 	{
 		chX--;
+		x += Settings::CHUNK_SIZE;
 	}
 	else if (x >= Settings::CHUNK_SIZE)
 	{
 		chX++;
+		x -= Settings::CHUNK_SIZE;
 	}
 	if (y < 0)
 	{
 		chY--;
+		y += Settings::CHUNK_SIZE;
 	}
 	else if (y >= Settings::CHUNK_SIZE)
 	{
 		chY++;
+		y -= Settings::CHUNK_SIZE;
 	}
 	if (z < 0)
 	{
 		chZ--;
+		z += Settings::CHUNK_SIZE;
 	}
 	else if (z >= Settings::CHUNK_SIZE)
 	{
 		chZ++;
+		z -= Settings::CHUNK_SIZE;
 	}
 
 	const Chunk* chunk = getChunkAt(chX, chY, chZ);
@@ -1264,9 +1273,6 @@ Chunk::BlockAndLighting Chunk::getBlockAndLightingAt(int x, int y, int z) const
 	{
 		return {Block::Void, 0};
 	}
-	x &= Settings::CHUNK_SIZE - 1;
-	y &= Settings::CHUNK_SIZE - 1;
-	z &= Settings::CHUNK_SIZE - 1;
 	return chunk->getBlockAndLightingAtInBoundaries(x, y, z);
 }
 

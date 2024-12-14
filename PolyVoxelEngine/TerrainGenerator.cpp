@@ -430,8 +430,17 @@ void TerrainGenerator::unloadHeightMap(int chunkX, int chunkZ)
 		//std::cout << "height map was already unloaded" << std::endl;
 		return;
 	}
+	auto usedBy = it->second->usedBy.load();
+	if (usedBy > 0)
+	{
+		std::cerr << "Unloaded ChunkColumnData was used by: " << usedBy << " chunks" << std::endl;
+	}
 	heightMapPool.release(it->second);
 	heightMaps.erase(it);
+}
+
+ChunkColumnData::ChunkColumnData() : usedBy(0)
+{
 }
 
 void ChunkColumnData::setHeightAt(size_t x, size_t z, int height)
@@ -462,4 +471,14 @@ int ChunkColumnData::getSlMHAt(size_t x, size_t z) const
 Biome ChunkColumnData::getBiome() const
 {
 	return biome;
+}
+
+void ChunkColumnData::startUsing()
+{
+	usedBy.fetch_add(1);
+}
+
+void ChunkColumnData::stopUsing()
+{
+	usedBy.fetch_sub(1);
 }
