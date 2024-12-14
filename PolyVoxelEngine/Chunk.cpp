@@ -296,71 +296,8 @@ void Chunk::generateFaces()
 		return;
 	}
 
-	// generate
-	const char packOffsets[6][4] =
-	{
-		// offset = 3 - order
-		{1, 2, 3, 0},
-		{0, 3, 2, 1},
-		{3, 2, 1, 0},
-		{0, 1, 2, 3},
-		{0, 3, 2, 1},
-		{1, 2, 3, 0}
-	};
-
-	Profiler::start(FACE_FETCHING_INDEX);
-
-	// get grid face  data
-	for (size_t x = 0; x < Settings::CHUNK_SIZE; x++)
-	{
-		for (size_t y = 0; y < Settings::CHUNK_SIZE; y++)
-		{
-			for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
-			{
-				Block block = getBlockAtInBoundaries(x, y, z);
-				const BlockData& blockData = ALL_BLOCK_DATA[(size_t)block];
-				if (!blockData.createFaces)
-				{
-					continue;
-				}
-
-				bool maxAO = blockData.lightPower > 0;
-				for (size_t normalID = 0; normalID < 6; normalID++)
-				{
-					size_t planeIndex = normalID >> 1;
-
-					int offCoords[3] = { (int)x, (int)y, (int)z };
-					offCoords[planeIndex] += ((normalID & 1 ^ 1) << 1) - 1;
-					// TODO: in other methods: replace offsets with offCoords
-
-					BlockAndLighting faceBAL = getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], normalID);
-					Block faceBlock = faceBAL.block;
-					if (faceBlock != Block::Void && faceBlock != block && ALL_BLOCK_DATA[(size_t)faceBlock].transparent)
-					{
-						auto& face = facesData[normalID + (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6];
-						face.none = false;
-						face.transparent = blockData.transparent;
-						face.textureID = blockData.textures[normalID];
-						face.lighting = faceBAL.lighting;
-#if ENABLE_SMOOTH_LIGHTING
-						char ao = getAOandSmoothLighting(maxAO, offCoords[0], offCoords[1], offCoords[2], planeIndex, packOffsets[normalID], face.smoothLighting, faceBAL);
-#else
-						char ao = 255;
-						if (blockData.lightPower == 0)
-						{
-							ao = getAO(offCoords[0], offCoords[1], offCoords[2], planeIndex, packOffsets[normalID]);
-						}
-#endif
-						face.ao = ao;
-					}
-				}
-			}
-		}
-	}
-
-	Profiler::end(FACE_FETCHING_INDEX);
-
-	greedyMeshing(facesData);
+	fetchFaces();
+	greedyMeshing();
 
 	hasAnyFaces = drawCommand.anyFaces();
 	if (hasAnyFaces)
@@ -827,22 +764,84 @@ bool Chunk::isChunkClosed() const
 	return true;
 }
 
-void Chunk::greedyMeshing(Face* facesData)
+inline void Chunk::fetchFaces()
 {
-	Profiler::start(GREEDY_MESHING_INDEX);
-
-	auto getFaceIndex = [](const size_t* coords, size_t normalID)
+	const char packOffsets[6][4] =
 	{
-			return normalID + (coords[2] + (coords[1] + coords[0] * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6;
+		// offset = 3 - order
+		{1, 2, 3, 0},
+		{0, 3, 2, 1},
+		{3, 2, 1, 0},
+		{0, 1, 2, 3},
+		{0, 3, 2, 1},
+		{1, 2, 3, 0}
 	};
 
-	const size_t wIndexes[3] = {1, 0, 0};
+	Profiler::start(FACE_FETCHING_INDEX);
+	for (size_t x = 0; x < Settings::CHUNK_SIZE; x++)
+	{
+		for (size_t y = 0; y < Settings::CHUNK_SIZE; y++)
+		{
+			for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
+			{
+				Block block = getBlockAtInBoundaries(x, y, z);
+				const BlockData& blockData = ALL_BLOCK_DATA[(size_t)block];
+				if (!blockData.createFaces)
+				{
+					continue;
+				}
+
+				bool maxAO = blockData.lightPower > 0;
+				for (size_t normalID = 0; normalID < 6; normalID++)
+				{
+					size_t planeIndex = normalID >> 1;
+
+					int offCoords[3] = { (int)x, (int)y, (int)z };
+					offCoords[planeIndex] += ((normalID & 1 ^ 1) << 1) - 1;
+					// TODO: in other methods: replace offsets with offCoords
+
+					BlockAndLighting faceBAL = getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], normalID);
+					Block faceBlock = faceBAL.block;
+					if (faceBlock != Block::Void && faceBlock != block && ALL_BLOCK_DATA[(size_t)faceBlock].transparent)
+					{
+						auto& face = facesData[normalID + (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6];
+						face.none = false;
+						face.transparent = blockData.transparent;
+						face.textureID = blockData.textures[normalID];
+						face.lighting = faceBAL.lighting;
+#if ENABLE_SMOOTH_LIGHTING
+						char ao = getAOandSmoothLighting(maxAO, offCoords[0], offCoords[1], offCoords[2], planeIndex, packOffsets[normalID], face.smoothLighting, faceBAL);
+#else
+						char ao = 255;
+						if (blockData.lightPower == 0)
+						{
+							ao = getAO(offCoords[0], offCoords[1], offCoords[2], planeIndex, packOffsets[normalID]);
+						}
+#endif
+						face.ao = ao;
+					}
+				}
+			}
+		}
+	}
+	Profiler::end(FACE_FETCHING_INDEX);
+}
+
+void Chunk::greedyMeshing()
+{
+	auto getFaceIndex = [](const size_t* coords, size_t normalID)
+		{
+			return normalID + (coords[2] + (coords[1] + coords[0] * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6;
+		};
+
+	const size_t wIndexes[3] = { 1, 0, 0 };
 	const size_t hIndexes[3] = { 2, 2, 1 };
 
 	unsigned int* facesCount = drawCommand.facesCount;
 
 	size_t coords[3] = { 0, 0, 0 };
 
+	Profiler::start(GREEDY_MESHING_INDEX);
 	for (coords[0] = 0; coords[0] < Settings::CHUNK_SIZE; coords[0]++)
 	{
 		for (coords[1] = 0; coords[1] < Settings::CHUNK_SIZE; coords[1]++)
@@ -940,7 +939,6 @@ void Chunk::greedyMeshing(Face* facesData)
 			}
 		}
 	}
-
 	Profiler::end(GREEDY_MESHING_INDEX);
 }
 

@@ -90,7 +90,8 @@ class Chunk
 	void setBlockAtNoSave(size_t x, size_t y, size_t z, Block block);
 	void applyChanges();
 	bool isChunkClosed() const;
-	void greedyMeshing(Face* facesData);
+	inline void fetchFaces();
+	void greedyMeshing();
 	void updateLightingAt(size_t x, size_t y, size_t z, Block block, Block prevBlock);
 	static std::string getFilepath(int X, int Y, int Z);
 public:
