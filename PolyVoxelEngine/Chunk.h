@@ -111,7 +111,9 @@ public:
 	static std::vector<Light> lightingFloodFillVector;
 	static std::vector<Light> darknessFloodFillVector;
 	static std::vector<LightUpdate> lightingUpdateVector;
-	static std::mutex lightingMutex;
+	static std::mutex lightingFloodFillMutex;
+	static std::mutex darknessFloodFillMutex;
+	static std::mutex lightingUpdateMutex;
 
 	State state = State::NotLoaded;
 	bool hasAnyFaces = false; // Removing it doesnt change class size

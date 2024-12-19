@@ -12,5 +12,5 @@ out vec2 uv;
 void main()
 {
 	uv = vertUV;
-	gl_Position = camMatrix * vec4(position + ((vertPos - 0.5) * scale * 1.01 + 0.5 * scale), 1.0);
+	gl_Position = camMatrix * vec4(position + ((vertPos - 0.5) * scale * 1.02 + 0.5 * scale), 1.0);
 }

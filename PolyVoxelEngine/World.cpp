@@ -261,8 +261,6 @@ void World::update(const glm::vec3& pos, bool isMoving)
 
 	// update lighting
 	updateLighting();
-	darknessFloodFill();
-	lightingFloodFill();
 
 	// generate faces
 	generateChunksFaces();
@@ -283,10 +281,22 @@ void World::update(const glm::vec3& pos, bool isMoving)
 	{
 		dataShrinkingTick = 0;
 
-		Chunk::lightingUpdateVector.shrink_to_fit();
-		Chunk::lightingFloodFillVector.shrink_to_fit();
-		Chunk::darknessFloodFillVector.shrink_to_fit();
-		chunkGenerateVector.shrink_to_fit();
+		{
+			std::lock_guard<std::mutex> lock(Chunk::lightingUpdateMutex);
+			Chunk::lightingUpdateVector.shrink_to_fit();
+		}
+		{
+			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
+			Chunk::lightingFloodFillVector.shrink_to_fit();
+		}
+		{
+			std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
+			Chunk::darknessFloodFillVector.shrink_to_fit();
+		}
+		{
+			std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
+			chunkGenerateVector.shrink_to_fit();
+		}
 	}
 }
 
@@ -322,7 +332,7 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 	}
 	threadPool.addTasks(tasks);
 
-	//threadPool.waitForCompletion(); // TODO: remove and fix errors
+	threadPool.waitForCompletion(); // TODO: remove and fix errors
 	chunkGenerateVector.resize(range);
 }
 
@@ -848,6 +858,7 @@ void World::draw(const Camera& camera)
 
 void World::regenerateChunks()
 {
+	std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
 	chunkGenerateVector.clear();
 	chunkGenerateVector.reserve(Chunk::chunkMap.size());
 	for (const auto& pair : Chunk::chunkMap)
@@ -1016,24 +1027,38 @@ void World::lightingFloodFill()
 {
 	std::unordered_set<glm::ivec3, Int3> alreadyCheckedBlock;
 	std::unordered_set<glm::ivec3, Int3> alreadyCheckedSky;
+	std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
 	auto& needToCheck = Chunk::lightingFloodFillVector;
 	for (size_t i = 0; i < needToCheck.size(); i++)
 	{
 		auto& light = needToCheck[i];
-		int x = light.pos.x;
-		int y = light.pos.y;
-		int z = light.pos.z;
+		int globalX = light.pos.x;
+		int globalY = light.pos.y;
+		int globalZ = light.pos.z;
 		bool blockOrSky = light.blockOrSky;
 
 		// if block is void or solid we skip
-		Block block = getBlockAt(x, y, z);
+		int chX = floorf((float)globalX / Settings::CHUNK_SIZE);
+		int chY = floorf((float)globalY / Settings::CHUNK_SIZE);
+		int chZ = floorf((float)globalZ / Settings::CHUNK_SIZE);
+		Chunk* chunk = Chunk::getChunkAt(chX, chY, chZ);
+		if (!chunk || chunk->state != Chunk::State::Loaded)
+		{
+			continue;
+		}
+
+		int x = globalX & (Settings::CHUNK_SIZE - 1);
+		int y = globalY & (Settings::CHUNK_SIZE - 1);
+		int z = globalZ & (Settings::CHUNK_SIZE - 1);
+		Block block = chunk->getBlockAtInBoundaries(x, y, z);
+
 		if (block == Block::Void || !ALL_BLOCK_DATA[(size_t)block].transparent)
 		{
 			continue;
 		}
 
 		// comparing lighting
-		uint8_t prevLight = (getLightingAt(x, y, z) >> (4 * blockOrSky)) & 15;
+		uint8_t prevLight = (getLightingAt(globalX, globalY, globalZ) >> (4 * blockOrSky)) & 15;
 		if (light.power < prevLight)
 		{
 			continue;
@@ -1049,18 +1074,18 @@ void World::lightingFloodFill()
 			}
 		}
 
-		setLightingAt(x, y, z, light.power, blockOrSky);
+		setLightingAt(globalX, globalY, globalZ, light.power, blockOrSky);
 		light.power--;
 
 		if (light.power != 0)
 		{
 			uint8_t power = light.power;
-			needToCheck.emplace_back(x + 1, y, z, power, blockOrSky);
-			needToCheck.emplace_back(x - 1, y, z, power, blockOrSky);
-			needToCheck.emplace_back(x, y + 1, z, power, blockOrSky);
-			needToCheck.emplace_back(x, y - 1, z, power, blockOrSky);
-			needToCheck.emplace_back(x, y, z + 1, power, blockOrSky);
-			needToCheck.emplace_back(x, y, z - 1, power, blockOrSky);
+			needToCheck.emplace_back(globalX + 1, globalY, globalZ, power, blockOrSky);
+			needToCheck.emplace_back(globalX - 1, globalY, globalZ, power, blockOrSky);
+			needToCheck.emplace_back(globalX, globalY + 1, globalZ, power, blockOrSky);
+			needToCheck.emplace_back(globalX, globalY - 1, globalZ, power, blockOrSky);
+			needToCheck.emplace_back(globalX, globalY, globalZ + 1, power, blockOrSky);
+			needToCheck.emplace_back(globalX, globalY, globalZ - 1, power, blockOrSky);
 		}
 	}
 	needToCheck.clear();
@@ -1070,17 +1095,31 @@ void World::darknessFloodFill()
 {
 	std::unordered_set<glm::ivec3, Int3> alreadyCheckedBlock;
 	std::unordered_set<glm::ivec3, Int3> alreadyCheckedSky;
+	std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
 	auto& needToCheck = Chunk::darknessFloodFillVector;
 	for (size_t i = 0; i < needToCheck.size(); i++)
 	{
 		auto& light = needToCheck[i];
-		int x = light.pos.x;
-		int y = light.pos.y;
-		int z = light.pos.z;
+		int globalX = light.pos.x;
+		int globalY = light.pos.y;
+		int globalZ = light.pos.z;
 		bool blockOrSky = light.blockOrSky;
 
 		// if block is void or solid we skip
-		Block block = getBlockAt(x, y, z);
+		int chX = floorf((float)globalX / Settings::CHUNK_SIZE);
+		int chY = floorf((float)globalY / Settings::CHUNK_SIZE);
+		int chZ = floorf((float)globalZ / Settings::CHUNK_SIZE);
+		Chunk* chunk = Chunk::getChunkAt(chX, chY, chZ);
+		if (!chunk || chunk->state != Chunk::State::Loaded)
+		{
+			continue;
+		}
+
+		int x = globalX & (Settings::CHUNK_SIZE - 1);
+		int y = globalY & (Settings::CHUNK_SIZE - 1);
+		int z = globalZ & (Settings::CHUNK_SIZE - 1);
+		Block block = chunk->getBlockAtInBoundaries(x, y, z);
+
 		if (block == Block::Void || !ALL_BLOCK_DATA[(size_t)block].transparent)
 		{
 			continue;
@@ -1095,29 +1134,29 @@ void World::darknessFloodFill()
 		}
 
 		// comparing lighting
-		uint8_t prevLight = (getLightingAt(x, y, z) >> (4 * blockOrSky)) & 15;
+		uint8_t prevLight = (getLightingAt(globalX, globalY, globalZ) >> (4 * blockOrSky)) & 15;
 		if (light.power > prevLight)
 		{
 			continue;
 		}
 		else if (light.power < prevLight)
 		{
-			Chunk::lightingFloodFillVector.emplace_back(x, y, z, prevLight, blockOrSky);
+			Chunk::lightingFloodFillVector.emplace_back(globalX, globalY, globalZ, prevLight, blockOrSky);
 			continue;
 		}
 		light.power--;
 
-		setLightingAt(x, y, z, 0, blockOrSky);
+		setLightingAt(globalX, globalY, globalZ, 0, blockOrSky);
 
 		if (light.power != 0)
 		{
 			uint8_t power = light.power;
-			needToCheck.emplace_back(x + 1, y, z, power, blockOrSky);
-			needToCheck.emplace_back(x - 1, y, z, power, blockOrSky);
-			needToCheck.emplace_back(x, y + 1, z, power, blockOrSky);
-			needToCheck.emplace_back(x, y - 1, z, power, blockOrSky);
-			needToCheck.emplace_back(x, y, z + 1, power, blockOrSky);
-			needToCheck.emplace_back(x, y, z - 1, power, blockOrSky);
+			needToCheck.emplace_back(globalX + 1, globalY, globalZ, power, blockOrSky);
+			needToCheck.emplace_back(globalX - 1, globalY, globalZ, power, blockOrSky);
+			needToCheck.emplace_back(globalX, globalY + 1, globalZ, power, blockOrSky);
+			needToCheck.emplace_back(globalX, globalY - 1, globalZ, power, blockOrSky);
+			needToCheck.emplace_back(globalX, globalY, globalZ + 1, power, blockOrSky);
+			needToCheck.emplace_back(globalX, globalY, globalZ - 1, power, blockOrSky);
 		}
 	}
 	needToCheck.clear();
@@ -1126,26 +1165,38 @@ void World::darknessFloodFill()
 void World::updateLighting()
 {
 	// TODO: if place 2 light source close to eachother, after removing them, 1 block light will stay in last removed one
-	Profiler::start(BLOCK_LIGHT_UPDATE_INDEX);
-	for (const auto& update : Chunk::lightingUpdateVector)
 	{
-		updateBlockLighting(update);
-	}
-	Profiler::end(BLOCK_LIGHT_UPDATE_INDEX);
+		std::lock_guard<std::mutex> lock(Chunk::lightingUpdateMutex);
+		Profiler::start(BLOCK_LIGHT_UPDATE_INDEX);
+		for (const auto& update : Chunk::lightingUpdateVector)
+		{
+			updateBlockLighting(update);
+		}
+		Profiler::end(BLOCK_LIGHT_UPDATE_INDEX);
 
-	Profiler::start(SKY_LIGHT_UPDATE_INDEX);
-	for (const auto& update : Chunk::lightingUpdateVector)
-	{
-		updateSkyLighting(update);
-	}
-	Profiler::end(SKY_LIGHT_UPDATE_INDEX);
+		Profiler::start(SKY_LIGHT_UPDATE_INDEX);
+		for (const auto& update : Chunk::lightingUpdateVector)
+		{
+			//updateSkyLighting(update);
+		}
+		Profiler::end(SKY_LIGHT_UPDATE_INDEX);
 
-	Chunk::lightingUpdateVector.clear();
+		Chunk::lightingUpdateVector.clear();
+	}
+
+	// TODO: add flood fill profiling
+	darknessFloodFill();
+	lightingFloodFill();
 }
 
 void World::updateBlockLighting(const LightUpdate& lightUpdate)
 {
 	Chunk* chunk = (Chunk*)lightUpdate.chunk;
+	// TODO: remove
+	if (chunk->state != Chunk::State::Loaded)
+	{
+		std::cout << 1;
+	}
 	size_t x = lightUpdate.x;
 	size_t y = lightUpdate.y;
 	size_t z = lightUpdate.z;
@@ -1186,6 +1237,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 			size_t axis = side >> 1;
 			offsets[axis] = (side & 1) ? -1 : 1;
 
+			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
 			Chunk::lightingFloodFillVector.emplace_back(
 				globalX + offsets[0],
 				globalY + offsets[1],
@@ -1198,6 +1250,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 
 		if (blockData.transparent)
 		{
+			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
 			Chunk::lightingFloodFillVector.emplace_back(
 				globalX,
 				globalY,
@@ -1224,12 +1277,15 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 			int offY = (int)y + offsets[1];
 			int offZ = (int)z + offsets[2];
 
-			Chunk::darknessFloodFillVector.emplace_back(
-				globalX + offsets[0],
-				globalY + offsets[1],
-				globalZ + offsets[2],
-				prevBlockData.lightPower, false
-			);
+			{
+				std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
+				Chunk::darknessFloodFillVector.emplace_back(
+					globalX + offsets[0],
+					globalY + offsets[1],
+					globalZ + offsets[2],
+					prevBlockData.lightPower, false
+				);
+			}
 
 			if (blockData.transparent)
 			{
@@ -1245,6 +1301,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 		}
 		if (prevBlockData.transparent)
 		{
+			std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
 			Chunk::darknessFloodFillVector.emplace_back(
 				globalX,
 				globalY,
@@ -1254,6 +1311,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 		}
 		if (blockData.transparent && maxLighting > 0)
 		{
+			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
 			Chunk::lightingFloodFillVector.emplace_back(
 				globalX,
 				globalY,
@@ -1306,6 +1364,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 				size_t axis = maxLightingSide >> 1;
 				offsets[axis] = (maxLightingSide & 1) ? -1 : 1;
 			}
+			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
 			Chunk::lightingFloodFillVector.emplace_back(
 				globalX + offsets[0],
 				globalY + offsets[1],
@@ -1336,6 +1395,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 					uint8_t lighting = chunk->getLightingAtSideCheck(offX, offY, offZ, side) & 15;
 					if (lighting < prevLighting)
 					{
+						std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
 						Chunk::darknessFloodFillVector.emplace_back(
 							globalX + offsets[0],
 							globalY + offsets[1],
@@ -1361,6 +1421,11 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	}
 
 	Chunk* chunk = (Chunk*)lightUpdate.chunk;
+	// TODO: remove
+	if (chunk->state != Chunk::State::Loaded)
+	{
+		std::cout << 2;
+	}
 	size_t x = lightUpdate.x;
 	size_t y = lightUpdate.y;
 	size_t z = lightUpdate.z;
@@ -1371,8 +1436,9 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	int globalY = (int)y + Y * Settings::CHUNK_SIZE;
 	int globalZ = (int)z + Z * Settings::CHUNK_SIZE;
 
-	ChunkColumnData* heightMap = TerrainGenerator::getHeightMap(X, Z);
-	const int skyLightMaxHeight = heightMap->getSlMHAt(x, z);
+	ChunkColumnData* chunkColumnData = TerrainGenerator::getHeightMap(X, Z);
+	chunkColumnData->startUsing();
+	const int skyLightMaxHeight = chunkColumnData->getSlMHAt(x, z);
 
 	uint8_t fillLightPower = 0;
 	bool findNewSLMH = false;
@@ -1421,10 +1487,12 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 
 		if (globalY != skyLightMaxHeight)
 		{
+			chunkColumnData->stopUsing();
 			return;
 		}
 		fillLightPower = 15;
 		findNewSLMH = true;
+		std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
 		Chunk::lightingFloodFillVector.emplace_back
 		(
 			globalX, globalY, globalZ,
@@ -1451,6 +1519,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 					uint8_t lighting = chunk->getLightingAtSideCheck(offX, offY, offZ, side) >> 4;
 					if (lighting < prevLighting) // && lighting > 0  it will always be higher than zero
 					{
+						std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
 						Chunk::darknessFloodFillVector.emplace_back(
 							globalX + offsets[0],
 							globalY + offsets[1],
@@ -1466,7 +1535,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 		fillLightPower = 0;
 		if (globalY > skyLightMaxHeight)
 		{
-			heightMap->setSlMHAt(x, z, globalY);
+			chunkColumnData->setSlMHAt(x, z, globalY);
 		}
 	}
 	
@@ -1476,8 +1545,10 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 
 	int maxIterations = skyLightMaxHeight == INT_MIN ? 0 : std::max(0, globalY - skyLightMaxHeight) - !blockData.transparent;
 	auto& floodFillVector = fillLightPower == 0 ? Chunk::darknessFloodFillVector : Chunk::lightingFloodFillVector;
+	auto& floodFillMutex = fillLightPower == 0 ? Chunk::darknessFloodFillMutex : Chunk::lightingFloodFillMutex;
 	if (maxIterations > 0)
 	{
+		std::lock_guard<std::mutex> lock(floodFillMutex);
 		floodFillVector.reserve(floodFillVector.size() + maxIterations);
 	}
 	
@@ -1501,13 +1572,16 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 			break;
 		}
 
-		floodFillVector.emplace_back
-		(
-			globalX,
-			localY + chunk_->Y * Settings::CHUNK_SIZE,
-			globalZ,
-			15, true
-		);
+		{
+			std::lock_guard<std::mutex> lock(floodFillMutex);
+			floodFillVector.emplace_back
+			(
+				globalX,
+				localY + chunk_->Y * Settings::CHUNK_SIZE,
+				globalZ,
+				15, true
+			);
+		}
 
 		iterations++;
 	}
@@ -1516,13 +1590,14 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	{
 		if (chunk_)
 		{
-			heightMap->setSlMHAt(x, z, localY + chunk_->Y * Settings::CHUNK_SIZE);
+			chunkColumnData->setSlMHAt(x, z, localY + chunk_->Y * Settings::CHUNK_SIZE);
 		}
 		else
 		{
-			heightMap->setSlMHAt(x, z, INT_MIN);
+			chunkColumnData->setSlMHAt(x, z, INT_MIN);
 		}
 	}
+	chunkColumnData->stopUsing();
 }
 
 WorldData World::loadWorldData()
