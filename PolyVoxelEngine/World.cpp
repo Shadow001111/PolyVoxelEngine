@@ -682,15 +682,11 @@ float World::getSquaredDistanceToChunkLoader(const glm::vec3& chunkPos) const
 
 bool World::loadChunks(bool forced)
 {
-	if (
-		!forced &&
-		chunkLoaderPosition == lastChunkLoaderPosition
-	)
+	if (!forced && chunkLoaderPosition == lastChunkLoaderPosition)
 	{
 		return false;
 	}
 	lastChunkLoaderPosition = chunkLoaderPosition;
-
 	{
 		int radius = Settings::CHUNK_LOAD_RADIUS;
 		int rsq = radius * radius;
@@ -1177,7 +1173,7 @@ void World::updateLighting()
 		Profiler::start(SKY_LIGHT_UPDATE_INDEX);
 		for (const auto& update : Chunk::lightingUpdateVector)
 		{
-			//updateSkyLighting(update);
+			updateSkyLighting(update);
 		}
 		Profiler::end(SKY_LIGHT_UPDATE_INDEX);
 
@@ -1195,7 +1191,8 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 	// TODO: remove
 	if (chunk->state != Chunk::State::Loaded)
 	{
-		std::cout << 1;
+		std::cerr << "UpdateBlockLighting: Chunk is unloaded" << std::endl;
+		return;
 	}
 	size_t x = lightUpdate.x;
 	size_t y = lightUpdate.y;
@@ -1203,9 +1200,12 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 	int X = chunk->X;
 	int Y = chunk->Y;
 	int Z = chunk->Z;
-	int globalX = (int)x + X * Settings::CHUNK_SIZE;
-	int globalY = (int)y + Y * Settings::CHUNK_SIZE;
-	int globalZ = (int)z + Z * Settings::CHUNK_SIZE;
+	int chunkGlobalX = X * Settings::CHUNK_SIZE;
+	int chunkGlobalY = Y * Settings::CHUNK_SIZE;
+	int chunkGlobalZ = Z * Settings::CHUNK_SIZE;
+	int globalX = (int)x + chunkGlobalX;
+	int globalY = (int)y + chunkGlobalY;
+	int globalZ = (int)z + chunkGlobalZ;
 	const BlockData& blockData = ALL_BLOCK_DATA[(size_t)lightUpdate.block];
 	const BlockData& prevBlockData = ALL_BLOCK_DATA[(size_t)lightUpdate.prevBlock];
 	
@@ -1231,21 +1231,18 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 
 	if (addLights)
 	{
-		int offsets[3] = { 0, 0, 0 };
 		for (size_t side = 0; side < 6; side++)
 		{
 			size_t axis = side >> 1;
-			offsets[axis] = (side & 1) ? -1 : 1;
+			int offCoords[3] = { (int)globalX, (int)globalY, (int)globalZ };
+			offCoords[axis] += (side & 1) ? -1 : 1;
 
 			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
-			Chunk::lightingFloodFillVector.emplace_back(
-				globalX + offsets[0],
-				globalY + offsets[1],
-				globalZ + offsets[2],
+			Chunk::lightingFloodFillVector.emplace_back
+			(
+				offCoords[0], offCoords[1], offCoords[2],
 				blockData.lightPower, false
 			);
-
-			offsets[axis] = 0;
 		}
 
 		if (blockData.transparent)
@@ -1266,38 +1263,34 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 	if (removeLights)
 	{
 		uint8_t maxLighting = 0;
+		bool potentialOpenedLightSource = blockData.transparent && !prevBlockData.transparent;
 
-		int offsets[3] = { 0, 0, 0 };
+		// darkness flood-fill
 		for (size_t side = 0; side < 6; side++)
 		{
 			size_t axis = side >> 1;
-			offsets[axis] = (side & 1) ? -1 : 1;
-
-			int offX = (int)x + offsets[0];
-			int offY = (int)y + offsets[1];
-			int offZ = (int)z + offsets[2];
+			int offCoords[3] = { (int)x, (int)y, (int)z };
+			offCoords[axis] += (side & 1) ? -1 : 1;
 
 			{
 				std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
 				Chunk::darknessFloodFillVector.emplace_back(
-					globalX + offsets[0],
-					globalY + offsets[1],
-					globalZ + offsets[2],
+					chunkGlobalX + offCoords[0],
+					chunkGlobalY + offCoords[1],
+					chunkGlobalZ + offCoords[2],
 					prevBlockData.lightPower, false
 				);
 			}
 
-			if (blockData.transparent)
+			if (potentialOpenedLightSource)
 			{
-				Block block = chunk->getBlockAtSideCheck(offX, offY, offZ, side);
+				Block block = chunk->getBlockAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side);
 				const BlockData& blockData = ALL_BLOCK_DATA[(size_t)block];
-				if (!blockData.transparent && blockData.lightPower > maxLighting)
+				if (blockData.lightPower > maxLighting)
 				{
 					maxLighting = blockData.lightPower;
 				}
 			}
-
-			offsets[axis] = 0;
 		}
 		if (prevBlockData.transparent)
 		{
@@ -1309,7 +1302,9 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 				prevBlockData.lightPower, false
 			);
 		}
-		if (blockData.transparent && maxLighting > 0)
+
+		// propagating light from opened light-source
+		if (maxLighting > 0)
 		{
 			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
 			Chunk::lightingFloodFillVector.emplace_back(
@@ -1322,24 +1317,20 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 	}
 	if (addLights2)
 	{
-		uint8_t maxLighting = 0;
+		size_t maxLighting = 0; // size_t because there can be a problem with std::max when maxLighting overflows
 		size_t maxLightingSide = 0;
 
-		int offsets[3] = { 0, 0, 0 };
 		for (size_t side = 0; side < 6; side++)
 		{
 			size_t axis = side >> 1;
-			offsets[axis] = (side & 1) ? -1 : 1;
+			int offCoords[3] = { (int)x, (int)y, (int)z };
+			offCoords[axis] += (side & 1) ? -1 : 1;
 
-			int offX = (int)x + offsets[0];
-			int offY = (int)y + offsets[1];
-			int offZ = (int)z + offsets[2];
-
-			Block block = chunk->getBlockAtSideCheck(offX, offY, offZ, side);
-			const BlockData& blockData = ALL_BLOCK_DATA[(size_t)block];
+			Chunk::BlockAndLighting blockAndLighting = chunk->getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side);
+			const BlockData& blockData = ALL_BLOCK_DATA[(size_t)blockAndLighting.block];
 			if (blockData.transparent)
 			{
-				uint8_t lighting = chunk->getLightingAtSideCheck(offX, offY, offZ, side) & 15;
+				uint8_t lighting = blockAndLighting.lighting & 15;
 				if (lighting > maxLighting)
 				{
 					maxLighting = lighting;
@@ -1351,10 +1342,10 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 				maxLighting = blockData.lightPower + 1;
 				maxLightingSide = 6;
 			}
-			offsets[axis] = 0;
 		}
 		if (maxLighting > 1)
 		{
+			int offCoords[3] = { (int)globalX, (int)globalY, (int)globalZ };
 			if (maxLightingSide == 6)
 			{
 				maxLighting--;
@@ -1362,13 +1353,12 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 			else
 			{
 				size_t axis = maxLightingSide >> 1;
-				offsets[axis] = (maxLightingSide & 1) ? -1 : 1;
+				offCoords[axis] += (maxLightingSide & 1) ? -1 : 1;
 			}
 			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
-			Chunk::lightingFloodFillVector.emplace_back(
-				globalX + offsets[0],
-				globalY + offsets[1],
-				globalZ + offsets[2],
+			Chunk::lightingFloodFillVector.emplace_back
+			(
+				offCoords[0], offCoords[1], offCoords[2],
 				maxLighting, false
 			);
 		}
@@ -1378,33 +1368,30 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 		uint8_t prevLighting = chunk->getLightingAtInBoundaries(x, y, z) & 15;
 		chunk->setLightingAtInBoundaries(x, y, z, 0, false);
 		if (prevLighting > 1)
-		{	
-			int offsets[3] = { 0, 0, 0 };
+		{
 			for (size_t side = 0; side < 6; side++)
 			{
 				size_t axis = side >> 1;
-				offsets[axis] = (side & 1) ? -1 : 1;
+				int offCoords[3] = { (int)x, (int)y, (int)z };
+				offCoords[axis] += (side & 1) ? -1 : 1;
 
-				int offX = (int)x + offsets[0];
-				int offY = (int)y + offsets[1];
-				int offZ = (int)z + offsets[2];
-				Block block = chunk->getBlockAtSideCheck(offX, offY, offZ, side);
-				const BlockData& blockData = ALL_BLOCK_DATA[(size_t)block];
+				Chunk::BlockAndLighting blockAndLighting = chunk->getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side);
+				const BlockData& blockData = ALL_BLOCK_DATA[(size_t)blockAndLighting.block];
 				if (blockData.transparent)
 				{
-					uint8_t lighting = chunk->getLightingAtSideCheck(offX, offY, offZ, side) & 15;
-					if (lighting < prevLighting)
+					uint8_t lighting = blockAndLighting.lighting & 15;
+					if (lighting <= prevLighting)
 					{
 						std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
-						Chunk::darknessFloodFillVector.emplace_back(
-							globalX + offsets[0],
-							globalY + offsets[1],
-							globalZ + offsets[2],
+						Chunk::darknessFloodFillVector.emplace_back
+						(
+							chunkGlobalX + offCoords[0],
+							chunkGlobalY + offCoords[1],
+							chunkGlobalZ + offCoords[2],
 							lighting, false
 						);
 					}
 				}
-				offsets[axis] = 0;
 			}
 		}
 	}
@@ -1424,7 +1411,8 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	// TODO: remove
 	if (chunk->state != Chunk::State::Loaded)
 	{
-		std::cout << 2;
+		std::cerr << "UpdateSkyLighting: Chunk is unloaded" << std::endl;
+		return;
 	}
 	size_t x = lightUpdate.x;
 	size_t y = lightUpdate.y;
@@ -1432,9 +1420,12 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	int X = chunk->X;
 	int Y = chunk->Y;
 	int Z = chunk->Z;
-	int globalX = (int)x + X * Settings::CHUNK_SIZE;
-	int globalY = (int)y + Y * Settings::CHUNK_SIZE;
-	int globalZ = (int)z + Z * Settings::CHUNK_SIZE;
+	int chunkGlobalX = X * Settings::CHUNK_SIZE;
+	int chunkGlobalY = Y * Settings::CHUNK_SIZE;
+	int chunkGlobalZ = Z * Settings::CHUNK_SIZE;
+	int globalX = (int)x + chunkGlobalX;
+	int globalY = (int)y + chunkGlobalY;
+	int globalZ = (int)z + chunkGlobalZ;
 
 	ChunkColumnData* chunkColumnData = TerrainGenerator::getHeightMap(X, Z);
 	chunkColumnData->startUsing();
@@ -1443,48 +1434,44 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	uint8_t fillLightPower = 0;
 	bool findNewSLMH = false;
 
-	if (blockData.transparent) // !prevBlockData.transparent
+	if (blockData.transparent) // !prevBlockData.transparent // Block was replaced with transparent one
 	{
 		uint8_t maxLighting = 0;
 		size_t maxLightingSide = 0;
 
-		int offsets[3] = { 0, 0, 0 };
+		// finding max neighbour lighting to flood-fill from there
 		for (size_t side = 0; side < 6; side++)
 		{
 			size_t axis = side >> 1;
-			offsets[axis] = (side & 1) ? -1 : 1;
-			int offX = x + offsets[0];
-			int offY = y + offsets[1];
-			int offZ = z + offsets[2];
-			Block block = chunk->getBlockAtSideCheck(offX, offY, offZ, side);
-			if (ALL_BLOCK_DATA[(size_t)block].transparent)
+			int offCoords[3] = { (int)x, (int)y, (int)z };
+			offCoords[axis] += (side & 1) ? -1 : 1;
+			Chunk::BlockAndLighting blockAndLighting = chunk->getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side);
+			if (ALL_BLOCK_DATA[(size_t)blockAndLighting.block].transparent)
 			{
-				uint8_t lighting = chunk->getLightingAtSideCheck(offX, offY, offZ, side) >> 4;
+				uint8_t lighting = blockAndLighting.lighting >> 4;
 				if (lighting > maxLighting)
 				{
 					maxLighting = lighting;
 					maxLightingSide = side;
-					// doesnt help
-					/*if (maxLighting == 15)
-					{
-						break;
-					}*/
 				}
 			}
-			offsets[axis] = 0;
 		}
+
+		// lighting of value 1 can't propagate
 		if (maxLighting > 1)
 		{
 			size_t axis = maxLightingSide >> 1;
-			offsets[axis] = (maxLightingSide & 1) ? -1 : 1;
-			Chunk::lightingFloodFillVector.emplace_back(
-				globalX + offsets[0],
-				globalY + offsets[1],
-				globalZ + offsets[2],
+			int offCoords[3] = { globalX, globalY, globalZ };
+			offCoords[axis] += (maxLightingSide & 1) ? -1 : 1;
+			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
+			Chunk::lightingFloodFillVector.emplace_back
+			(
+				offCoords[0], offCoords[1], offCoords[2],
 				maxLighting, true
 			);
 		}
 
+		// destroying highest block in that column
 		if (globalY != skyLightMaxHeight)
 		{
 			chunkColumnData->stopUsing();
@@ -1492,55 +1479,58 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 		}
 		fillLightPower = 15;
 		findNewSLMH = true;
-		std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
-		Chunk::lightingFloodFillVector.emplace_back
-		(
-			globalX, globalY, globalZ,
-			fillLightPower, true
-		);
+
+		// could do that in loop, but here we already know that block is transparent
+		{
+			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
+			Chunk::lightingFloodFillVector.emplace_back
+			(
+				globalX, globalY, globalZ,
+				fillLightPower, true
+			);
+		}
 	}
-	else // prevBlockData.transparent
+	else // prevBlockData.transparent // Block was replaced with solid one
 	{
+		if (globalY > skyLightMaxHeight)
+		{
+			chunkColumnData->setSlMHAt(x, z, globalY);
+		}
+		//fillLightPower = 0; // is already zero
+
 		uint8_t prevLighting = chunk->getLightingAtInBoundaries(x, y, z) >> 4;
 		chunk->setLightingAtInBoundaries(x, y, z, 0, true);
+
+		// lighting of value 1 can't propagate
 		if (prevLighting > 1)
 		{
-			int offsets[3] = { 0, 0, 0 };
 			for (size_t side = 0; side < 6; side++)
 			{
 				size_t axis = side >> 1;
-				offsets[axis] = (side & 1) ? -1 : 1;
-				int offX = x + offsets[0];
-				int offY = y + offsets[1];
-				int offZ = z + offsets[2];
-				Block block = chunk->getBlockAtSideCheck(offX, offY, offZ, side);
-				if (ALL_BLOCK_DATA[(size_t)block].transparent)
+				int offCoords[3] = { (int)x, (int)y, (int)z };
+				offCoords[axis] += (side & 1) ? -1 : 1;
+				Chunk::BlockAndLighting blockAndLighting = chunk->getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side);
+				if (ALL_BLOCK_DATA[(size_t)blockAndLighting.block].transparent)
 				{
-					uint8_t lighting = chunk->getLightingAtSideCheck(offX, offY, offZ, side) >> 4;
+					uint8_t lighting = blockAndLighting.lighting >> 4;
 					if (lighting < prevLighting) // && lighting > 0  it will always be higher than zero
 					{
 						std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
 						Chunk::darknessFloodFillVector.emplace_back(
-							globalX + offsets[0],
-							globalY + offsets[1],
-							globalZ + offsets[2],
+							chunkGlobalX + offCoords[0],
+							chunkGlobalY + offCoords[1],
+							chunkGlobalZ + offCoords[2],
 							lighting, true
 						);
 					}
 				}
-				offsets[axis] = 0;
 			}
-		}
-
-		fillLightPower = 0;
-		if (globalY > skyLightMaxHeight)
-		{
-			chunkColumnData->setSlMHAt(x, z, globalY);
 		}
 	}
 	
 	// fill column with light value
 	int localY = y;
+	int fillGlobalY = globalY;
 	Chunk* chunk_ = chunk;
 
 	int maxIterations = skyLightMaxHeight == INT_MIN ? 0 : std::max(0, globalY - skyLightMaxHeight) - !blockData.transparent;
@@ -1551,10 +1541,10 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 		std::lock_guard<std::mutex> lock(floodFillMutex);
 		floodFillVector.reserve(floodFillVector.size() + maxIterations);
 	}
-	
-	int iterations = 0;
+	size_t iterations = 0;
 	while (true)
 	{
+		fillGlobalY--;
 		localY--;
 		if (localY < 0)
 		{
@@ -1577,12 +1567,11 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 			floodFillVector.emplace_back
 			(
 				globalX,
-				localY + chunk_->Y * Settings::CHUNK_SIZE,
+				fillGlobalY,
 				globalZ,
 				15, true
 			);
 		}
-
 		iterations++;
 	}
 
@@ -1590,7 +1579,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	{
 		if (chunk_)
 		{
-			chunkColumnData->setSlMHAt(x, z, localY + chunk_->Y * Settings::CHUNK_SIZE);
+			chunkColumnData->setSlMHAt(x, z, fillGlobalY);
 		}
 		else
 		{

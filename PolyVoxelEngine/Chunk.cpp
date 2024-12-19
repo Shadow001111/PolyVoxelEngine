@@ -101,8 +101,16 @@ void Chunk::destroy()
 	if (physicEntities.getSize() > 0)
 	{
 		std::cerr << "Entities are in destroyed chunk" << std::endl;
+		physicEntities.clear();
 	}
-	physicEntities.clear();
+
+	for (size_t i = 0; i < 6; i++)
+	{
+		if (neighbours[i])
+		{
+			neighbours[i]->neighbours[i ^ 1] = nullptr;
+		}
+	}
 
 	// TODO: chunk may save while init
 	saveData(blockChanges, X, Y, Z);
@@ -804,7 +812,7 @@ inline void Chunk::fetchFaces()
 					size_t planeIndex = normalID >> 1;
 
 					int offCoords[3] = { (int)x, (int)y, (int)z };
-					offCoords[planeIndex] += ((normalID & 1 ^ 1) << 1) - 1;
+					offCoords[planeIndex] += (normalID & 1) ? -1 : 1;
 					// TODO: in other methods: replace offsets with offCoords
 
 					BlockAndLighting faceBAL = getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], normalID);

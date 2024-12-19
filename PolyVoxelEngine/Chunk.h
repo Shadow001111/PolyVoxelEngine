@@ -73,12 +73,13 @@ struct LightUpdate
 
 class Chunk
 {
+public:
 	struct BlockAndLighting
 	{
 		Block block;
 		uint8_t lighting;
 	};
-
+private:
 	Block blocks[Settings::CHUNK_SIZE_CUBED];
 	uint8_t lightingMap[Settings::CHUNK_SIZE_CUBED]; // sky lighting in left bits, source lighting in right bits
 	std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_SIZE_CUBED>> blockChanges;

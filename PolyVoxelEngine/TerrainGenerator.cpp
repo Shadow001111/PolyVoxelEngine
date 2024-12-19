@@ -460,11 +460,13 @@ int ChunkColumnData::getHeightAtByIndex(size_t index) const
 
 void ChunkColumnData::setSlMHAt(size_t x, size_t z, int height)
 {
+	// TODO: add mutex
 	skyLightMaxHeight[x + z * Settings::CHUNK_SIZE] = height;
 }
 
 int ChunkColumnData::getSlMHAt(size_t x, size_t z) const
 {
+	// TODO: add mutex
 	return skyLightMaxHeight[x + z * Settings::CHUNK_SIZE];
 }
 
