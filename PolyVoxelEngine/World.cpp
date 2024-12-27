@@ -1130,6 +1130,30 @@ void World::darknessFloodFill()
 		}
 
 		// comparing lighting
+		if (!blockOrSky) // block
+		{
+			uint8_t lightSourceMaxLighting = 0;
+			for (size_t side = 0; side < 6; side++)
+			{
+				size_t axis = side >> 1;
+				int offCoords[3] = { (int)x, (int)y, (int)z };
+				offCoords[axis] += (side & 1) ? -1 : 1;
+
+				Block block = chunk->getBlockAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side);
+				const BlockData& blockData = ALL_BLOCK_DATA[(size_t)block];
+				if (!blockData.transparent && blockData.lightPower > lightSourceMaxLighting)
+				{
+					lightSourceMaxLighting = blockData.lightPower;
+				}
+			}
+			if (lightSourceMaxLighting > 0)
+			{
+				std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
+				Chunk::lightingFloodFillVector.emplace_back(globalX, globalY, globalZ, lightSourceMaxLighting, blockOrSky);
+				continue;
+			}
+		}
+
 		uint8_t prevLight = (getLightingAt(globalX, globalY, globalZ) >> (4 * blockOrSky)) & 15;
 		if (light.power > prevLight)
 		{
@@ -1137,10 +1161,13 @@ void World::darknessFloodFill()
 		}
 		else if (light.power < prevLight)
 		{
+			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
 			Chunk::lightingFloodFillVector.emplace_back(globalX, globalY, globalZ, prevLight, blockOrSky);
 			continue;
 		}
 		light.power--;
+
+		// TODO: check for light sources
 
 		setLightingAt(globalX, globalY, globalZ, 0, blockOrSky);
 
@@ -1262,9 +1289,6 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 	}
 	if (removeLights)
 	{
-		uint8_t maxLighting = 0;
-		bool potentialOpenedLightSource = blockData.transparent && !prevBlockData.transparent;
-
 		// darkness flood-fill
 		for (size_t side = 0; side < 6; side++)
 		{
@@ -1281,16 +1305,6 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 					prevBlockData.lightPower, false
 				);
 			}
-
-			if (potentialOpenedLightSource)
-			{
-				Block block = chunk->getBlockAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side);
-				const BlockData& blockData = ALL_BLOCK_DATA[(size_t)block];
-				if (blockData.lightPower > maxLighting)
-				{
-					maxLighting = blockData.lightPower;
-				}
-			}
 		}
 		if (prevBlockData.transparent)
 		{
@@ -1300,18 +1314,6 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 				globalY,
 				globalZ,
 				prevBlockData.lightPower, false
-			);
-		}
-
-		// propagating light from opened light-source
-		if (maxLighting > 0)
-		{
-			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
-			Chunk::lightingFloodFillVector.emplace_back(
-				globalX,
-				globalY,
-				globalZ,
-				maxLighting, false
 			);
 		}
 	}
@@ -1541,7 +1543,6 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 		std::lock_guard<std::mutex> lock(floodFillMutex);
 		floodFillVector.reserve(floodFillVector.size() + maxIterations);
 	}
-	size_t iterations = 0;
 	while (true)
 	{
 		fillGlobalY--;
@@ -1572,7 +1573,6 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 				15, true
 			);
 		}
-		iterations++;
 	}
 
 	if (findNewSLMH)
