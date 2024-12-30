@@ -9,8 +9,8 @@ Face* Chunk::facesData = nullptr;
 FaceInstanceData* Chunk::faceInstancesData = nullptr;
 FaceInstancesVBO* Chunk::faceInstancesVBO = nullptr;
 std::unordered_map<int, Chunk*> Chunk::chunkMap;
-std::vector<Light> Chunk::lightingFloodFillVector;
-std::vector<Light> Chunk::darknessFloodFillVector;
+std::vector<LightPropagationNode> Chunk::lightingFloodFillVector;
+std::vector<LightRemovalNode> Chunk::darknessFloodFillVector;
 std::vector<LightUpdate> Chunk::lightingUpdateVector;
 std::mutex Chunk::lightingFloodFillMutex;
 std::mutex Chunk::darknessFloodFillMutex;
@@ -187,6 +187,7 @@ void Chunk::generateBlocks()
 	applyChanges();
 
 	// lighting
+	// TODO: rework
 	Profiler::start(CHUNK_LIGHTING_INDEX);
 	for (size_t x = 0; x < Settings::CHUNK_SIZE; x++)
 	{
@@ -226,6 +227,14 @@ void Chunk::generateBlocks()
 	// get lighting from neighbours
 	for (int x = -1; x <= Settings::CHUNK_SIZE; x += (Settings::CHUNK_SIZE + 1))
 	{
+		size_t neighbourIndex = x == -1 ? 1 : 0;
+		const Chunk* neighbour = neighbours[neighbourIndex];
+		if (neighbour == nullptr || neighbour->state != State::Loaded)
+		{
+			continue;
+		}
+
+		int inBoundaryX = x & (Settings::CHUNK_SIZE - 1);
 		int globalX = x + X * Settings::CHUNK_SIZE;
 		for (int z = 0; z < Settings::CHUNK_SIZE; z++)
 		{
@@ -234,14 +243,13 @@ void Chunk::generateBlocks()
 			{
 				int globalY = y + Y * Settings::CHUNK_SIZE;
 
-				uint8_t lighting = getLightingAtSideCheck(x, y, z, x == -1 ? 1 : 0) & 15;
+				uint8_t lighting = neighbour->getLightingAtInBoundaries(inBoundaryX, y, z) & 15;
 				if (lighting > 1)
 				{
 					std::lock_guard<std::mutex> lock(lightingFloodFillMutex);
 					lightingFloodFillVector.emplace_back
 					(
-						globalX, globalY, globalZ,
-						lighting, false
+						globalX, globalY, globalZ, false
 					);
 				}
 			}
@@ -249,6 +257,14 @@ void Chunk::generateBlocks()
 	}
 	for (int y = -1; y <= Settings::CHUNK_SIZE; y += (Settings::CHUNK_SIZE + 1))
 	{
+		size_t neighbourIndex = y == -1 ? 3 : 2;
+		const Chunk* neighbour = neighbours[neighbourIndex];
+		if (neighbour == nullptr || neighbour->state != State::Loaded)
+		{
+			continue;
+		}
+
+		int inBoundaryY = y & (Settings::CHUNK_SIZE - 1);
 		int globalY = y + Y * Settings::CHUNK_SIZE;
 		for (int z = 0; z < Settings::CHUNK_SIZE; z++)
 		{
@@ -257,42 +273,48 @@ void Chunk::generateBlocks()
 			{
 				int globalX = x + X * Settings::CHUNK_SIZE;
 
-				uint8_t lighting = getLightingAtSideCheck(x, y, z, y == -1 ? 3 : 2) & 15;
+				uint8_t lighting = neighbour->getLightingAtInBoundaries(x, inBoundaryY, z) & 15;
 				if (lighting > 1)
 				{
 					std::lock_guard<std::mutex> lock(lightingFloodFillMutex);
 					lightingFloodFillVector.emplace_back
 					(
-						globalX, globalY, globalZ,
-						lighting, false
+						globalX, globalY, globalZ, false
 					);
 				}
 			}
 		}
 	}
 	for (int z = -1; z <= Settings::CHUNK_SIZE; z += (Settings::CHUNK_SIZE + 1))
+	{
+		size_t neighbourIndex = z == -1 ? 5 : 4;
+		const Chunk* neighbour = neighbours[neighbourIndex];
+		if (neighbour == nullptr || neighbour->state != State::Loaded)
 		{
-			int globalZ = z + Z * Settings::CHUNK_SIZE;
-			for (int x = 0; x < Settings::CHUNK_SIZE; x++)
-			{
-				int globalX = x + X * Settings::CHUNK_SIZE;
-				for (int y = 0; y < Settings::CHUNK_SIZE; y++)
-				{
-					int globalY = y + Y * Settings::CHUNK_SIZE;
+			continue;
+		}
 
-					uint8_t lighting = getLightingAtSideCheck(x, y, z, z == -1 ? 5 : 4) & 15;
-					if (lighting > 1)
-					{
-						std::lock_guard<std::mutex> lock(lightingFloodFillMutex);
-						lightingFloodFillVector.emplace_back
-						(
-							globalX, globalY, globalZ,
-							lighting, false
-						);
-					}
+		int inBoundaryZ = z & (Settings::CHUNK_SIZE - 1);
+		int globalZ = z + Z * Settings::CHUNK_SIZE;
+		for (int x = 0; x < Settings::CHUNK_SIZE; x++)
+		{
+			int globalX = x + X * Settings::CHUNK_SIZE;
+			for (int y = 0; y < Settings::CHUNK_SIZE; y++)
+			{
+				int globalY = y + Y * Settings::CHUNK_SIZE;
+
+				uint8_t lighting = neighbour->getLightingAtInBoundaries(x, y, inBoundaryZ) & 15;
+				if (lighting > 1)
+				{
+					std::lock_guard<std::mutex> lock(lightingFloodFillMutex);
+					lightingFloodFillVector.emplace_back
+					(
+						globalX, globalY, globalZ, false
+					);
 				}
 			}
 		}
+	}
 
 	Profiler::end(CHUNK_LIGHTING_INDEX);
 }
@@ -969,6 +991,10 @@ void Chunk::updateLightingAt(size_t x, size_t y, size_t z, Block block, Block pr
 
 Block Chunk::getBlockAtInBoundaries(size_t x, size_t y, size_t z) const
 {
+	if (state != State::Loaded)
+	{
+		return Block::Void;
+	}
 	return blocks[getIndex(x, y, z)];
 }
 
@@ -1011,6 +1037,29 @@ bool Chunk::setBlockAtInBoundaries(size_t x, size_t y, size_t z, Block block)
 	blockChanges[block].push(saveIndex);
 	return true;
 }
+
+Block Chunk::getBlockAtSideCheck(int x, int y, int z, size_t side) const
+{
+	if (
+		x >= 0 && x < Settings::CHUNK_SIZE &&
+		y >= 0 && y < Settings::CHUNK_SIZE &&
+		z >= 0 && z < Settings::CHUNK_SIZE
+		)
+	{
+		return getBlockAtInBoundaries(x, y, z);
+	}
+	const Chunk* chunk = neighbours[side];
+	if (!chunk)
+	{
+		return Block::Void;
+	}
+	x &= Settings::CHUNK_SIZE - 1;
+	y &= Settings::CHUNK_SIZE - 1;
+	z &= Settings::CHUNK_SIZE - 1;
+	return chunk->getBlockAtInBoundaries(x, y, z);
+}
+
+
 
 Block Chunk::getBlockAt(int x, int y, int z) const
 {
@@ -1059,7 +1108,7 @@ Block Chunk::getBlockAt(int x, int y, int z) const
 	}
 
 	const Chunk* chunk = getChunkAt(chX, chY, chZ);
-	if (!chunk || chunk->state != Chunk::State::Loaded)
+	if (!chunk || chunk->state != State::Loaded)
 	{
 		return Block::Void;
 	}
@@ -1096,7 +1145,21 @@ bool Chunk::canSideBeSeen(const glm::vec3& position, size_t side) const
 
 uint8_t Chunk::getLightingAtInBoundaries(size_t x, size_t y, size_t z) const
 {
+	if (state != State::Loaded)
+	{
+		return 0;
+	}
 	return lightingMap[getIndex(x, y, z)];
+}
+
+void Chunk::setLightingAtInBoundaries(size_t x, size_t y, size_t z, uint8_t lightPower, bool lightOrSky)
+{
+	if (state != State::Loaded)
+	{
+		return;
+	}
+	size_t index = getIndex(x, y, z);
+	lightingMap[index] = (lightingMap[index] & (15 << (4 * !lightOrSky))) | (lightPower << (4 * lightOrSky));
 }
 
 uint8_t Chunk::getLightingAt(int x, int y, int z) const
@@ -1146,38 +1209,11 @@ uint8_t Chunk::getLightingAt(int x, int y, int z) const
 	}
 
 	const Chunk* chunk = getChunkAt(chX, chY, chZ);
-	if (!chunk || chunk->state != Chunk::State::Loaded)
+	if (!chunk || chunk->state != State::Loaded)
 	{
 		return 0;
 	}
 	return chunk->getLightingAtInBoundaries(x, y, z);
-}
-
-uint8_t Chunk::getLightingAtSideCheck(int x, int y, int z, size_t side) const
-{
-	if (
-		x >= 0 && x < Settings::CHUNK_SIZE &&
-		y >= 0 && y < Settings::CHUNK_SIZE &&
-		z >= 0 && z < Settings::CHUNK_SIZE
-		)
-	{
-		return getLightingAtInBoundaries(x, y, z);
-	}
-	const Chunk* chunk = neighbours[side];
-	if (!chunk || chunk->state != Chunk::State::Loaded)
-	{
-		return 0;
-	}
-	x &= Settings::CHUNK_SIZE - 1;
-	y &= Settings::CHUNK_SIZE - 1;
-	z &= Settings::CHUNK_SIZE - 1;
-	return chunk->getLightingAtInBoundaries(x, y, z);
-}
-
-void Chunk::setLightingAtInBoundaries(size_t x, size_t y, size_t z, uint8_t lightPower, bool lightOrSky)
-{
-	size_t index = getIndex(x, y, z);
-	lightingMap[index] = (lightingMap[index] & (15 << (4 * !lightOrSky))) | (lightPower << (4 * lightOrSky));
 }
 
 void Chunk::setLightingAt(int x, int y, int z, uint8_t lightPower, bool lightOrSky)
@@ -1189,6 +1225,7 @@ void Chunk::setLightingAt(int x, int y, int z, uint8_t lightPower, bool lightOrS
 		)
 	{
 		setLightingAtInBoundaries(x, y, z, lightPower, lightOrSky);
+		return;
 	}
 
 	int chX = X;
@@ -1227,15 +1264,62 @@ void Chunk::setLightingAt(int x, int y, int z, uint8_t lightPower, bool lightOrS
 	}
 
 	Chunk* chunk = getChunkAt(chX, chY, chZ);
-	if (!chunk)
+	if (!chunk || chunk->state != State::Loaded)
 	{
 		return;
 	}
 	chunk->setLightingAtInBoundaries(x, y, z, lightPower, lightOrSky);
 }
 
+uint8_t Chunk::getLightingAtSideCheck(int x, int y, int z, size_t side) const
+{
+	if (
+		x >= 0 && x < Settings::CHUNK_SIZE &&
+		y >= 0 && y < Settings::CHUNK_SIZE &&
+		z >= 0 && z < Settings::CHUNK_SIZE
+		)
+	{
+		return getLightingAtInBoundaries(x, y, z);
+	}
+	const Chunk* chunk = neighbours[side];
+	if (!chunk || chunk->state != State::Loaded)
+	{
+		return 0;
+	}
+	x &= Settings::CHUNK_SIZE - 1;
+	y &= Settings::CHUNK_SIZE - 1;
+	z &= Settings::CHUNK_SIZE - 1;
+	return chunk->getLightingAtInBoundaries(x, y, z);
+}
+
+void Chunk::setLightingAtSideCheck(int x, int y, int z, size_t side, uint8_t lightPower, bool lightOrSky)
+{
+	if (
+		x >= 0 && x < Settings::CHUNK_SIZE &&
+		y >= 0 && y < Settings::CHUNK_SIZE &&
+		z >= 0 && z < Settings::CHUNK_SIZE
+		)
+	{
+		setLightingAtInBoundaries(x, y, z, lightPower, lightOrSky);
+		return;
+	}
+	Chunk* chunk = neighbours[side];
+	if (!chunk || chunk->state != State::Loaded)
+	{
+		return;
+	}
+	x &= Settings::CHUNK_SIZE - 1;
+	y &= Settings::CHUNK_SIZE - 1;
+	z &= Settings::CHUNK_SIZE - 1;
+	chunk->setLightingAtInBoundaries(x, y, z, lightPower, lightOrSky);
+}
+
 Chunk::BlockAndLighting Chunk::getBlockAndLightingAtInBoundaries(size_t x, size_t y, size_t z) const
 {
+	if (state != State::Loaded)
+	{
+		return { Block::Void, 0 };
+	}
 	size_t index = getIndex(x, y, z);
 	return {blocks[index], lightingMap[index]};
 }
@@ -1287,7 +1371,7 @@ Chunk::BlockAndLighting Chunk::getBlockAndLightingAt(int x, int y, int z) const
 	}
 
 	const Chunk* chunk = getChunkAt(chX, chY, chZ);
-	if (!chunk || chunk->state != Chunk::State::Loaded)
+	if (!chunk || chunk->state != State::Loaded)
 	{
 		return {Block::Void, 0};
 	}
@@ -1305,7 +1389,7 @@ Chunk::BlockAndLighting Chunk::getBlockAndLightingAtSideCheck(int x, int y, int 
 		return getBlockAndLightingAtInBoundaries(x, y, z);
 	}
 	const Chunk* chunk = neighbours[side];
-	if (!chunk || chunk->state != Chunk::State::Loaded)
+	if (!chunk || chunk->state != State::Loaded)
 	{
 		return {Block::Void, 0};
 	}
@@ -1313,27 +1397,6 @@ Chunk::BlockAndLighting Chunk::getBlockAndLightingAtSideCheck(int x, int y, int 
 	y &= Settings::CHUNK_SIZE - 1;
 	z &= Settings::CHUNK_SIZE - 1;
 	return chunk->getBlockAndLightingAtInBoundaries(x, y, z);
-}
-
-Block Chunk::getBlockAtSideCheck(int x, int y, int z, size_t side) const
-{
-	if (
-		x >= 0 && x < Settings::CHUNK_SIZE &&
-		y >= 0 && y < Settings::CHUNK_SIZE &&
-		z >= 0 && z < Settings::CHUNK_SIZE
-	)
-	{
-		return getBlockAtInBoundaries(x, y, z);
-	}
-	const Chunk* chunk = neighbours[side];
-	if (!chunk)
-	{
-		return Block::Void;
-	}
-	x &= Settings::CHUNK_SIZE - 1;
-	y &= Settings::CHUNK_SIZE - 1;
-	z &= Settings::CHUNK_SIZE - 1;
-	return chunk->getBlockAtInBoundaries(x, y, z);
 }
 
 int Chunk::posHash() const
@@ -1381,14 +1444,23 @@ bool Face::operator==(const Face& other) const
 #endif
 }
 
-Light::Light() : pos(0, 0, 0), power(0), blockOrSky(false)
+LightPropagationNode::LightPropagationNode() : pos(), blockOrSky(false)
 {}
 
-Light::Light(int x, int y, int z, uint8_t lightPower, bool blockOrSky) : pos(x, y, z), power(lightPower), blockOrSky(blockOrSky)
-{}
+LightPropagationNode::LightPropagationNode(int x, int y, int z, bool blockOrSky) : pos(x, y, z), blockOrSky(blockOrSky)
+{
+}
 
 SizeT3::SizeT3(size_t x, size_t y, size_t z) : x(x), y(y), z(z)
 {}
 
 LightUpdate::LightUpdate(void* chunk, uint8_t x, uint8_t y, uint8_t z, Block block, Block prevBlock) : chunk(chunk), x(x), y(y), z(z), block(block), prevBlock(prevBlock)
 {}
+
+LightRemovalNode::LightRemovalNode() : pos(), blockOrSky(false), lightValue(0)
+{
+}
+
+LightRemovalNode::LightRemovalNode(int x, int y, int z, bool blockOrSky, uint8_t lightValue) : pos(x, y, z),blockOrSky(blockOrSky), lightValue(lightValue)
+{
+}

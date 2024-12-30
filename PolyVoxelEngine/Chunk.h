@@ -45,14 +45,23 @@ struct PhysicEntityCollider
 	PhysicEntityCollider(glm::vec3& position, glm::vec3& size, glm::vec3& dpos);
 };
 
-struct Light
+struct LightPropagationNode
 {
 	glm::ivec3 pos;
-	uint8_t power;
 	bool blockOrSky;
 
-	Light();
-	Light(int x, int y, int z, uint8_t lightPower, bool blockOrSky);
+	LightPropagationNode();
+	LightPropagationNode(int x, int y, int z, bool blockOrSky);
+};
+
+struct LightRemovalNode
+{
+	glm::ivec3 pos;
+	bool blockOrSky;
+	uint8_t lightValue;
+
+	LightRemovalNode();
+	LightRemovalNode(int x, int y, int z, bool blockOrSky, uint8_t lightValue);
 };
 
 struct SizeT3
@@ -109,8 +118,8 @@ public:
 	static FaceInstancesVBO* faceInstancesVBO;
 	static std::unordered_map<int, Chunk*> chunkMap;
 
-	static std::vector<Light> lightingFloodFillVector;
-	static std::vector<Light> darknessFloodFillVector;
+	static std::vector<LightPropagationNode> lightingFloodFillVector;
+	static std::vector<LightRemovalNode> darknessFloodFillVector;
 	static std::vector<LightUpdate> lightingUpdateVector;
 	static std::mutex lightingFloodFillMutex;
 	static std::mutex darknessFloodFillMutex;
@@ -142,8 +151,9 @@ public:
 	uint8_t getLightingAtInBoundaries(size_t x, size_t y, size_t z) const;
 	void setLightingAtInBoundaries(size_t x, size_t y, size_t z, uint8_t lightPower, bool lightOrSky);
 	uint8_t getLightingAt(int x, int y, int z) const;
-	uint8_t getLightingAtSideCheck(int x, int y, int z, size_t side) const;
 	void setLightingAt(int x, int y, int z, uint8_t lightPower, bool lightOrSky);
+	uint8_t getLightingAtSideCheck(int x, int y, int z, size_t side) const;
+	void setLightingAtSideCheck(int x, int y, int z, size_t side, uint8_t lightPower, bool lightOrSky);
 
 	BlockAndLighting getBlockAndLightingAtInBoundaries(size_t x, size_t y, size_t z) const;
 	BlockAndLighting getBlockAndLightingAt(int x, int y, int z) const;
