@@ -32,11 +32,12 @@ namespace Settings
 	// Biomes
 	constexpr int BIOME_BORDER_INTERPOLATION_SIZE = 8;
 
-	//
+	// Terrain generator
 	constexpr size_t NOISE2_ARRAY_WIDTH = 16;
 
 	//
 	const float fogGradient = 10.0f;
+	const bool loadSMLHFiles = true;
 
 	// Player
 	constexpr float PLAYER_INTERACTION_DISTANCE = 16.0f;
