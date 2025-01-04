@@ -1282,13 +1282,66 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 	}
 	if (removeLights)
 	{
-		if (prevBlockData.transparent)
+		for (size_t side = 0; side < 6; side++)
 		{
-			chunk->setLightingAtInBoundaries(x, y, z, 0, false);
+			size_t axis = side >> 1;
+			int offCoords[3] = { (int)x, (int)y, (int)z };
+			offCoords[axis] += (side & 1) ? -1 : 1;
+
+			Block neighbourBlock = chunk->getBlockAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side);
+			if (neighbourBlock == Block::Void)
+			{
+				continue;
+			}
+
+			const BlockData& neighbourBlockData = ALL_BLOCK_DATA[(size_t)neighbourBlock];
+			if (!neighbourBlockData.transparent)
+			{
+				continue;
+			}
+
+			/*if (neighbourBlockData.lightPower > maxNeighbourLighting)
+			{
+				maxNeighbourLighting = neighbourBlockData.lightPower;
+			}*/
+
+			uint8_t maxNeighbourLighting2 = 0;
+			for (size_t side = 0; side < 6; side++)
+			{
+				size_t axis = side >> 1;
+				int offCoords2[3] = { offCoords[0], offCoords[1], offCoords[2] };
+				offCoords2[axis] += (side & 1) ? -1 : 1;
+
+				Block neighbourBlock = chunk->getBlockAtSideCheck(offCoords2[0], offCoords2[1], offCoords2[2], side);
+				if (neighbourBlock == Block::Void)
+				{
+					continue;
+				}
+
+				const BlockData& neighbourBlockData = ALL_BLOCK_DATA[(size_t)neighbourBlock];
+				if (neighbourBlockData.lightPower > maxNeighbourLighting2)
+				{
+					maxNeighbourLighting2 = neighbourBlockData.lightPower;
+				}
+
+			}
+
+			chunk->setLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side, maxNeighbourLighting2, false);
+			{
+				std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
+
+				Chunk::darknessFloodFillVector.emplace_back(
+					chunkGlobalX + offCoords[0],
+					chunkGlobalY + offCoords[1],
+					chunkGlobalZ + offCoords[2],
+					false, prevBlockData.lightPower
+				);
+			}
 		}
+		// TODO: remove loop there. Do this in upper loop
+		uint8_t maxNeighbourLighting = 0;
 		if (blockData.transparent)
 		{
-			uint8_t maxNeighbourLighting = 0;
 			for (size_t side = 0; side < 6; side++)
 			{
 				size_t axis = side >> 1;
@@ -1310,57 +1363,9 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 			}
 			chunk->setLightingAtInBoundaries(x, y, z, maxNeighbourLighting, false);
 		}
-		for (size_t side = 0; side < 6; side++)
+		else if (prevBlockData.transparent)
 		{
-			size_t axis = side >> 1;
-			int offCoords[3] = { (int)x, (int)y, (int)z };
-			offCoords[axis] += (side & 1) ? -1 : 1;
-
-			Block neighbourBlock = chunk->getBlockAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side);
-			if (neighbourBlock == Block::Void)
-			{
-				continue;
-			}
-
-			const BlockData& neighbourBlockData = ALL_BLOCK_DATA[(size_t)neighbourBlock];
-			if (!neighbourBlockData.transparent)
-			{
-				continue;
-			}
-
-
-			uint8_t maxNeighbourLighting = 0;
-			for (size_t side = 0; side < 6; side++)
-			{
-				size_t axis = side >> 1;
-				int offCoords2[3] = { offCoords[0], offCoords[1], offCoords[2] };
-				offCoords2[axis] += (side & 1) ? -1 : 1;
-
-				Block neighbourBlock = chunk->getBlockAtSideCheck(offCoords2[0], offCoords2[1], offCoords2[2], side);
-				if (neighbourBlock == Block::Void)
-				{
-					continue;
-				}
-
-				const BlockData& neighbourBlockData = ALL_BLOCK_DATA[(size_t)neighbourBlock];
-				if (neighbourBlockData.lightPower > maxNeighbourLighting)
-				{
-					maxNeighbourLighting = neighbourBlockData.lightPower;
-				}
-
-			}
-
-			chunk->setLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side, maxNeighbourLighting, false);
-			{
-				std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
-
-				Chunk::darknessFloodFillVector.emplace_back(
-					chunkGlobalX + offCoords[0],
-					chunkGlobalY + offCoords[1],
-					chunkGlobalZ + offCoords[2],
-					false, prevBlockData.lightPower
-				);
-			}
+			chunk->setLightingAtInBoundaries(x, y, z, 0, false);
 		}
 	}
 	if (addLights2)
@@ -1468,192 +1473,219 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 
 void World::updateSkyLighting(const LightUpdate& lightUpdate)
 {
-	//const BlockData& blockData = ALL_BLOCK_DATA[(size_t)lightUpdate.block];
-	//const BlockData& prevBlockData = ALL_BLOCK_DATA[(size_t)lightUpdate.prevBlock];
+	const BlockData& blockData = ALL_BLOCK_DATA[(size_t)lightUpdate.block];
+	const BlockData& prevBlockData = ALL_BLOCK_DATA[(size_t)lightUpdate.prevBlock];
 
-	//if (blockData.transparent == prevBlockData.transparent)
-	//{
-	//	return;
-	//}
+	if (blockData.transparent == prevBlockData.transparent)
+	{
+		return;
+	}
 
-	//Chunk* chunk = (Chunk*)lightUpdate.chunk;
-	//// TODO: remove
-	//if (chunk->state != Chunk::State::Loaded)
-	//{
-	//	std::cerr << "UpdateSkyLighting: Chunk is unloaded" << std::endl;
-	//	return;
-	//}
-	//size_t x = lightUpdate.x;
-	//size_t y = lightUpdate.y;
-	//size_t z = lightUpdate.z;
-	//int X = chunk->X;
-	//int Y = chunk->Y;
-	//int Z = chunk->Z;
-	//int chunkGlobalX = X * Settings::CHUNK_SIZE;
-	//int chunkGlobalY = Y * Settings::CHUNK_SIZE;
-	//int chunkGlobalZ = Z * Settings::CHUNK_SIZE;
-	//int globalX = (int)x + chunkGlobalX;
-	//int globalY = (int)y + chunkGlobalY;
-	//int globalZ = (int)z + chunkGlobalZ;
+	Chunk* chunk = (Chunk*)lightUpdate.chunk;
+	// TODO: remove
+	if (chunk->state != Chunk::State::Loaded)
+	{
+		std::cerr << "UpdateSkyLighting: Chunk is unloaded" << std::endl;
+		return;
+	}
+	size_t x = lightUpdate.x;
+	size_t y = lightUpdate.y;
+	size_t z = lightUpdate.z;
+	int X = chunk->X;
+	int Y = chunk->Y;
+	int Z = chunk->Z;
+	int chunkGlobalX = X * Settings::CHUNK_SIZE;
+	int chunkGlobalY = Y * Settings::CHUNK_SIZE;
+	int chunkGlobalZ = Z * Settings::CHUNK_SIZE;
+	int globalX = (int)x + chunkGlobalX;
+	int globalY = (int)y + chunkGlobalY;
+	int globalZ = (int)z + chunkGlobalZ;
 
-	//ChunkColumnData* chunkColumnData = TerrainGenerator::getHeightMap(X, Z);
-	//chunkColumnData->startUsing();
-	//const int skyLightMaxHeight = chunkColumnData->getSlMHAt(x, z);
+	ChunkColumnData* chunkColumnData = TerrainGenerator::getHeightMap(X, Z);
+	chunkColumnData->startUsing();
+	const int skyLightMaxHeight = chunkColumnData->getSlMHAt(x, z);
 
-	//uint8_t fillLightPower = 0;
-	//bool findNewSLMH = false;
+	uint8_t fillLightPower = 0;
+	bool findNewSLMH = false;
 
-	//if (blockData.transparent) // !prevBlockData.transparent // Block was replaced with transparent one
-	//{
-	//	uint8_t maxLighting = 0;
-	//	size_t maxLightingSide = 0;
+	if (blockData.transparent) // !prevBlockData.transparent // Block was replaced with transparent one
+	{
+		uint8_t maxLighting = 0;
+		size_t maxLightingSide = 0;
 
-	//	// finding max neighbour lighting to flood-fill from there
-	//	for (size_t side = 0; side < 6; side++)
-	//	{
-	//		size_t axis = side >> 1;
-	//		int offCoords[3] = { (int)x, (int)y, (int)z };
-	//		offCoords[axis] += (side & 1) ? -1 : 1;
-	//		Chunk::BlockAndLighting blockAndLighting = chunk->getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side);
-	//		if (ALL_BLOCK_DATA[(size_t)blockAndLighting.block].transparent)
-	//		{
-	//			uint8_t lighting = blockAndLighting.lighting >> 4;
-	//			if (lighting > maxLighting)
-	//			{
-	//				maxLighting = lighting;
-	//				maxLightingSide = side;
-	//			}
-	//		}
-	//	}
+		// finding max neighbour lighting to flood-fill from there
+		for (size_t side = 0; side < 6; side++)
+		{
+			size_t axis = side >> 1;
+			int offCoords[3] = { (int)x, (int)y, (int)z };
+			offCoords[axis] += (side & 1) ? -1 : 1;
+			Chunk::BlockAndLighting blockAndLighting = chunk->getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side);
+			if (ALL_BLOCK_DATA[(size_t)blockAndLighting.block].transparent)
+			{
+				uint8_t lighting = blockAndLighting.lighting >> 4;
+				if (lighting > maxLighting)
+				{
+					maxLighting = lighting;
+					maxLightingSide = side;
+				}
+			}
+		}
 
-	//	// lighting of value 1 can't propagate
-	//	if (maxLighting > 1)
-	//	{
-	//		size_t axis = maxLightingSide >> 1;
-	//		int offCoords[3] = { globalX, globalY, globalZ };
-	//		offCoords[axis] += (maxLightingSide & 1) ? -1 : 1;
-	//		std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
-	//		Chunk::lightingFloodFillVector.emplace_back
-	//		(
-	//			offCoords[0], offCoords[1], offCoords[2],
-	//			maxLighting, true
-	//		);
-	//	}
+		// lighting of value 1 can't propagate
+		if (maxLighting > 1)
+		{
+			size_t axis = maxLightingSide >> 1;
+			int offCoords[3] = { x, y, z };
+			offCoords[axis] += (maxLightingSide & 1) ? -1 : 1;
+			chunk->setLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], maxLightingSide, maxLighting, true);
+			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
+			Chunk::lightingFloodFillVector.emplace_back
+			(
+				chunkGlobalX + offCoords[0],
+				chunkGlobalY + offCoords[1],
+				chunkGlobalZ + offCoords[2],
+				true
+			);
+		}
 
-	//	// destroying highest block in that column
-	//	if (globalY != skyLightMaxHeight)
-	//	{
-	//		chunkColumnData->stopUsing();
-	//		return;
-	//	}
-	//	fillLightPower = 15;
-	//	findNewSLMH = true;
+		// destroying highest block in that column
+		if (globalY != skyLightMaxHeight)
+		{
+			chunkColumnData->stopUsing();
+			return;
+		}
+		fillLightPower = 15;
+		findNewSLMH = true;
 
-	//	// could do that in loop, but here we already know that block is transparent
-	//	{
-	//		std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
-	//		Chunk::lightingFloodFillVector.emplace_back
-	//		(
-	//			globalX, globalY, globalZ,
-	//			fillLightPower, true
-	//		);
-	//	}
-	//}
-	//else // prevBlockData.transparent // Block was replaced with solid one
-	//{
-	//	if (globalY > skyLightMaxHeight)
-	//	{
-	//		chunkColumnData->setSlMHAt(x, z, globalY);
-	//	}
-	//	//fillLightPower = 0; // is already zero
+		// could do that in loop, but here we already know that block is transparent
+		{
+			chunk->setLightingAtInBoundaries(x, y, z, fillLightPower, true);
+			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
+			Chunk::lightingFloodFillVector.emplace_back
+			(
+				globalX, globalY, globalZ,
+				true
+			);
+		}
+	}
+	else // prevBlockData.transparent // Block was replaced with solid one
+	{
+		if (globalY > skyLightMaxHeight)
+		{
+			chunkColumnData->setSlMHAt(x, z, globalY);
+		}
+		//fillLightPower = 0; // is already zero
 
-	//	uint8_t prevLighting = chunk->getLightingAtInBoundaries(x, y, z) >> 4;
-	//	chunk->setLightingAtInBoundaries(x, y, z, 0, true);
+		uint8_t prevLighting = chunk->getLightingAtInBoundaries(x, y, z) >> 4;
+		chunk->setLightingAtInBoundaries(x, y, z, 0, true);
 
-	//	// lighting of value 1 can't propagate
-	//	if (prevLighting > 1)
-	//	{
-	//		for (size_t side = 0; side < 6; side++)
-	//		{
-	//			size_t axis = side >> 1;
-	//			int offCoords[3] = { (int)x, (int)y, (int)z };
-	//			offCoords[axis] += (side & 1) ? -1 : 1;
-	//			Chunk::BlockAndLighting blockAndLighting = chunk->getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side);
-	//			if (ALL_BLOCK_DATA[(size_t)blockAndLighting.block].transparent)
-	//			{
-	//				uint8_t lighting = blockAndLighting.lighting >> 4;
-	//				if (lighting < prevLighting) // && lighting > 0  it will always be higher than zero
-	//				{
-	//					std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
-	//					Chunk::darknessFloodFillVector.emplace_back(
-	//						chunkGlobalX + offCoords[0],
-	//						chunkGlobalY + offCoords[1],
-	//						chunkGlobalZ + offCoords[2],
-	//						lighting, true
-	//					);
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
-	//
-	//// fill column with light value
-	//int localY = y;
-	//int fillGlobalY = globalY;
-	//Chunk* chunk_ = chunk;
+		// lighting of value 1 can't propagate
+		if (prevLighting > 1)
+		{
+			for (size_t side = 0; side < 6; side++)
+			{
+				size_t axis = side >> 1;
+				int offCoords[3] = { (int)x, (int)y, (int)z };
+				offCoords[axis] += (side & 1) ? -1 : 1;
+				Chunk::BlockAndLighting blockAndLighting = chunk->getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side);
+				if (ALL_BLOCK_DATA[(size_t)blockAndLighting.block].transparent)
+				{
+					uint8_t lighting = blockAndLighting.lighting >> 4;
+					if (lighting < prevLighting) // && lighting > 0  it will always be higher than zero
+					{
+						chunk->setLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side, 0, true);
+						std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
+						Chunk::darknessFloodFillVector.emplace_back(
+							chunkGlobalX + offCoords[0],
+							chunkGlobalY + offCoords[1],
+							chunkGlobalZ + offCoords[2],
+							true, lighting
+						);
+					}
+				}
+			}
+		}
+	}
+	
+	// fill column with light value
+	int localY = y;
+	int fillGlobalY = globalY;
+	Chunk* chunk_ = chunk;
 
-	//int maxIterations = skyLightMaxHeight == INT_MIN ? 0 : std::max(0, globalY - skyLightMaxHeight) - !blockData.transparent;
-	//auto& floodFillVector = fillLightPower == 0 ? Chunk::darknessFloodFillVector : Chunk::lightingFloodFillVector;
-	//auto& floodFillMutex = fillLightPower == 0 ? Chunk::darknessFloodFillMutex : Chunk::lightingFloodFillMutex;
-	//if (maxIterations > 0)
-	//{
-	//	std::lock_guard<std::mutex> lock(floodFillMutex);
-	//	floodFillVector.reserve(floodFillVector.size() + maxIterations);
-	//}
-	//while (true)
-	//{
-	//	fillGlobalY--;
-	//	localY--;
-	//	if (localY < 0)
-	//	{
-	//		chunk_ = chunk_->neighbours[3];
-	//		if (!chunk_)
-	//		{
-	//			break;
-	//		}
-	//		localY = Settings::CHUNK_SIZE - 1;
-	//	}
+	int maxIterations = skyLightMaxHeight == INT_MIN ? 0 : std::max(0, globalY - skyLightMaxHeight) - !blockData.transparent;
+	bool useDarknessVector = fillLightPower == 0;
+	auto& floodFillMutex = useDarknessVector ? Chunk::darknessFloodFillMutex : Chunk::lightingFloodFillMutex;
+	if (maxIterations > 0)
+	{
+		std::lock_guard<std::mutex> lock(floodFillMutex);
+		if (useDarknessVector)
+		{
+			Chunk::darknessFloodFillVector.reserve(Chunk::darknessFloodFillVector.size() + maxIterations);
+		}
+		else
+		{
+			Chunk::lightingFloodFillVector.reserve(Chunk::lightingFloodFillVector.size() + maxIterations);
+		}
+	}
+	while (true)
+	{
+		fillGlobalY--;
+		localY--;
+		if (localY < 0)
+		{
+			chunk_ = chunk_->neighbours[3];
+			if (!chunk_)
+			{
+				break;
+			}
+			localY = Settings::CHUNK_SIZE - 1;
+		}
 
-	//	Block block = chunk_->getBlockAtInBoundaries(x, localY, z);
-	//	if (!ALL_BLOCK_DATA[(size_t)block].transparent)
-	//	{
-	//		break;
-	//	}
+		Block block = chunk_->getBlockAtInBoundaries(x, localY, z);
+		if (!ALL_BLOCK_DATA[(size_t)block].transparent)
+		{
+			break;
+		}
 
-	//	{
-	//		std::lock_guard<std::mutex> lock(floodFillMutex);
-	//		floodFillVector.emplace_back
-	//		(
-	//			globalX,
-	//			fillGlobalY,
-	//			globalZ,
-	//			15, true
-	//		);
-	//	}
-	//}
+		{
+			std::lock_guard<std::mutex> lock(floodFillMutex);
+			if (useDarknessVector)
+			{
+				chunk_->setLightingAtInBoundaries(x, localY, z, fillLightPower, true);
+				Chunk::darknessFloodFillVector.emplace_back
+				(
+					globalX,
+					fillGlobalY,
+					globalZ,
+					true, 15
+				);
+			}
+			else
+			{
+				chunk_->setLightingAtInBoundaries(x, localY, z, fillLightPower, true);
+				Chunk::lightingFloodFillVector.emplace_back
+				(
+					globalX,
+					fillGlobalY,
+					globalZ,
+					true
+				);
+			}
+		}
+	}
 
-	//if (findNewSLMH)
-	//{
-	//	if (chunk_)
-	//	{
-	//		chunkColumnData->setSlMHAt(x, z, fillGlobalY);
-	//	}
-	//	else
-	//	{
-	//		chunkColumnData->setSlMHAt(x, z, INT_MIN);
-	//	}
-	//}
-	//chunkColumnData->stopUsing();
+	if (findNewSLMH)
+	{
+		if (chunk_)
+		{
+			chunkColumnData->setSlMHAt(x, z, fillGlobalY);
+		}
+		else
+		{
+			chunkColumnData->setSlMHAt(x, z, INT_MIN);
+		}
+	}
+	chunkColumnData->stopUsing();
 }
 
 WorldData World::loadWorldData()
