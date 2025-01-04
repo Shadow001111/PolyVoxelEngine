@@ -17,6 +17,7 @@ struct BiomePoint
 
 struct LayeredNoiseData
 {
+	// TODO: add offset
 	int layersCount = 3;
 	float amplitude = 1.0f;
 	float frequency = 1.0f;

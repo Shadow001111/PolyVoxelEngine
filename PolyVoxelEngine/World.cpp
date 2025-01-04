@@ -129,6 +129,9 @@ World::World(const WorldData& worldData)
 	threadPool(4),
 	chunkPool(Settings::MAX_RENDERED_CHUNKS_COUNT)
 {
+	TerrainGenerator::init();
+	TerrainGenerator::seed = worldData.seed;
+
 	chunkIDPool = new unsigned int[Settings::MAX_RENDERED_CHUNKS_COUNT];
 	for (size_t i = 0; i < Settings::MAX_RENDERED_CHUNKS_COUNT; i++)
 	{
@@ -152,8 +155,6 @@ World::World(const WorldData& worldData)
 	chunkPositionIndexSSBO.bindBase(1);
 
 	//
-	TerrainGenerator::init(worldData.seed);
-
 	drawCommands = new DrawArraysIndirectCommand[Settings::MAX_CHUNK_DRAW_COMMANDS_COUNT];
 	for (size_t i = 0; i < Settings::MAX_CHUNK_DRAW_COMMANDS_COUNT; i++)
 	{
@@ -1716,6 +1717,16 @@ void World::saveWorldData(const WorldData& worldData)
 	}
 	file.write(reinterpret_cast<const char*>(&worldData), sizeof(WorldData));
 	file.close();
+}
+
+void World::worldDataGetPlayerY(WorldData& worldData)
+{
+	if (worldData.playerPosition.y != INT_MIN)
+	{
+		return;
+	}
+	auto& playerPos = worldData.playerPosition;
+	playerPos.y = TerrainGenerator::getInitialHeight(playerPos.x, playerPos.z) + 3;
 }
 
 World::Int3::Int3() : x(0), y(0), z(0)

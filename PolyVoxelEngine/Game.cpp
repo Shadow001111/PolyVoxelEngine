@@ -109,27 +109,19 @@ void Game::run()
 	glfwSetScrollCallback(GraphicController::window, &gameScrollCallback);
 	glfwSetMouseButtonCallback(GraphicController::window, &gameMouseButtonCallback);
 
-	// world data
+	// world
 	WorldData worldData = World::loadWorldData();
-
-	// player, world
-	player = new Player({ 0.0f, 0.0f, 0.0f }, 80.0f, 0.1f, Settings::MAX_RENDER_DISTANCE);
 	World world(worldData);
+	World::worldDataGetPlayerY(worldData);
+
+	// player
+	player = new Player({ 0.0f, 0.0f, 0.0f }, 80.0f, 0.1f, Settings::MAX_RENDER_DISTANCE);
 	PhysicEntity::world = &world;
 
 	// player data
 	{
-		auto& pos = player->physicEntity.position;
-		pos.x = worldData.playerPosition.x;
-		pos.z = worldData.playerPosition.z;
-		if (worldData.playerPosition.y == INT_MIN)
-		{
-			pos.y = TerrainGenerator::calculateHeight(pos.x, pos.z) + 6;
-		}
-		else
-		{
-			pos.y = worldData.playerPosition.y;
-		}
+		player->physicEntity.position = worldData.playerPosition;
+		player->physicEntity.previousPosition = worldData.playerPosition;
 
 		player->rotation = worldData.playerRotation;
 		player->previousRotation = worldData.playerRotation;

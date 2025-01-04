@@ -45,7 +45,7 @@ class TerrainGenerator
 public:
 	static int seed;
 
-	static void init(unsigned int seed);
+	static void init();
 	static void clear();
 
 	static int calculateHeight(int globalX, int globalZ);
@@ -55,12 +55,14 @@ public:
 
 	static float noise(float x, float y);
 	static float noise(float x, float y, float z);
-	static float getLayeredNoise2D(float x, float y, int layers, float amp0, float freq0, float f_amp, float f_freq, float dx, float dy);
+	static float getLayeredNoise2D(float x, float y, int layers, float amp0, float freq0, float f_amp, float f_freq);
+	static float getLayeredNoise2D(float x, float y, const LayeredNoiseData& data);
 	static float getLayeredNoise3D(float x, float y, float z, int layers, float amp0, float freq0, float f_amp, float f_freq, float dx, float dy, float dz);
 	static void getNoiseArray2D(float* array, float x, float y, int sizeX, int sizeY, float frequency);
 	static void getNoiseArray3D(float* array, float x, float y, float z, int sizeX, int sizeY, int sizeZ, float frequency);
 	static void getLayeredNoiseArray2D(float* array, float x, float y, int sizeX, int sizeY, float amplitude, float frequency, int layers, float amplitudeFactor, float frequencyFactor);
 	static void getLayeredNoiseArray2D(float* array, float x, float y, int sizeX, int sizeY, const LayeredNoiseData& data);
+	static int getInitialHeight(int globalX, int globalZ);
 	static void getInitialHeightArray(int* heightArray, int chunkX, int chunkZ, Biome biome);
 	static void generateChunkCaveNoise(int chunkX, int chunkY, int chunkZ);
 	static ChunkColumnData* getHeightMap(int chunkX, int chunkZ);

@@ -128,6 +128,7 @@ public:
 
 	static WorldData loadWorldData();
 	static void saveWorldData(const WorldData& worldData);
+	static void worldDataGetPlayerY(WorldData& worldData);
 
 	void draw(const Camera& camera);
 
