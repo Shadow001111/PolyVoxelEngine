@@ -12,8 +12,9 @@ class ChunkColumnData
 {
 	friend class TerrainGenerator;
 
+	int X, Z;
 	int heightMap[Settings::CHUNK_SIZE_SQUARED];
-	int skyLightMaxHeight[Settings::CHUNK_SIZE_SQUARED];
+	int skyLightMaxHeightMap[Settings::CHUNK_SIZE_SQUARED];
 	Biome biome;
 	std::atomic<uint32_t> usedBy;
 public:
@@ -27,6 +28,8 @@ public:
 	int getSlMHAt(size_t x, size_t z) const;
 
 	Biome getBiome() const;
+
+	static std::string slmhGetFilepath(int chunkX, int chunkZ);
 
 	void startUsing();
 	void stopUsing();
@@ -52,7 +55,10 @@ public:
 
 	static void loadHeightMap(int chunkX, int chunkZ);
 	static void unloadHeightMap(int chunkX, int chunkZ);
-
+private:
+	static bool loadSkyLightMaxHeightMapFromFile(int chunkX, int chunkZ, ChunkColumnData* columnChunkData);
+	static void saveSkyLightMaxHeightMapToFile(const ChunkColumnData* columnChunkData);
+public:
 	static float noise(float x, float y);
 	static float noise(float x, float y, float z);
 	static float getLayeredNoise2D(float x, float y, int layers, float amp0, float freq0, float f_amp, float f_freq);

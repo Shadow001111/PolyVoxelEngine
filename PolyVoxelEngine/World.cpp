@@ -171,6 +171,10 @@ World::World(const WorldData& worldData)
 	{
 		std::filesystem::create_directories(Settings::chunkSavesPath);
 	}
+	if (!std::filesystem::exists(Settings::skyLightMaxHeightMapSavesPath))
+	{
+		std::filesystem::create_directories(Settings::skyLightMaxHeightMapSavesPath);
+	}
 }
 
 World::~World()

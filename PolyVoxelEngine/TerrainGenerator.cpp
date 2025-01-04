@@ -2,6 +2,8 @@
 #include "settings.h"
 #include "Profiler.h"
 #include <iostream>
+#include <filesystem>
+#include <fstream>
 
 int TerrainGenerator::seed = 0;
 FastNoise::SmartNode<FastNoise::Simplex> TerrainGenerator::simplexNoise;
@@ -416,7 +418,9 @@ void TerrainGenerator::clear()
 {
 	for (const auto& pair : heightMaps)
 	{
-		delete pair.second;
+		ChunkColumnData* data = pair.second;
+		saveSkyLightMaxHeightMapToFile(data);
+		delete data;
 	}
 	heightMapPool.clear();
 }
@@ -431,17 +435,22 @@ void TerrainGenerator::loadHeightMap(int chunkX, int chunkZ)
 	}
 
 	ChunkColumnData* columnChunkData = heightMapPool.acquire();
+	columnChunkData->X = chunkX;
+	columnChunkData->Z = chunkZ;
 	columnChunkData->biome = getBiome(chunkX, chunkZ);
 
 	// height
 	getInitialHeightArray(columnChunkData->heightMap, chunkX, chunkZ, columnChunkData->biome);
 
 	// slmh
-	for (int z = 0; z < Settings::CHUNK_SIZE; z++)
+	if (!loadSkyLightMaxHeightMapFromFile(chunkX, chunkZ, columnChunkData))
 	{
-		for (int x = 0; x < Settings::CHUNK_SIZE; x++)
+		for (int z = 0; z < Settings::CHUNK_SIZE; z++)
 		{
-			columnChunkData->setSlMHAt(x, z, INT_MIN);
+			for (int x = 0; x < Settings::CHUNK_SIZE; x++)
+			{
+				columnChunkData->setSlMHAt(x, z, INT_MIN);
+			}
 		}
 	}
 
@@ -463,11 +472,64 @@ void TerrainGenerator::unloadHeightMap(int chunkX, int chunkZ)
 	{
 		std::cerr << "Unloaded ChunkColumnData was used by: " << usedBy << " chunks" << std::endl;
 	}
+
+	saveSkyLightMaxHeightMapToFile(it->second);
+
 	heightMapPool.release(it->second);
 	heightMaps.erase(it);
+
 }
 
-ChunkColumnData::ChunkColumnData() : usedBy(0)
+bool TerrainGenerator::loadSkyLightMaxHeightMapFromFile(int chunkX, int chunkZ, ChunkColumnData* columnChunkData)
+{
+	std::string filepath = ChunkColumnData::slmhGetFilepath(chunkX, chunkZ);
+	if (!std::filesystem::exists(filepath))
+	{
+		return false;
+	}
+
+	std::ifstream file(filepath, std::ios::binary);
+	if (!file.is_open())
+	{
+		std::cerr << "Failed to open sky light max height map file" << std::endl;
+		return false;
+	}
+
+	file.read
+	(
+		reinterpret_cast<char*>(columnChunkData->skyLightMaxHeightMap),
+		sizeof(columnChunkData->skyLightMaxHeightMap)
+	);
+	file.close();
+	return true;
+}
+
+void TerrainGenerator::saveSkyLightMaxHeightMapToFile(const ChunkColumnData* columnChunkData)
+{
+	std::string filepath = ChunkColumnData::slmhGetFilepath(columnChunkData->X, columnChunkData->Z);
+	std::ofstream file(filepath, std::ios::binary | std::ios::trunc);
+	if (!file.is_open())
+	{
+		std::cerr << "Failed to open sky light max height map file" << std::endl;
+		return;
+	}
+
+	try
+	{
+		file.write
+		(
+			reinterpret_cast<const char*>(&columnChunkData->skyLightMaxHeightMap),
+			sizeof(columnChunkData->skyLightMaxHeightMap)
+		);
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Failed to write to sky light max height map file: " << e.what() << std::endl;
+	}
+	file.close();
+}
+
+ChunkColumnData::ChunkColumnData() : X(0), Z(0), usedBy(0)
 {
 }
 
@@ -489,18 +551,28 @@ int ChunkColumnData::getHeightAtByIndex(size_t index) const
 void ChunkColumnData::setSlMHAt(size_t x, size_t z, int height)
 {
 	// TODO: add mutex
-	skyLightMaxHeight[x + z * Settings::CHUNK_SIZE] = height;
+	skyLightMaxHeightMap[x + z * Settings::CHUNK_SIZE] = height;
 }
 
 int ChunkColumnData::getSlMHAt(size_t x, size_t z) const
 {
 	// TODO: add mutex
-	return skyLightMaxHeight[x + z * Settings::CHUNK_SIZE];
+	return skyLightMaxHeightMap[x + z * Settings::CHUNK_SIZE];
 }
 
 Biome ChunkColumnData::getBiome() const
 {
 	return biome;
+}
+
+std::string ChunkColumnData::slmhGetFilepath(int chunkX, int chunkZ)
+{
+	std::string path = Settings::skyLightMaxHeightMapSavesPath;
+	path += std::to_string(chunkX);
+	path += "_";
+	path += std::to_string(chunkZ);
+	path += ".bin";
+	return path;
 }
 
 void ChunkColumnData::startUsing()

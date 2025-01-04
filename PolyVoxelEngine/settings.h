@@ -58,6 +58,7 @@ namespace Settings
 	extern size_t MAX_CHUNK_DRAW_COMMANDS_COUNT;
 
 	const std::string chunkSavesPath = worldPath + "/Chunks/";
+	const std::string skyLightMaxHeightMapSavesPath = worldPath + "/SLMH/";
 
 	const float MAX_RENDER_DISTANCE = float((CHUNK_LOAD_RADIUS - 1) * CHUNK_SIZE);
 	const float fogDensity = calculateFogDensity(MAX_RENDER_DISTANCE, fogGradient);
