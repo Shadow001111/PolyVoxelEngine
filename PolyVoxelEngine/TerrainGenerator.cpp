@@ -434,28 +434,30 @@ void TerrainGenerator::loadHeightMap(int chunkX, int chunkZ)
 		return;
 	}
 
-	ChunkColumnData* columnChunkData = heightMapPool.acquire();
-	columnChunkData->X = chunkX;
-	columnChunkData->Z = chunkZ;
-	columnChunkData->biome = getBiome(chunkX, chunkZ);
+	ChunkColumnData* chunkColumnData = heightMapPool.acquire();
+	chunkColumnData->startUsing();
+	chunkColumnData->X = chunkX;
+	chunkColumnData->Z = chunkZ;
+	chunkColumnData->biome = getBiome(chunkX, chunkZ);
 
 	// height
-	getInitialHeightArray(columnChunkData->heightMap, chunkX, chunkZ, columnChunkData->biome);
+	getInitialHeightArray(chunkColumnData->heightMap, chunkX, chunkZ, chunkColumnData->biome);
 
 	// slmh
-	if (!loadSkyLightMaxHeightMapFromFile(chunkX, chunkZ, columnChunkData))
+	if (!loadSkyLightMaxHeightMapFromFile(chunkX, chunkZ, chunkColumnData))
 	{
 		for (int z = 0; z < Settings::CHUNK_SIZE; z++)
 		{
 			for (int x = 0; x < Settings::CHUNK_SIZE; x++)
 			{
-				columnChunkData->setSlMHAt(x, z, INT_MIN);
+				chunkColumnData->setSlMHAt(x, z, INT_MIN);
 			}
 		}
 	}
+	chunkColumnData->stopUsing();
 
 	//
-	heightMaps[hash] = columnChunkData;
+	heightMaps[hash] = chunkColumnData;
 }
 
 void TerrainGenerator::unloadHeightMap(int chunkX, int chunkZ)
@@ -473,14 +475,18 @@ void TerrainGenerator::unloadHeightMap(int chunkX, int chunkZ)
 		std::cerr << "Unloaded ChunkColumnData was used by: " << usedBy << " chunks" << std::endl;
 	}
 
-	saveSkyLightMaxHeightMapToFile(it->second);
+	ChunkColumnData* chunkColumnData = it->second;
 
-	heightMapPool.release(it->second);
+	chunkColumnData->startUsing();
+	saveSkyLightMaxHeightMapToFile(chunkColumnData);
+	chunkColumnData->stopUsing();
+
+	heightMapPool.release(chunkColumnData);
 	heightMaps.erase(it);
 
 }
 
-bool TerrainGenerator::loadSkyLightMaxHeightMapFromFile(int chunkX, int chunkZ, ChunkColumnData* columnChunkData)
+bool TerrainGenerator::loadSkyLightMaxHeightMapFromFile(int chunkX, int chunkZ, ChunkColumnData* chunkColumnData)
 {
 	if (!Settings::loadSMLHFiles)
 	{
@@ -502,21 +508,21 @@ bool TerrainGenerator::loadSkyLightMaxHeightMapFromFile(int chunkX, int chunkZ, 
 
 	file.read
 	(
-		reinterpret_cast<char*>(columnChunkData->skyLightMaxHeightMap),
-		sizeof(columnChunkData->skyLightMaxHeightMap)
+		reinterpret_cast<char*>(chunkColumnData->skyLightMaxHeightMap),
+		sizeof(chunkColumnData->skyLightMaxHeightMap)
 	);
 	file.close();
 	return true;
 }
 
-void TerrainGenerator::saveSkyLightMaxHeightMapToFile(const ChunkColumnData* columnChunkData)
+void TerrainGenerator::saveSkyLightMaxHeightMapToFile(const ChunkColumnData* chunkColumnData)
 {
 	if (!Settings::loadSMLHFiles)
 	{
 		return;
 	}
 
-	std::string filepath = ChunkColumnData::slmhGetFilepath(columnChunkData->X, columnChunkData->Z);
+	std::string filepath = ChunkColumnData::slmhGetFilepath(chunkColumnData->X, chunkColumnData->Z);
 	std::ofstream file(filepath, std::ios::binary | std::ios::trunc);
 	if (!file.is_open())
 	{
@@ -528,8 +534,8 @@ void TerrainGenerator::saveSkyLightMaxHeightMapToFile(const ChunkColumnData* col
 	{
 		file.write
 		(
-			reinterpret_cast<const char*>(&columnChunkData->skyLightMaxHeightMap),
-			sizeof(columnChunkData->skyLightMaxHeightMap)
+			reinterpret_cast<const char*>(&chunkColumnData->skyLightMaxHeightMap),
+			sizeof(chunkColumnData->skyLightMaxHeightMap)
 		);
 	}
 	catch (const std::exception& e)

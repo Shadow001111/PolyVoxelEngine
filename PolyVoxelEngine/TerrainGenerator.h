@@ -56,8 +56,8 @@ public:
 	static void loadHeightMap(int chunkX, int chunkZ);
 	static void unloadHeightMap(int chunkX, int chunkZ);
 private:
-	static bool loadSkyLightMaxHeightMapFromFile(int chunkX, int chunkZ, ChunkColumnData* columnChunkData);
-	static void saveSkyLightMaxHeightMapToFile(const ChunkColumnData* columnChunkData);
+	static bool loadSkyLightMaxHeightMapFromFile(int chunkX, int chunkZ, ChunkColumnData* chunkColumnData);
+	static void saveSkyLightMaxHeightMapToFile(const ChunkColumnData* chunkColumnData);
 public:
 	static float noise(float x, float y);
 	static float noise(float x, float y, float z);
