@@ -18,6 +18,7 @@ namespace Settings
 	// World
 	const std::string worldPath = "Worlds/Test";
 	const std::string WORLD_DATA_PATH = worldPath + "/data.bin";
+	const uint32_t WORLD_THREAD_POOL_SIZE = 4;
 	
 	// Chunk
 	extern int CHUNK_LOAD_RADIUS;

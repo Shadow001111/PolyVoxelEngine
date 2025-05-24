@@ -74,8 +74,6 @@ class World
 	glm::vec3* chunkPositions = nullptr;
 	unsigned int* chunkPositionIndexes = nullptr;
 
-	uint8_t dataShrinkingTick = 0;
-
 	ThreadPool threadPool;
 	std::mutex chunkPoolMutex;
 	std::mutex chunkIDPoolMutex;

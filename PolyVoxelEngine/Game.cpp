@@ -351,6 +351,8 @@ void Game::run()
 
 		glfwPollEvents();
 
+		std::cout << std::flush;
+
 		float frameTime = glfwGetTime() - currentTime;
 		if (frameTime < frameDelay)
 		{

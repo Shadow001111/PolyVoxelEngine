@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
+#include "TimeMeasurer.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -126,7 +127,7 @@ World::World(const WorldData& worldData)
 	blockTextures("res/Textures.png", 0, Settings::BLOCK_TEXTURE_SIZE, Settings::BLOCK_TEXTURES_IN_ROW, Settings::BLOCK_TEXTURES_COUNT, Settings::BLOCK_TEXTURES_NUM_CHANNELS, GL_REPEAT, true),
 	numberTextures("res/Numbers.png", 1, 8, 4, 16, 1, GL_CLAMP_TO_BORDER, false),
 
-	threadPool(4),
+	threadPool(Settings::WORLD_THREAD_POOL_SIZE),
 	chunkPool(Settings::MAX_RENDERED_CHUNKS_COUNT)
 {
 	TerrainGenerator::init();
@@ -279,30 +280,6 @@ void World::update(const glm::vec3& pos, bool isMoving)
 	float angle = (float)time / 24000.0f * 2.0f * (float)M_PI;
 	GraphicController::chunkProgram->bind();
 	GraphicController::chunkProgram->setUniformFloat("dayNightCycleSkyLightingSubtraction", (cosf(angle) + 1.0f) * 0.5f);
-
-	// shrinking vectors
-	dataShrinkingTick++;
-	if (dataShrinkingTick > 20)
-	{
-		dataShrinkingTick = 0;
-
-		{
-			std::lock_guard<std::mutex> lock(Chunk::lightingUpdateMutex);
-			Chunk::lightingUpdateVector.shrink_to_fit();
-		}
-		{
-			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
-			Chunk::lightingFloodFillVector.shrink_to_fit();
-		}
-		{
-			std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
-			Chunk::darknessFloodFillVector.shrink_to_fit();
-		}
-		{
-			std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
-			chunkGenerateVector.shrink_to_fit();
-		}
-	}
 }
 
 void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
@@ -313,9 +290,10 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 	{
 		return;
 	}
-	size_t generateCount = std::min(chunksCount, size_t(isMoving ? Settings::DynamicSettings::generateChunksPerTickMoving : Settings::DynamicSettings::generateChunksPerTickStationary));
 
-	// generate
+	TimeMeasurer tm;
+
+	size_t generateCount = std::min(chunksCount, size_t(isMoving ? Settings::DynamicSettings::generateChunksPerTickMoving : Settings::DynamicSettings::generateChunksPerTickStationary));
 	size_t range = chunksCount - generateCount;
 
 	std::vector<std::function<void()>> tasks;
@@ -327,7 +305,7 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 			// TODO: remove
 			if (chunk->state != Chunk::State::InLoadingQueue)
 			{
-				std::cerr << "GenerateChunksBlocks: " << toString(chunk->state) << std::endl;
+				std::cerr << "GenerateChunksBlocks: " << toString(chunk->state) << "\n";
 				continue;
 			}
 			tasks.push_back([this, chunk]() {
@@ -336,6 +314,9 @@ void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 		}
 	}
 	threadPool.addTasks(tasks);
+
+	tm.stop("Test");
+	std::cout << generateCount << "\n";
 
 	threadPool.waitForCompletion(); // TODO: remove and fix errors
 	chunkGenerateVector.resize(range);
@@ -375,16 +356,17 @@ void World::generateChunkBlocksThread(Chunk* chunk)
 
 void World::sortGenerateChunksQueue()
 {
-	// sort chunks in ascending order by distance
-	// later chunks will be generated from back to front
+	// Sorts chunks in descending order by distance
+
 	std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
 	const size_t chunksCount = chunkGenerateVector.size();
 	std::vector<ChunkDistance> chunkDistances;
 	chunkDistances.reserve(chunksCount);
 
+	auto loaderPosition = glm::vec3(chunkLoaderPosition);
 	for (Chunk* chunk : chunkGenerateVector)
 	{
-		auto dpos = glm::vec3(chunk->X, chunk->Y, chunk->Z) - glm::vec3(chunkLoaderPosition);
+		auto dpos = glm::vec3(chunk->X, chunk->Y, chunk->Z) - loaderPosition;
 		float distance = glm::dot(dpos, dpos);
 		chunkDistances.emplace_back(chunk, distance);
 	}
