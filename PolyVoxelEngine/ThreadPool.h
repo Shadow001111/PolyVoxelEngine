@@ -2,7 +2,7 @@
 #include <vector>
 #include <thread>
 #include <mutex>
-#include <queue>
+#include <deque>
 #include <functional>
 
 // thanks to Pezzas Work
@@ -13,10 +13,10 @@ class ThreadPool
 	{
 		bool isWaitingForCompletion = false;
 		std::condition_variable completionSignal;
-		std::queue<std::function<void()>> tasks;
+		std::deque<std::function<void()>> tasks;
 		std::mutex taskMutex;
 		std::mutex completionMutex;
-		std::atomic<uint8_t> activeTasks = 0;
+		std::atomic<uint32_t> activeTasks = 0;
 	public:
 		std::condition_variable taskAvailableSignal;
 		bool stopThreads = false;
@@ -76,7 +76,7 @@ inline void ThreadPool::TaskQueue::addTask(TCallback&& task)
 {
 	{
 		std::lock_guard<std::mutex> lock(taskMutex);
-		tasks.push(std::forward<TCallback>(task));
+		tasks.emplace_back(std::forward<TCallback>(task));
 	}
 	activeTasks++;
 	taskAvailableSignal.notify_one();
@@ -89,10 +89,10 @@ inline void ThreadPool::TaskQueue::addTasks(const TCallbackContainer& taskContai
 		std::lock_guard<std::mutex> lock(taskMutex);
 		for (const auto& task : taskContainer) 
 		{
-			tasks.push(task);
-			activeTasks++;
+			tasks.emplace_back(task);
 		}
 	}
+	activeTasks += taskContainer.size();
 	taskAvailableSignal.notify_all();
 }
 
@@ -124,6 +124,7 @@ inline void ThreadPool::distribute(size_t count, TCallback&& task)
 		{
 			end = start + batchSize;
 		}
+		// TODO: Maybe pass 'task' by value instead of reference?
 		addTask([&task, start, end]() { task(start, end); });
 	}
 }

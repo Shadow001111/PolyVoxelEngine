@@ -10,5 +10,5 @@ void TimeMeasurer::stop(const char* text)
 {
 	auto end = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> duration = end - start;
-	std::cout << text << ": " << duration.count() * 1000.0 << " ms\n";
+	std::cout << text << ": " << (float)duration.count() * 1000.0f << " ms\n";
 }

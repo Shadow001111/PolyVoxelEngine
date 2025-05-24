@@ -284,42 +284,47 @@ void World::update(const glm::vec3& pos, bool isMoving)
 
 void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 {
-	std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
-	size_t chunksCount = chunkGenerateVector.size();
-	if (chunksCount == 0)
+	// Prepare chunks for generation
+	std::vector<Chunk*> chunksToGenerate;
 	{
-		return;
-	}
+		std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
 
-	TimeMeasurer tm;
-
-	size_t generateCount = std::min(chunksCount, size_t(isMoving ? Settings::DynamicSettings::generateChunksPerTickMoving : Settings::DynamicSettings::generateChunksPerTickStationary));
-	size_t range = chunksCount - generateCount;
-
-	std::vector<std::function<void()>> tasks;
-	tasks.reserve(generateCount);
-	{
-		for (size_t i = range; i < chunksCount; i++)
+		size_t chunksCount = chunkGenerateVector.size();
+		if (chunksCount == 0)
 		{
-			Chunk* chunk = chunkGenerateVector[i];
-			// TODO: remove
-			if (chunk->state != Chunk::State::InLoadingQueue)
-			{
-				std::cerr << "GenerateChunksBlocks: " << toString(chunk->state) << "\n";
-				continue;
-			}
-			tasks.push_back([this, chunk]() {
-				generateChunkBlocksThread(chunk);
-							});
+			return;
 		}
+
+		size_t generateCount = std::min(chunksCount, size_t(isMoving ? Settings::DynamicSettings::generateChunksPerTickMoving : Settings::DynamicSettings::generateChunksPerTickStationary));
+		size_t range = chunksCount - generateCount;
+
+		chunksToGenerate.insert(chunksToGenerate.end(), chunkGenerateVector.begin() + range, chunkGenerateVector.end());
+		chunkGenerateVector.resize(range);
 	}
+
+	// Task creation
+	std::vector<std::function<void()>> tasks;
+	tasks.reserve(chunksToGenerate.size());
+	for (Chunk* chunk : chunksToGenerate)
+	{
+		if (chunk->state != Chunk::State::InLoadingQueue)
+		{
+			std::cerr << "GenerateChunksBlocks: " << toString(chunk->state) << "\n";
+			continue;
+		}
+
+		tasks.push_back([this, chunk]() {
+			generateChunkBlocksThread(chunk);
+						});
+	}
+
+	// TODO: addTasks sometimes takes 4 ms
+	//TimeMeasurer tm;
 	threadPool.addTasks(tasks);
+	//tm.stop("Tm");
 
-	tm.stop("Test");
-	std::cout << generateCount << "\n";
-
-	threadPool.waitForCompletion(); // TODO: remove and fix errors
-	chunkGenerateVector.resize(range);
+	// TODO: Remove
+	threadPool.waitForCompletion();
 }
 
 void World::generateChunkBlocksThread(Chunk* chunk)

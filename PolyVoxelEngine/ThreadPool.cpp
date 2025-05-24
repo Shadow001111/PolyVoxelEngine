@@ -1,17 +1,21 @@
 #include "ThreadPool.h"
 #include <iostream>
 
+// TODO: Maybe 'isWaitingForCompletion' should be atomic bool?
+
 void ThreadPool::TaskQueue::getTask(std::function<void()>& task)
 {
 	std::unique_lock<std::mutex> lock(taskMutex);
 	taskAvailableSignal.wait(lock, [this]() { return !tasks.empty() || stopThreads; });
+	
 	if (tasks.empty() || stopThreads)
 	{
 		task = nullptr;
 		return;
 	}
+
 	task = std::move(tasks.front());
-	tasks.pop();
+	tasks.pop_front();
 }
 
 void ThreadPool::TaskQueue::waitForCompletion()
