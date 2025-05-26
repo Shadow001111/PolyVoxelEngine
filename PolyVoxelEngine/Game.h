@@ -7,6 +7,7 @@
 
 class Game
 {
+	void renderImGui(float deltaTime, const World& world) const;
 public:
 	Player* player = nullptr;
 

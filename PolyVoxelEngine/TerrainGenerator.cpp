@@ -18,7 +18,7 @@ float TerrainGenerator::chunkNoiseCalculationsArray2D[Settings::CHUNK_SIZE_SQUAR
 
 int pos2_hash(int x, int y)
 {
-	constexpr int shift = sizeof(int) * 8 / 2;
+	constexpr int shift = sizeof(int) * 8 / 2; // sizeof(return_type) * bits_count / 2
 	constexpr int mod = (1 << shift) - 1;
 	return (x & mod) | ((y & mod) << shift);
 }
@@ -466,7 +466,6 @@ void TerrainGenerator::unloadHeightMap(int chunkX, int chunkZ)
 	const auto& it = heightMaps.find(hash);
 	if (it == heightMaps.end())
 	{
-		//std::cout << "height map was already unloaded" << std::endl;
 		return;
 	}
 	auto usedBy = it->second->usedBy.load();
@@ -506,12 +505,16 @@ bool TerrainGenerator::loadSkyLightMaxHeightMapFromFile(int chunkX, int chunkZ, 
 		return false;
 	}
 
+	// TODO: TAKES TIME!
+	Profiler::start(TEST_INDEX);
+
 	file.read
 	(
 		reinterpret_cast<char*>(chunkColumnData->skyLightMaxHeightMap),
 		sizeof(chunkColumnData->skyLightMaxHeightMap)
 	);
 	file.close();
+	Profiler::end(TEST_INDEX);
 	return true;
 }
 

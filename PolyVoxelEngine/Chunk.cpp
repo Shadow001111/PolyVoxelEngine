@@ -100,7 +100,7 @@ void Chunk::destroy()
 {
 	if (physicEntities.getSize() > 0)
 	{
-		std::cerr << "Entities are in destroyed chunk" << std::endl;
+		std::cerr << "Entities are in destroyed chunk\n";
 		physicEntities.clear();
 	}
 
@@ -125,7 +125,7 @@ void Chunk::generateBlocks()
 	ChunkColumnData* chunkColumnData = TerrainGenerator::getHeightMap(X, Z);
 	if (chunkColumnData == nullptr)
 	{
-		std::cerr << "HeightMap is null" << std::endl;
+		std::cerr << "Chunk::generateBlocks: HeightMap is null\n";
 		return;
 	}
 

@@ -2,11 +2,9 @@
 #include "settings.h"
 #include "Camera.h"
 #include "World.h"
-#include "TerrainGenerator.h"
 #include "Profiler.h"
 #include <format>
 #include <thread>
-#include <math.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/fwd.hpp>
@@ -19,7 +17,6 @@
 #include "VAO.h"
 #include "VBO.h"
 #include <chrono>
-#include <climits>
 #include <exception>
 #include <string>
 
@@ -86,6 +83,16 @@ static void gameKeyCallback(GLFWwindow* window, int key, int scancode, int actio
 
 static void gameMouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
+	auto& io = ImGui::GetIO();
+	if (io.WantCaptureMouse || io.WantCaptureKeyboard)
+	{
+		if (button >= 0 && button < IM_ARRAYSIZE(io.MouseDown))
+		{
+			io.MouseDown[button] = (action == GLFW_PRESS);
+		}
+		return;
+	}
+
 	Game* game = (Game*)glfwGetWindowUserPointer(window);
 	Player* player = game->player;
 	player->mouseButtonCallback(button, action);
@@ -93,9 +100,114 @@ static void gameMouseButtonCallback(GLFWwindow* window, int button, int action, 
 
 static void gameScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
+	auto& io = ImGui::GetIO();
+	if (io.WantCaptureMouse || io.WantCaptureKeyboard)
+	{
+		return;
+	}
+
 	Game* game = (Game*)glfwGetWindowUserPointer(window);
 	Player* player = game->player;
 	player->scrollCallback(yoffset);
+}
+
+void Game::renderImGui(float deltaTime, const World& world) const
+{
+	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Once);
+
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
+	//
+	ImGui::Begin("IGui");
+
+	if (ImGui::CollapsingHeader("Info"))
+	{
+		ImGui::Text("FPS: %d / %d", int(1.0f / deltaTime), GraphicController::gameMaxFps);
+		ImGui::Text("Delta time: %f", deltaTime);
+	}
+
+	if (ImGui::CollapsingHeader("Dumb Info"))
+	{
+		ImGui::Text("Draw commands: %d", world.drawCommandsCount);
+		ImGui::Text("Chunks count: %d", Settings::MAX_RENDERED_CHUNKS_COUNT);
+	}
+
+	if (ImGui::CollapsingHeader("Profiler"))
+	{
+		static float samples[PROFILER_CATEGORIES_COUNT][PROFILER_MEMORY_TABLE_SIZE];
+		int index = Profiler::memoryTableIndex;
+
+		// Prepare data and find max value (optional for color normalization or something else)
+		float maxValue = 0.0f;
+
+		for (size_t category = 0; category < PROFILER_CATEGORIES_COUNT; category++)
+		{
+			for (size_t i = 0; i < PROFILER_MEMORY_TABLE_SIZE; i++)
+			{
+				float value = static_cast<float>(Profiler::memoryTable[category][(index + i) % PROFILER_MEMORY_TABLE_SIZE]) * 1e-6f;
+				samples[category][i] = value;
+				if (value > maxValue)
+				{
+					maxValue = value;
+				}
+			}
+		}
+
+		// Prepare category labels
+		const char* labels[PROFILER_CATEGORIES_COUNT];
+		for (int i = 0; i < PROFILER_CATEGORIES_COUNT; i++)
+		{
+			labels[i] = profilerSamplesNames[i].c_str();
+		}
+
+		// Flatten samples into a row-major matrix for PlotBarGroups: [category][frame]
+		std::vector<float> values(PROFILER_CATEGORIES_COUNT * PROFILER_MEMORY_TABLE_SIZE);
+		for (int row = 0; row < PROFILER_CATEGORIES_COUNT; row++)
+		{
+			for (int col = 0; col < PROFILER_MEMORY_TABLE_SIZE; col++)
+			{
+				values[row * PROFILER_MEMORY_TABLE_SIZE + col] = samples[row][col];
+			}
+		}
+
+		// Compute stacked max Y axis value (sum of categories per frame)
+		float stackedMaxValue = 0.0f;
+		for (size_t i = 0; i < PROFILER_MEMORY_TABLE_SIZE; i++)
+		{
+			float sum = 0.0f;
+			for (size_t c = 0; c < PROFILER_CATEGORIES_COUNT; c++)
+			{
+				sum += samples[c][i];
+			}
+			if (sum > stackedMaxValue)
+			{
+				stackedMaxValue = sum;
+			}
+		}
+
+		if (ImPlot::BeginPlot("Systems Time Usage", ImVec2(-1, 300)))
+		{
+			float yLimit = fmaxf(30.0f, stackedMaxValue);
+
+			ImPlot::SetupAxes("Time stamp", "Time (ms)", ImPlotAxisFlags_NoGridLines, ImPlotAxisFlags_NoGridLines);
+			ImPlot::SetupAxisLimits(ImAxis_X1, 0, static_cast<float>(PROFILER_MEMORY_TABLE_SIZE), ImGuiCond_Always);
+			ImPlot::SetupAxisLimits(ImAxis_Y1, 0, yLimit, ImGuiCond_Always);
+
+			ImPlot::PlotBarGroups(labels, values.data(), PROFILER_CATEGORIES_COUNT, PROFILER_MEMORY_TABLE_SIZE, 0.8, 0, ImPlotBarGroupsFlags_Stacked);
+
+			ImPlot::EndPlot();
+		}
+
+	}
+
+	//
+	ImGui::End();
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+	// TODO: add world time
 }
 
 Game::Game()
@@ -130,11 +242,9 @@ void Game::run()
 	// Ticks
 	Tick worldTick(20);
 	Tick playerTick(40);
-	Tick guiTick(10);
-	Tick profilerTick(40);
+	Tick profilerTick(20);
 
 	//
-	std::string guiPerfomanceText;
 
 	const std::string debugViewModeNames[5] =
 	{
@@ -163,6 +273,9 @@ void Game::run()
 	float previousTime = glfwGetTime();
 	while (!GraphicController::shouldWindowClose())
 	{
+		glfwPollEvents();
+
+		// update
 		float currentTime = glfwGetTime();
 		float deltaTime = currentTime - previousTime;
 		previousTime = currentTime;
@@ -172,7 +285,6 @@ void Game::run()
 		{
 			playerTick.add(deltaTime);
 		}
-		guiTick.add(deltaTime);
 		profilerTick.add(deltaTime);
 
 		while (playerTick.checkLoop())
@@ -186,38 +298,12 @@ void Game::run()
 			world.update(player->physicEntity.position, glm::length2(player->physicEntity.velocity) > 5.0f);
 		}
 
-		if (guiTick.checkOnce())
-		{
-			// TODO: find data per proccess
-			auto* gpu = HardwareUsageInfo::getGPUUtilization();
-			auto* vram = HardwareUsageInfo::getVRAMUsage();
-
-			guiPerfomanceText.clear();
-
-			guiPerfomanceText += "FPS: ";
-			guiPerfomanceText += std::to_string(int(1.0f / deltaTime));
-
-			guiPerfomanceText += "\nCPU: ";
-			guiPerfomanceText += std::to_string(HardwareUsageInfo::getCPUUsage());
-
-			guiPerfomanceText += "\nRAM: ";
-			guiPerfomanceText += std::to_string(HardwareUsageInfo::getRAMUsage() >> 20);
-
-			guiPerfomanceText += "\nGPU: ";
-			guiPerfomanceText += std::to_string(gpu->gpu);
-
-			guiPerfomanceText += "\nVRAM: ";
-			guiPerfomanceText += std::to_string(vram->used >> 20);
-
-			guiPerfomanceText += "\nDrawCommands: ";
-			guiPerfomanceText += std::to_string(world.drawCommandsCount);
-		}
-
 		if (profilerTick.checkOnce())
 		{
 			Profiler::saveToMemory();
 		}
 
+		// render
 		GraphicController::beforeRender();
 		{
 			player->BeforeRender();
@@ -225,73 +311,9 @@ void Game::run()
 			world.draw(player->camera);
 			player->draw();
 
-			// profiler
-			rectangleVAO.bind();
-			rectangleVBO.bind();
-			GraphicController::rectangleProgram->bind();
-			{
-				const float barWidth = PROFILER_DRAW_WIDTH / PROFILER_MEMORY_TABLE_SIZE;
-				const float left = -GraphicController::aspectRatio;
-				const float bottom = -1.0f;
-
-				// background
-				GraphicController::rectangleProgram->setUniformFloat2("position", left, bottom);
-				GraphicController::rectangleProgram->setUniformFloat2("scale", PROFILER_DRAW_WIDTH, PROFILER_DRAW_HEIGHT);
-				GraphicController::rectangleProgram->setUniformFloat3("color", 0.0f, 0.0f, 0.0f);
-				glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
-				// bars
-				if (Profiler::maxTime > 0)
-				{
-					for (size_t barIndex = 0; barIndex < PROFILER_MEMORY_TABLE_SIZE; barIndex++)
-					{
-						size_t tableIndex = Profiler::memoryTableIndex + barIndex;
-						if (tableIndex >= PROFILER_MEMORY_TABLE_SIZE)
-						{
-							tableIndex -= PROFILER_MEMORY_TABLE_SIZE;
-						}
-						float yProgress = 0.0f;
-						for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
-						{
-							float time = (float)Profiler::memoryTable[tableIndex][i] / (float)Profiler::maxTime;
-							if (time > 0.0f)
-							{
-								const auto& color = profilerSamplesColors[i];
-								GraphicController::rectangleProgram->setUniformFloat2("position", left + barIndex * barWidth, bottom + yProgress * PROFILER_DRAW_HEIGHT);
-								GraphicController::rectangleProgram->setUniformFloat2("scale", barWidth, PROFILER_DRAW_HEIGHT * time);
-								GraphicController::rectangleProgram->setUniformFloat3("color", color.x, color.y, color.z);
-								glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-								yProgress += time;
-							}
-						}
-					}
-				}
-
-				// colors
-				GraphicController::rectangleProgram->setUniformFloat2("scale", PROFILER_DRAW_COLOR_RECT_SIZE, PROFILER_DRAW_COLOR_RECT_SIZE);
-				for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
-				{
-					const auto& color = profilerSamplesColors[i];
-					GraphicController::rectangleProgram->setUniformFloat2("position", left, bottom + PROFILER_DRAW_HEIGHT + 0.01f + i * (PROFILER_DRAW_COLOR_RECT_Y_OFFSET + PROFILER_DRAW_COLOR_RECT_SIZE));
-					GraphicController::rectangleProgram->setUniformFloat3("color", color.x, color.y, color.z);
-					glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-				}
-			}
-
 			// text
 			TextRenderer::beforeTextRender();
 			{
-				{
-					float offsetX = 0.02f;
-					float offsetY = offsetX;
-
-					float x = -1.0f * GraphicController::aspectRatio + offsetX;
-					float y = 1.0f - offsetY;
-
-					float scale = 0.03f;
-
-					TextRenderer::renderText(guiPerfomanceText, x, y, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Left, AligmentY::Top);
-				}
 				{
 					float offsetX = 0.02f;
 					float offsetY = offsetX;
@@ -321,36 +343,13 @@ void Game::run()
 
 					TextRenderer::renderText(text, x, y, scale, glm::vec3(1.0f, 0.0f, 0.0f), AligmentX::Right, AligmentY::Top);
 				}
-				// profiler
-				{
-					const float left = -GraphicController::aspectRatio;
-					const float bottom = -1.0f;
-					for (size_t i = 0; i < PROFILER_SAMPLES_COUNT; i++)
-					{
-						TextRenderer::renderText(profilerSamplesNames[i],
-							left + PROFILER_DRAW_COLOR_RECT_SIZE + 0.01f,
-							bottom + PROFILER_DRAW_HEIGHT + 0.01f + i * (PROFILER_DRAW_COLOR_RECT_Y_OFFSET + PROFILER_DRAW_COLOR_RECT_SIZE) + PROFILER_DRAW_COLOR_RECT_SIZE,
-							PROFILER_DRAW_COLOR_RECT_SIZE * 0.5f,
-							{ 1.0f, 1.0f, 1.0f },
-							AligmentX::Left,
-							AligmentY::Top
-						);
-					}
-
-					TextRenderer::renderText(std::to_string(int(Profiler::maxTime * 1e-6f)) + " ms",
-						left + PROFILER_DRAW_WIDTH + 0.01f,
-						bottom + PROFILER_DRAW_HEIGHT,
-						0.025f,
-						{ 1.0f, 1.0f, 1.0f },
-						AligmentX::Left, AligmentY::Center);
-				}
 			}
 			TextRenderer::afterTextRender();
 		}
+		renderImGui(deltaTime, world);
 		GraphicController::afterRender();
 
-		glfwPollEvents();
-
+		//
 		std::cout << std::flush;
 
 		float frameTime = glfwGetTime() - currentTime;

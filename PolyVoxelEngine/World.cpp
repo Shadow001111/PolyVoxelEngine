@@ -258,9 +258,7 @@ void World::update(const glm::vec3& pos, bool isMoving)
 
 	// load chunks
 	chunkLoaderPosition = glm::ivec3(pos / (float)Settings::CHUNK_SIZE);
-	Profiler::start(LOAD_CHUNKS_INDEX);
 	loadChunks(false);
-	Profiler::end(LOAD_CHUNKS_INDEX);
 	
 	// generate blocks
 	generateChunksBlocks(pos, isMoving);
@@ -362,7 +360,6 @@ void World::generateChunkBlocksThread(Chunk* chunk)
 void World::sortGenerateChunksQueue()
 {
 	// Sorts chunks in descending order by distance
-
 	std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
 	const size_t chunksCount = chunkGenerateVector.size();
 	std::vector<ChunkDistance> chunkDistances;
@@ -678,6 +675,7 @@ bool World::loadChunks(bool forced)
 	{
 		return false;
 	}
+
 	lastChunkLoaderPosition = chunkLoaderPosition;
 	{
 		int radius = Settings::CHUNK_LOAD_RADIUS;
@@ -685,6 +683,7 @@ bool World::loadChunks(bool forced)
 		std::lock_guard<std::mutex> lock(chunkMapMutex);
 
 		// unload chunks
+		Profiler::start(UNLOAD_CHUNKS_INDEX);
 		for (auto it = Chunk::chunkMap.begin(); it != Chunk::chunkMap.end();)
 		{
 			Chunk* chunk = it->second;
@@ -715,8 +714,10 @@ bool World::loadChunks(bool forced)
 				it++;
 			}
 		}
+		Profiler::end(UNLOAD_CHUNKS_INDEX);
 
 		// load chunks
+		Profiler::start(LOAD_CHUNKS_INDEX);
 		for (int dx = -radius; dx <= radius; dx++)
 		{
 			int D1 = rsq - dx * dx;
@@ -739,16 +740,15 @@ bool World::loadChunks(bool forced)
 					// TODO: remove
 					if (chunk->state != Chunk::State::NotLoaded)
 					{
-						std::cerr << std::format("Chunk state mismatch in loadChunks. State: {}, should be: {}", toString(chunk->state), toString(Chunk::State::NotLoaded)) << std::endl;
+						std::cerr << std::format("Chunk state mismatch in loadChunks. State: {}, should be: {}", toString(chunk->state), toString(Chunk::State::NotLoaded)) << "\n";
 					}
-					{
-						chunk->state = Chunk::State::InLoadingQueue;
-						std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
-						chunkGenerateVector.push_back(chunk);
-					}
+					chunk->state = Chunk::State::InLoadingQueue;
+					std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
+					chunkGenerateVector.push_back(chunk);
 				}
 			}
 		}
+		Profiler::end(LOAD_CHUNKS_INDEX);
 	}
 
 	sortGenerateChunksQueue();

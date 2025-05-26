@@ -158,6 +158,19 @@ int GraphicController::init(const GraphicSettings& graphicSettings, const GameSe
 	
 	// fbo
 	fbo = new FBO(width, height);
+
+	// imgui
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImPlot::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+	ImGui::StyleColorsDark();
+
+	ImGui_ImplGlfw_InitForOpenGL(window, false);
+	const std::string ver = "#version " + std::to_string(graphicSettings.openglVersion);
+	ImGui_ImplOpenGL3_Init(ver.c_str());
+
 	return 0;
 }
 
@@ -225,12 +238,14 @@ void GraphicController::afterRender()
 	framebufferProgram->bind();
 	framebufferProgram->setUniformFloat("aspectRatio", aspectRatio);
 	fbo->draw();
+
 	//glFinish(); TODO: high cpu usage
 	glfwSwapBuffers(window);
 }
 
 void GraphicController::clean()
 {
+	// programs
 	fbo->clean(); delete fbo;
 	framebufferProgram->clean(); delete framebufferProgram;
 	chunkProgram->clean(); delete chunkProgram;
@@ -240,6 +255,13 @@ void GraphicController::clean()
 	hotbarProgram->clean(); delete hotbarProgram;
 	buttonProgram->clean(); delete buttonProgram;
 
+	// imgui
+	ImPlot::DestroyContext();
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
+	// glfw
 	glfwDestroyWindow(window); window = nullptr;
 	glfwTerminate();
 }
