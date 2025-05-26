@@ -3,7 +3,6 @@
 std::unordered_map<std::thread::id, Profiler::PerThreadData> Profiler::threadProfilerData;
 uint32_t Profiler::memoryTable[PROFILER_CATEGORIES_COUNT][PROFILER_MEMORY_TABLE_SIZE] = {};
 size_t Profiler::memoryTableIndex = 0;
-std::mutex Profiler::addDataMutex;
 
 const std::string profilerSamplesNames[PROFILER_CATEGORIES_COUNT] =
 {
@@ -21,7 +20,6 @@ const std::string profilerSamplesNames[PROFILER_CATEGORIES_COUNT] =
 
 void Profiler::start(size_t index)
 {
-	std::lock_guard<std::mutex> lock(addDataMutex);
 	threadProfilerData[std::this_thread::get_id()].profilerData[index].lastTimeSample = std::chrono::steady_clock::now();
 }
 
@@ -32,7 +30,6 @@ void Profiler::end(size_t index)
 	{
 		return;
 	}
-	std::lock_guard<std::mutex> lock(addDataMutex);
 	ProfilerData& data = threadProfilerData[std::this_thread::get_id()].profilerData[index];
 	auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - data.lastTimeSample);
 	data.timeNS += duration.count();
@@ -45,7 +42,6 @@ void Profiler::reset(size_t index)
 	{
 		return;
 	}
-	std::lock_guard<std::mutex> lock(addDataMutex);
 	for (auto& it : threadProfilerData)
 	{
 		for (size_t i = 0; i < PROFILER_CATEGORIES_COUNT; i++)
@@ -62,7 +58,6 @@ void Profiler::clean()
 
 void Profiler::saveToMemory()
 {
-	std::lock_guard<std::mutex> lock(addDataMutex);
 	uint32_t timeSum = 0;
 
 	for (size_t i = 0; i < PROFILER_CATEGORIES_COUNT; i++)

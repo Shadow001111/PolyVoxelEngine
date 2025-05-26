@@ -10,7 +10,6 @@
 #include "VBO.h"
 #include "VAO.h"
 
-#include "ThreadPool.h"
 #include "AllocatedObjectPool.h"
 
 struct RaycastHit
@@ -73,14 +72,6 @@ class World
 	DrawArraysIndirectCommand* drawCommands = nullptr;
 	glm::vec3* chunkPositions = nullptr;
 	unsigned int* chunkPositionIndexes = nullptr;
-
-	ThreadPool threadPool;
-	std::mutex chunkPoolMutex;
-	std::mutex chunkIDPoolMutex;
-	std::mutex generateFacesSetMutex;
-	std::mutex chunkMapMutex;
-	std::mutex generateChunkVectorMutex;
-	std::mutex releasedLoadingChunksMutex;
 
 
 	Chunk* getChunk(int x, int y, int z);

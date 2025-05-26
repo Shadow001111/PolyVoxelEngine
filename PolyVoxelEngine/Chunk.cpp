@@ -12,9 +12,6 @@ std::unordered_map<int, Chunk*> Chunk::chunkMap;
 std::vector<LightPropagationNode> Chunk::lightingFloodFillVector;
 std::vector<LightRemovalNode> Chunk::darknessFloodFillVector;
 std::vector<LightUpdate> Chunk::lightingUpdateVector;
-std::mutex Chunk::lightingFloodFillMutex;
-std::mutex Chunk::darknessFloodFillMutex;
-std::mutex Chunk::lightingUpdateMutex;
 
 static inline constexpr int min_int(int a, int b)
 {
@@ -246,7 +243,6 @@ void Chunk::generateBlocks()
 				uint8_t lighting = neighbour->getLightingAtInBoundaries(inBoundaryX, y, z) & 15;
 				if (lighting > 1)
 				{
-					std::lock_guard<std::mutex> lock(lightingFloodFillMutex);
 					lightingFloodFillVector.emplace_back
 					(
 						globalX, globalY, globalZ, false
@@ -276,7 +272,6 @@ void Chunk::generateBlocks()
 				uint8_t lighting = neighbour->getLightingAtInBoundaries(x, inBoundaryY, z) & 15;
 				if (lighting > 1)
 				{
-					std::lock_guard<std::mutex> lock(lightingFloodFillMutex);
 					lightingFloodFillVector.emplace_back
 					(
 						globalX, globalY, globalZ, false
@@ -306,7 +301,6 @@ void Chunk::generateBlocks()
 				uint8_t lighting = neighbour->getLightingAtInBoundaries(x, y, inBoundaryZ) & 15;
 				if (lighting > 1)
 				{
-					std::lock_guard<std::mutex> lock(lightingFloodFillMutex);
 					lightingFloodFillVector.emplace_back
 					(
 						globalX, globalY, globalZ, false
@@ -801,7 +795,7 @@ bool Chunk::isChunkClosed() const
 	return true;
 }
 
-inline void Chunk::fetchFaces()
+void Chunk::fetchFaces()
 {
 	const char packOffsets[6][4] =
 	{
@@ -829,6 +823,7 @@ inline void Chunk::fetchFaces()
 				}
 
 				bool maxAO = blockData.lightPower > 0;
+				size_t baseFaceIndex = (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6;
 				for (size_t normalID = 0; normalID < 6; normalID++)
 				{
 					size_t planeIndex = normalID >> 1;
@@ -839,9 +834,10 @@ inline void Chunk::fetchFaces()
 
 					BlockAndLighting faceBAL = getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], normalID);
 					Block faceBlock = faceBAL.block;
-					if (faceBlock != Block::Void && faceBlock != block && ALL_BLOCK_DATA[(size_t)faceBlock].transparent)
+					const BlockData& neighborData = ALL_BLOCK_DATA[(size_t)faceBlock];
+					if (faceBlock != Block::Void && faceBlock != block && neighborData.transparent)
 					{
-						auto& face = facesData[normalID + (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6];
+						auto& face = facesData[baseFaceIndex + normalID];
 						face.none = false;
 						face.transparent = blockData.transparent;
 						face.textureID = blockData.textures[normalID];
@@ -981,7 +977,6 @@ void Chunk::greedyMeshing()
 
 void Chunk::updateLightingAt(size_t x, size_t y, size_t z, Block block, Block prevBlock)
 {
-	std::lock_guard<std::mutex> lock(lightingUpdateMutex);
 	lightingUpdateVector.emplace_back
 	(
 		this, x, y, z,

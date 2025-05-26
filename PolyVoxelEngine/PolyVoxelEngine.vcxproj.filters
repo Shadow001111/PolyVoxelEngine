@@ -108,9 +108,6 @@
     <ClCompile Include="Spline.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="ThreadPool.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="TimeMeasurer.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
@@ -228,9 +225,6 @@
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="Spline.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
-    <ClInclude Include="ThreadPool.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="AllocatedObjectPool.h">

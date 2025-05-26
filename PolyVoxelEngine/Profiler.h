@@ -2,7 +2,7 @@
 #include <chrono>
 #include <cstdint>
 #include <glm/ext/vector_float3.hpp>
-#include <mutex>
+#include <thread>
 #include <unordered_map>
 
 constexpr size_t PROFILER_MEMORY_TABLE_SIZE = 50;
@@ -44,7 +44,6 @@ class Profiler
 public:
 	static uint32_t memoryTable[PROFILER_CATEGORIES_COUNT][PROFILER_MEMORY_TABLE_SIZE];
 	static size_t memoryTableIndex;
-	static std::mutex addDataMutex;
 
 	static void start(size_t index);
 	static void end(size_t index);

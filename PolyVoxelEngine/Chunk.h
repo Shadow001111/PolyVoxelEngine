@@ -4,7 +4,6 @@
 #include <unordered_map>
 #include "Block.h"
 #include "Vector.h"
-#include <mutex>
 #include <glm/vec3.hpp>
 
 int pos3_hash(int x, int y, int z) noexcept;
@@ -100,7 +99,7 @@ private:
 	void setBlockAtNoSave(size_t x, size_t y, size_t z, Block block);
 	void applyChanges();
 	bool isChunkClosed() const;
-	inline void fetchFaces();
+	void fetchFaces();
 	void greedyMeshing();
 	void updateLightingAt(size_t x, size_t y, size_t z, Block block, Block prevBlock);
 	static std::string getFilepath(int X, int Y, int Z);
@@ -121,9 +120,6 @@ public:
 	static std::vector<LightPropagationNode> lightingFloodFillVector;
 	static std::vector<LightRemovalNode> darknessFloodFillVector;
 	static std::vector<LightUpdate> lightingUpdateVector;
-	static std::mutex lightingFloodFillMutex;
-	static std::mutex darknessFloodFillMutex;
-	static std::mutex lightingUpdateMutex;
 
 	State state = State::NotLoaded;
 	bool hasAnyFaces = false; // Removing it doesnt change class size

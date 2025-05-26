@@ -53,7 +53,6 @@ static float intbound(float s, float ds)
 
 Chunk* World::getChunk(int x, int y, int z)
 {
-	std::lock_guard<std::mutex> lock(chunkPoolMutex);
 	Chunk* ret = chunkPool.acquire();
 	// TODO: remove
 	if (ret->state != Chunk::State::NotLoaded)
@@ -69,7 +68,6 @@ void World::releaseChunk(Chunk* chunk, bool returnDrawIdToPool = true)
 	if (chunk->state == Chunk::State::InLoadingQueue)
 	{
 		{
-			std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
 			size_t count = chunkGenerateVector.size();
 			for (size_t i = 0; i < count; i++)
 			{
@@ -84,7 +82,6 @@ void World::releaseChunk(Chunk* chunk, bool returnDrawIdToPool = true)
 		}
 		chunk->state = Chunk::State::NotLoaded;
 		{
-			std::lock_guard<std::mutex> lock(chunkPoolMutex);
 			chunkPool.release(chunk);
 		}
 	}
@@ -94,19 +91,16 @@ void World::releaseChunk(Chunk* chunk, bool returnDrawIdToPool = true)
 		if (returnDrawIdToPool)
 		{
 			// TODO: switch to pool class
-			std::lock_guard<std::mutex> lock(chunkIDPoolMutex);
 			chunkIDPool[++chunkIDPoolIndex] = chunk->drawCommand.offset / Settings::FACE_INSTANCES_PER_CHUNK;
 		}
 		chunk->state = Chunk::State::NotLoaded;
 		{
-			std::lock_guard<std::mutex> lock(chunkPoolMutex);
 			chunkPool.release(chunk);
 		}
 	}
 	else if (chunk->state == Chunk::State::Loading)
 	{
 		std::cerr << "Chunk was added to releasedLoadingChunks" << std::endl;
-		std::lock_guard<std::mutex> lock(releasedLoadingChunksMutex);
 		releasedLoadingChunks.push_back(chunk);
 	}
 }
@@ -127,7 +121,6 @@ World::World(const WorldData& worldData)
 	blockTextures("res/Textures.png", 0, Settings::BLOCK_TEXTURE_SIZE, Settings::BLOCK_TEXTURES_IN_ROW, Settings::BLOCK_TEXTURES_COUNT, Settings::BLOCK_TEXTURES_NUM_CHANNELS, GL_REPEAT, true),
 	numberTextures("res/Numbers.png", 1, 8, 4, 16, 1, GL_CLAMP_TO_BORDER, false),
 
-	threadPool(Settings::WORLD_THREAD_POOL_SIZE),
 	chunkPool(Settings::MAX_RENDERED_CHUNKS_COUNT)
 {
 	TerrainGenerator::init();
@@ -180,9 +173,6 @@ World::World(const WorldData& worldData)
 
 World::~World()
 {
-	// shutdown threads
-	threadPool.destroy();
-	
 	//
 	quadInstanceVBO.clean();
 	quadInstanceVAO.clean();
@@ -240,7 +230,6 @@ void World::update(const glm::vec3& pos, bool isMoving)
 	if (!releasedLoadingChunks.empty())
 	{
 		std::cout << releasedLoadingChunks.size() << std::endl;
-		std::lock_guard<std::mutex> lock(releasedLoadingChunksMutex);
 		for (auto it = releasedLoadingChunks.begin(); it != releasedLoadingChunks.end();)
 		{
 			Chunk* chunk = *it;
@@ -282,47 +271,16 @@ void World::update(const glm::vec3& pos, bool isMoving)
 
 void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
 {
-	// Prepare chunks for generation
-	std::vector<Chunk*> chunksToGenerate;
-	{
-		std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
-
-		size_t chunksCount = chunkGenerateVector.size();
-		if (chunksCount == 0)
-		{
-			return;
-		}
-
-		size_t generateCount = std::min(chunksCount, size_t(isMoving ? Settings::DynamicSettings::generateChunksPerTickMoving : Settings::DynamicSettings::generateChunksPerTickStationary));
-		size_t range = chunksCount - generateCount;
-
-		chunksToGenerate.insert(chunksToGenerate.end(), chunkGenerateVector.begin() + range, chunkGenerateVector.end());
-		chunkGenerateVector.resize(range);
-	}
-
-	// Task creation
-	std::vector<std::function<void()>> tasks;
-	tasks.reserve(chunksToGenerate.size());
-	for (Chunk* chunk : chunksToGenerate)
+	for (Chunk* chunk : chunkGenerateVector)
 	{
 		if (chunk->state != Chunk::State::InLoadingQueue)
 		{
 			std::cerr << "GenerateChunksBlocks: " << toString(chunk->state) << "\n";
 			continue;
 		}
-
-		tasks.push_back([this, chunk]() {
-			generateChunkBlocksThread(chunk);
-						});
+		generateChunkBlocksThread(chunk);
 	}
-
-	// TODO: addTasks sometimes takes 4 ms
-	//TimeMeasurer tm;
-	threadPool.addTasks(tasks);
-	//tm.stop("Tm");
-
-	// TODO: Remove
-	threadPool.waitForCompletion();
+	chunkGenerateVector.clear();
 }
 
 void World::generateChunkBlocksThread(Chunk* chunk)
@@ -347,7 +305,6 @@ void World::generateChunkBlocksThread(Chunk* chunk)
 	}
 
 	{
-		std::lock_guard<std::mutex> lock(chunkIDPoolMutex);
 		chunk->setDrawID(chunkIDPool[chunkIDPoolIndex]);
 		chunkIDPool[chunkIDPoolIndex] = 0;
 		chunkIDPoolIndex--;
@@ -360,7 +317,6 @@ void World::generateChunkBlocksThread(Chunk* chunk)
 void World::sortGenerateChunksQueue()
 {
 	// Sorts chunks in descending order by distance
-	std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
 	const size_t chunksCount = chunkGenerateVector.size();
 	std::vector<ChunkDistance> chunkDistances;
 	chunkDistances.reserve(chunksCount);
@@ -386,7 +342,6 @@ void World::sortGenerateChunksQueue()
 
 void World::generateChunksFaces()
 {
-	std::lock_guard<std::mutex> lock(generateFacesSetMutex);
 	if (generateFacesSet.empty())
 	{
 		return;
@@ -680,7 +635,6 @@ bool World::loadChunks(bool forced)
 	{
 		int radius = Settings::CHUNK_LOAD_RADIUS;
 		int rsq = radius * radius;
-		std::lock_guard<std::mutex> lock(chunkMapMutex);
 
 		// unload chunks
 		Profiler::start(UNLOAD_CHUNKS_INDEX);
@@ -743,7 +697,6 @@ bool World::loadChunks(bool forced)
 						std::cerr << std::format("Chunk state mismatch in loadChunks. State: {}, should be: {}", toString(chunk->state), toString(Chunk::State::NotLoaded)) << "\n";
 					}
 					chunk->state = Chunk::State::InLoadingQueue;
-					std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
 					chunkGenerateVector.push_back(chunk);
 				}
 			}
@@ -846,7 +799,6 @@ void World::draw(const Camera& camera)
 
 void World::regenerateChunks()
 {
-	std::lock_guard<std::mutex> lock(generateChunkVectorMutex);
 	chunkGenerateVector.clear();
 	chunkGenerateVector.reserve(Chunk::chunkMap.size());
 	for (const auto& pair : Chunk::chunkMap)
@@ -934,7 +886,6 @@ void World::addChunkToGenerateFaces(Chunk* chunk)
 {
 	if (chunk->state == Chunk::State::Loaded)
 	{
-		std::lock_guard<std::mutex> lock(generateFacesSetMutex);
 		generateFacesSet.emplace(chunk);
 	}
 }
@@ -952,7 +903,6 @@ void World::addSurroundingChunksToGenerateFaces(const Chunk* chunk)
 			{
 				Chunk* chunk;
 				{
-					std::lock_guard<std::mutex> lock(chunkMapMutex);
 					chunk = Chunk::getChunkAt(chX + dx, chY + dy, chZ + dz);
 				}
 				if (chunk)
@@ -1015,7 +965,6 @@ void World::lightingFloodFill()
 {
 	// TODO: maybe use queue?
 	// TODO: if not loaded, wait for loading
-	std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
 	auto& needToCheck = Chunk::lightingFloodFillVector;
 	while (!needToCheck.empty())
 	{
@@ -1081,7 +1030,6 @@ void World::lightingFloodFill()
 
 void World::darknessFloodFill()
 {
-	std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
 	auto& needToCheck = Chunk::darknessFloodFillVector;
 	while (!needToCheck.empty())
 	{
@@ -1148,7 +1096,6 @@ void World::darknessFloodFill()
 			}
 			else
 			{
-				std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
 				Chunk::lightingFloodFillVector.emplace_back
 				(
 					chunkGlobalX + offCoords[0],
@@ -1165,7 +1112,6 @@ void World::updateLighting()
 {
 	// TODO: if place 2 light source close to eachother, after removing them, 1 block light will stay in last removed one
 	{
-		std::lock_guard<std::mutex> lock(Chunk::lightingUpdateMutex);
 		Profiler::start(BLOCK_LIGHT_UPDATE_INDEX);
 		for (const auto& update : Chunk::lightingUpdateVector)
 		{
@@ -1261,7 +1207,6 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 			}
 			chunk->setLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side, blockData.lightPower, false);
 			{
-				std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
 				Chunk::lightingFloodFillVector.emplace_back
 				(
 					chunkGlobalX + offCoords[0],
@@ -1320,8 +1265,6 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 
 			chunk->setLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side, maxNeighbourLighting2, false);
 			{
-				std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
-
 				Chunk::darknessFloodFillVector.emplace_back(
 					chunkGlobalX + offCoords[0],
 					chunkGlobalY + offCoords[1],
@@ -1409,7 +1352,6 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 				chunk->setLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], maxLightingSide, maxLighting, false);
 			}
 			{
-				std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
 				Chunk::lightingFloodFillVector.emplace_back
 				(
 					chunkGlobalX + offCoords[0],
@@ -1449,7 +1391,6 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 				if (neighbourLighting <= prevLighting)
 				{
 					chunk->setLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side, 0, false);
-					std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
 					Chunk::darknessFloodFillVector.emplace_back
 					(
 						chunkGlobalX + offCoords[0],
@@ -1530,7 +1471,6 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 			int offCoords[3] = { x, y, z };
 			offCoords[axis] += (maxLightingSide & 1) ? -1 : 1;
 			chunk->setLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], maxLightingSide, maxLighting, true);
-			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
 			Chunk::lightingFloodFillVector.emplace_back
 			(
 				chunkGlobalX + offCoords[0],
@@ -1552,7 +1492,6 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 		// could do that in loop, but here we already know that block is transparent
 		{
 			chunk->setLightingAtInBoundaries(x, y, z, fillLightPower, true);
-			std::lock_guard<std::mutex> lock(Chunk::lightingFloodFillMutex);
 			Chunk::lightingFloodFillVector.emplace_back
 			(
 				globalX, globalY, globalZ,
@@ -1586,7 +1525,6 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 					if (lighting < prevLighting) // && lighting > 0  it will always be higher than zero
 					{
 						chunk->setLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], side, 0, true);
-						std::lock_guard<std::mutex> lock(Chunk::darknessFloodFillMutex);
 						Chunk::darknessFloodFillVector.emplace_back(
 							chunkGlobalX + offCoords[0],
 							chunkGlobalY + offCoords[1],
@@ -1606,10 +1544,8 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 
 	int maxIterations = skyLightMaxHeight == INT_MIN ? 0 : std::max(0, globalY - skyLightMaxHeight) - !blockData.transparent;
 	bool useDarknessVector = fillLightPower == 0;
-	auto& floodFillMutex = useDarknessVector ? Chunk::darknessFloodFillMutex : Chunk::lightingFloodFillMutex;
 	if (maxIterations > 0)
 	{
-		std::lock_guard<std::mutex> lock(floodFillMutex);
 		if (useDarknessVector)
 		{
 			Chunk::darknessFloodFillVector.reserve(Chunk::darknessFloodFillVector.size() + maxIterations);
@@ -1640,7 +1576,6 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 		}
 
 		{
-			std::lock_guard<std::mutex> lock(floodFillMutex);
 			if (useDarknessVector)
 			{
 				chunk_->setLightingAtInBoundaries(x, localY, z, fillLightPower, true);
