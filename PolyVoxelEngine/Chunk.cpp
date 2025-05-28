@@ -809,10 +809,8 @@ void Chunk::fetchFaces()
 		{
 			for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
 			{
-				Profiler::start(TEST1_INDEX);
 				Block block = getBlockAtInBoundaries(x, y, z);
 				const BlockData& blockData = ALL_BLOCK_DATA[(size_t)block];
-				Profiler::end(TEST1_INDEX);
 
 				if (!blockData.createFaces)
 				{
@@ -820,10 +818,9 @@ void Chunk::fetchFaces()
 				}
 
 				bool maxAO = blockData.lightPower > 0;
-				size_t baseFaceIndex = (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6;
+				Face* baseFace = facesData + (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6;
 				for (size_t normalID = 0; normalID < 6; normalID++)
 				{
-					Profiler::start(TEST2_INDEX);
 					size_t planeIndex = normalID >> 1;
 
 					int offCoords[3] = { (int)x, (int)y, (int)z };
@@ -839,12 +836,10 @@ void Chunk::fetchFaces()
 					}
 
 					const BlockData& neighborData = ALL_BLOCK_DATA[(size_t)faceBlock];
-					Profiler::end(TEST2_INDEX);
 
 					if (neighborData.transparent)
 					{
-						Profiler::start(TEST3_INDEX);
-						auto& face = facesData[baseFaceIndex + normalID];
+						auto& face = baseFace[normalID];
 						face.none = false;
 						face.transparent = blockData.transparent;
 						face.textureID = blockData.textures[normalID];
@@ -859,7 +854,6 @@ void Chunk::fetchFaces()
 						}
 #endif
 						face.ao = ao;
-						Profiler::end(TEST3_INDEX);
 					}
 				}
 			}
