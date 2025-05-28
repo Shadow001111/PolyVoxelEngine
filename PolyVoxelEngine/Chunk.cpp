@@ -994,10 +994,6 @@ void Chunk::updateLightingAt(size_t x, size_t y, size_t z, Block block, Block pr
 
 Block Chunk::getBlockAtInBoundaries(size_t x, size_t y, size_t z) const
 {
-	if (state != State::Loaded)
-	{
-		return Block::Void;
-	}
 	return blocks[getIndex(x, y, z)];
 }
 
@@ -1107,7 +1103,7 @@ Block Chunk::getBlockAt(int x, int y, int z) const
 	}
 
 	const Chunk* chunk = getChunkAt(chX, chY, chZ);
-	if (!chunk || chunk->state != State::Loaded)
+	if (!chunk)
 	{
 		return Block::Void;
 	}
@@ -1144,19 +1140,11 @@ bool Chunk::canSideBeSeen(const glm::vec3& position, size_t side) const
 
 uint8_t Chunk::getLightingAtInBoundaries(size_t x, size_t y, size_t z) const
 {
-	if (state != State::Loaded)
-	{
-		return 0;
-	}
 	return lightingMap[getIndex(x, y, z)];
 }
 
 void Chunk::setLightingAtInBoundaries(size_t x, size_t y, size_t z, uint8_t lightPower, bool lightOrSky)
 {
-	if (state != State::Loaded)
-	{
-		return;
-	}
 	size_t index = getIndex(x, y, z);
 	lightingMap[index] = (lightingMap[index] & (15 << (4 * !lightOrSky))) | (lightPower << (4 * lightOrSky));
 }
@@ -1204,7 +1192,7 @@ uint8_t Chunk::getLightingAt(int x, int y, int z) const
 	}
 
 	const Chunk* chunk = getChunkAt(chX, chY, chZ);
-	if (!chunk || chunk->state != State::Loaded)
+	if (!chunk)
 	{
 		return 0;
 	}
@@ -1255,7 +1243,7 @@ void Chunk::setLightingAt(int x, int y, int z, uint8_t lightPower, bool lightOrS
 	}
 
 	Chunk* chunk = getChunkAt(chX, chY, chZ);
-	if (!chunk || chunk->state != State::Loaded)
+	if (!chunk)
 	{
 		return;
 	}
@@ -1269,7 +1257,7 @@ uint8_t Chunk::getLightingAtSideCheck(int x, int y, int z, size_t side) const
 		return getLightingAtInBoundaries(x, y, z);
 	}
 	const Chunk* chunk = neighbours[side];
-	if (!chunk || chunk->state != State::Loaded)
+	if (!chunk)
 	{
 		return 0;
 	}
@@ -1287,7 +1275,7 @@ void Chunk::setLightingAtSideCheck(int x, int y, int z, size_t side, uint8_t lig
 		return;
 	}
 	Chunk* chunk = neighbours[side];
-	if (!chunk || chunk->state != State::Loaded)
+	if (!chunk)
 	{
 		return;
 	}
@@ -1299,10 +1287,6 @@ void Chunk::setLightingAtSideCheck(int x, int y, int z, size_t side, uint8_t lig
 
 Chunk::BlockAndLighting Chunk::getBlockAndLightingAtInBoundaries(size_t x, size_t y, size_t z) const
 {
-	if (state != State::Loaded)
-	{
-		return { Block::Void, 0 };
-	}
 	size_t index = getIndex(x, y, z);
 	return {blocks[index], lightingMap[index]};
 }
@@ -1350,7 +1334,7 @@ Chunk::BlockAndLighting Chunk::getBlockAndLightingAt(int x, int y, int z) const
 	}
 
 	const Chunk* chunk = getChunkAt(chX, chY, chZ);
-	if (!chunk || chunk->state != State::Loaded)
+	if (!chunk)
 	{
 		return {Block::Void, 0};
 	}
@@ -1364,7 +1348,7 @@ Chunk::BlockAndLighting Chunk::getBlockAndLightingAtSideCheck(int x, int y, int 
 		return getBlockAndLightingAtInBoundaries(x, y, z);
 	}
 	const Chunk* chunk = neighbours[side];
-	if (!chunk || chunk->state != State::Loaded)
+	if (!chunk)
 	{
 		return {Block::Void, 0};
 	}
