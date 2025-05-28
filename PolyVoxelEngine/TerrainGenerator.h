@@ -20,11 +20,11 @@ class ChunkColumnData
 public:
 	ChunkColumnData();
 
-	void setHeightAt(size_t x, size_t z, int height);
+	inline void setHeightAt(size_t x, size_t z, int height);
 	int getHeightAt(size_t x, size_t z) const;
 	int getHeightAtByIndex(size_t index) const;
 
-	void setSlMHAt(size_t x, size_t z, int height);
+	inline void setSlMHAt(size_t x, size_t z, int height);
 	int getSlMHAt(size_t x, size_t z) const;
 
 	Biome getBiome() const;

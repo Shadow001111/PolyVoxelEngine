@@ -28,11 +28,6 @@ static inline constexpr int clamp_int(int value, int min_, int max_)
 	return min_int(max_, max_int(min_, value));
 }
 
-static constexpr size_t floorlog2(size_t x)
-{
-	return x == 1 ? 0 : 1 + floorlog2(x >> 1);
-}
-
 int pos3_hash(int x, int y, int z) noexcept
 {
 	constexpr int shift = sizeof(int) * 8 / 3;
@@ -126,50 +121,49 @@ void Chunk::generateBlocks()
 		return;
 	}
 
+	const int baseGlobalX = X * Settings::CHUNK_SIZE;
+	const int baseGlobalY = Y * Settings::CHUNK_SIZE;
+	const int baseGlobalZ = Z * Settings::CHUNK_SIZE;
+
 	chunkColumnData->startUsing();
 
 	int chunkMaxY = INT_MIN;
 	{
-		int globalY = Y * Settings::CHUNK_SIZE;
 		int globalMaxY = INT_MIN;
 		for (size_t index = 0; index < Settings::CHUNK_SIZE_SQUARED; index++)
 		{
 			globalMaxY = std::max(globalMaxY, chunkColumnData->getHeightAtByIndex(index));
 		}
-		chunkMaxY = (int)floorf((float)globalMaxY / (float)Settings::CHUNK_SIZE);
+		chunkMaxY = globalMaxY >> Settings::CHUNK_SIZE_LOG2;
 	}
 
 	Biome biome = chunkColumnData->getBiome();
 
-	if (Y <= chunkMaxY)
+	if (Y > chunkMaxY)
+	{
+		for (size_t index = 0; index < Settings::CHUNK_SIZE_CUBED; index++)
+		{
+			blocks[index] = Block::Air;
+			lightingMap[index] = 0;
+		}
+		blocksCount = 0;
+	}
+	else
 	{
 		TerrainGenerator::generateChunkCaveNoise(X, Y, Z);
 		for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
 		{
-			int globalZ = Z * Settings::CHUNK_SIZE + (int)z;
+			int globalZ = baseGlobalZ + (int)z;
 			for (size_t x = 0; x < Settings::CHUNK_SIZE; x++)
 			{
-				int globalX = X * Settings::CHUNK_SIZE + (int)x;
+				int globalX = baseGlobalX + (int)x;
 
 				int globalHeight = chunkColumnData->getHeightAt(x, z);
 				for (size_t y = 0; y < Settings::CHUNK_SIZE; y++)
 				{
-					int globalY = Y * Settings::CHUNK_SIZE + (int)y;
+					int globalY = baseGlobalY + (int)y;
 					Block block = TerrainGenerator::getBlock(globalX, globalY, globalZ, globalHeight, biome);
 					setBlockAtNoSave(x, y, z, block);
-				}
-			}
-		}
-	}
-	else
-	{
-		for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
-		{
-			for (size_t y = 0; y < Settings::CHUNK_SIZE; y++)
-			{
-				for (size_t x = 0; x < Settings::CHUNK_SIZE; x++)
-				{
-					setBlockAtNoSave(x, y, z, Block::Air);
 				}
 			}
 		}
@@ -194,7 +188,7 @@ void Chunk::generateBlocks()
 
 			for (size_t y = 0; y < Settings::CHUNK_SIZE; y++)
 			{
-				int globalY = (int)y + Y * Settings::CHUNK_SIZE;
+				int globalY = (int)y + baseGlobalY;
 
 				Block block = getBlockAtInBoundaries(x, y, z);
 				size_t index = getIndex(x, y, z);
@@ -232,13 +226,13 @@ void Chunk::generateBlocks()
 		}
 
 		int inBoundaryX = x & Settings::CHUNK_SIZE_MASK;
-		int globalX = x + X * Settings::CHUNK_SIZE;
+		int globalX = x + baseGlobalX;
 		for (int z = 0; z < Settings::CHUNK_SIZE; z++)
 		{
-			int globalZ = z + Z * Settings::CHUNK_SIZE;
+			int globalZ = z + baseGlobalZ;
 			for (int y = 0; y < Settings::CHUNK_SIZE; y++)
 			{
-				int globalY = y + Y * Settings::CHUNK_SIZE;
+				int globalY = y + baseGlobalY;
 
 				uint8_t lighting = neighbour->getLightingAtInBoundaries(inBoundaryX, y, z) & 15;
 				if (lighting > 1)
@@ -261,13 +255,13 @@ void Chunk::generateBlocks()
 		}
 
 		int inBoundaryY = y & Settings::CHUNK_SIZE_MASK;
-		int globalY = y + Y * Settings::CHUNK_SIZE;
+		int globalY = y + baseGlobalY;
 		for (int z = 0; z < Settings::CHUNK_SIZE; z++)
 		{
-			int globalZ = z + Z * Settings::CHUNK_SIZE;
+			int globalZ = z + baseGlobalZ;
 			for (int x = 0; x < Settings::CHUNK_SIZE; x++)
 			{
-				int globalX = x + X * Settings::CHUNK_SIZE;
+				int globalX = x + baseGlobalX;
 
 				uint8_t lighting = neighbour->getLightingAtInBoundaries(x, inBoundaryY, z) & 15;
 				if (lighting > 1)
@@ -290,13 +284,13 @@ void Chunk::generateBlocks()
 		}
 
 		int inBoundaryZ = z & Settings::CHUNK_SIZE_MASK;
-		int globalZ = z + Z * Settings::CHUNK_SIZE;
+		int globalZ = z + baseGlobalZ;
 		for (int x = 0; x < Settings::CHUNK_SIZE; x++)
 		{
-			int globalX = x + X * Settings::CHUNK_SIZE;
+			int globalX = x + baseGlobalX;
 			for (int y = 0; y < Settings::CHUNK_SIZE; y++)
 			{
-				int globalY = y + Y * Settings::CHUNK_SIZE;
+				int globalY = y + baseGlobalY;
 
 				uint8_t lighting = neighbour->getLightingAtInBoundaries(x, y, inBoundaryZ) & 15;
 				if (lighting > 1)

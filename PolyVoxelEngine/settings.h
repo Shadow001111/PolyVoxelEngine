@@ -7,6 +7,12 @@ int calcVolume(int radius);
 
 float calculateFogDensity(float distance, float fogGradient);
 
+template<typename T>
+constexpr T floorlog2(T x)
+{
+	return x == 1 ? 0 : 1 + floorlog2(x >> 1);
+}
+
 namespace Settings
 {
 	struct DynamicSettings
@@ -55,6 +61,7 @@ namespace Settings
 	constexpr int CHUNK_SIZE_SQUARED = CHUNK_SIZE * CHUNK_SIZE;
 	constexpr int CHUNK_SIZE_CUBED = CHUNK_SIZE_SQUARED * CHUNK_SIZE;
 	constexpr int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
+	constexpr int CHUNK_SIZE_LOG2 = floorlog2(Settings::CHUNK_SIZE);
 	//constexpr size_t SINGLE_TYPE_FACE_INSTANCES_PER_CHUNK = (CHUNK_SIZE_CUBED / 2 * 6);
 	constexpr size_t FACE_INSTANCES_PER_CHUNK = (CHUNK_SIZE_CUBED / 2 * 6) + (CHUNK_SIZE_SQUARED / 2 * 6); // solid + additionalTransparent
 	extern size_t MAX_RENDERED_CHUNKS_COUNT;

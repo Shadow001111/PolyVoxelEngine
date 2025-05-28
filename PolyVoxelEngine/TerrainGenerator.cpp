@@ -549,7 +549,7 @@ ChunkColumnData::ChunkColumnData() : X(0), Z(0), usedBy(0)
 {
 }
 
-void ChunkColumnData::setHeightAt(size_t x, size_t z, int height)
+inline void ChunkColumnData::setHeightAt(size_t x, size_t z, int height)
 {
 	heightMap[x + z * Settings::CHUNK_SIZE] = height;
 }
@@ -564,7 +564,7 @@ int ChunkColumnData::getHeightAtByIndex(size_t index) const
 	return heightMap[index];
 }
 
-void ChunkColumnData::setSlMHAt(size_t x, size_t z, int height)
+inline void ChunkColumnData::setSlMHAt(size_t x, size_t z, int height)
 {
 	// TODO: add mutex
 	skyLightMaxHeightMap[x + z * Settings::CHUNK_SIZE] = height;
