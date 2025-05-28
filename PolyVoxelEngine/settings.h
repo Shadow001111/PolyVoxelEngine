@@ -22,7 +22,7 @@ namespace Settings
 	
 	// Chunk
 	extern int CHUNK_LOAD_RADIUS;
-	constexpr int CHUNK_SIZE = 16;
+	constexpr int CHUNK_SIZE = 16; // Must be power of 2
 	constexpr size_t MAX_ENTITIES_PER_CHUNK = 256;
 
 	// Physic
@@ -54,6 +54,7 @@ namespace Settings
 	constexpr int HALF_CHUNK_SIZE = CHUNK_SIZE / 2;
 	constexpr int CHUNK_SIZE_SQUARED = CHUNK_SIZE * CHUNK_SIZE;
 	constexpr int CHUNK_SIZE_CUBED = CHUNK_SIZE_SQUARED * CHUNK_SIZE;
+	constexpr int CHUNK_SIZE_MASK = CHUNK_SIZE - 1;
 	//constexpr size_t SINGLE_TYPE_FACE_INSTANCES_PER_CHUNK = (CHUNK_SIZE_CUBED / 2 * 6);
 	constexpr size_t FACE_INSTANCES_PER_CHUNK = (CHUNK_SIZE_CUBED / 2 * 6) + (CHUNK_SIZE_SQUARED / 2 * 6); // solid + additionalTransparent
 	extern size_t MAX_RENDERED_CHUNKS_COUNT;

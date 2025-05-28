@@ -15,7 +15,11 @@ const std::string profilerSamplesNames[PROFILER_CATEGORIES_COUNT] =
 	"UnloadChunks",
 	"ChunkLoadData",
 	"ChunkLighting",
-	"Test"
+	"Test1",
+	"Test2",
+	"Test3",
+	"Test4",
+	"Test5",
 };
 
 void Profiler::start(size_t index)

@@ -403,9 +403,9 @@ RaycastHit World::raycast(const glm::vec3& startPos, const glm::vec3& dir, float
 			}
 		}
 
-		size_t x = currentVoxelPos.x & (Settings::CHUNK_SIZE - 1);
-		size_t y = currentVoxelPos.y & (Settings::CHUNK_SIZE - 1);
-		size_t z = currentVoxelPos.z & (Settings::CHUNK_SIZE - 1);
+		size_t x = currentVoxelPos.x & Settings::CHUNK_SIZE_MASK;
+		size_t y = currentVoxelPos.y & Settings::CHUNK_SIZE_MASK;
+		size_t z = currentVoxelPos.z & Settings::CHUNK_SIZE_MASK;
 		
 		Block block = chunk->getBlockAtInBoundaries(x, y, z);
 
@@ -494,9 +494,9 @@ void World::setBlockAt(int x, int y, int z, Block block)
 		}
 
 		// place block
-		x &= Settings::CHUNK_SIZE - 1;
-		y &= Settings::CHUNK_SIZE - 1;
-		z &= Settings::CHUNK_SIZE - 1;
+		x &= Settings::CHUNK_SIZE_MASK;
+		y &= Settings::CHUNK_SIZE_MASK;
+		z &= Settings::CHUNK_SIZE_MASK;
 
 		const BlockData& blockData = ALL_BLOCK_DATA[(size_t)block];
 
@@ -521,9 +521,9 @@ void World::setBlockAt(int x, int y, int z, Block block)
 	else
 	{
 		// place block
-		x &= Settings::CHUNK_SIZE - 1;
-		y &= Settings::CHUNK_SIZE - 1;
-		z &= Settings::CHUNK_SIZE - 1;
+		x &= Settings::CHUNK_SIZE_MASK;
+		y &= Settings::CHUNK_SIZE_MASK;
+		z &= Settings::CHUNK_SIZE_MASK;
 
 		std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_SIZE_CUBED>> blockChanges;
 
@@ -606,9 +606,9 @@ Block World::getBlockAt(int x, int y, int z) const
 		return Block::Void;
 	}
 
-	x &= Settings::CHUNK_SIZE - 1;
-	y &= Settings::CHUNK_SIZE - 1;
-	z &= Settings::CHUNK_SIZE - 1;
+	x &= Settings::CHUNK_SIZE_MASK;
+	y &= Settings::CHUNK_SIZE_MASK;
+	z &= Settings::CHUNK_SIZE_MASK;
 
 	return chunk->getBlockAtInBoundaries(x, y, z);
 }
@@ -934,9 +934,9 @@ uint8_t World::getLightingAt(int x, int y, int z) const
 		return 0;
 	}
 
-	x &= Settings::CHUNK_SIZE - 1;
-	y &= Settings::CHUNK_SIZE - 1;
-	z &= Settings::CHUNK_SIZE - 1;
+	x &= Settings::CHUNK_SIZE_MASK;
+	y &= Settings::CHUNK_SIZE_MASK;
+	z &= Settings::CHUNK_SIZE_MASK;
 
 	return chunk->getLightingAtInBoundaries(x, y, z);
 }
@@ -953,9 +953,9 @@ void World::setLightingAt(int x, int y, int z, uint8_t power, bool lightOrSky)
 		return;
 	}
 
-	x &= Settings::CHUNK_SIZE - 1;
-	y &= Settings::CHUNK_SIZE - 1;
-	z &= Settings::CHUNK_SIZE - 1;
+	x &= Settings::CHUNK_SIZE_MASK;
+	y &= Settings::CHUNK_SIZE_MASK;
+	z &= Settings::CHUNK_SIZE_MASK;
 
 	chunk->setLightingAtInBoundaries(x, y, z, power, lightOrSky);
 	addChunkToGenerateFaces(chunk);
@@ -990,9 +990,9 @@ void World::lightingFloodFill()
 		int chunkGlobalY = chY * Settings::CHUNK_SIZE;
 		int chunkGlobalZ = chZ * Settings::CHUNK_SIZE;
 
-		int x = globalX & (Settings::CHUNK_SIZE - 1);
-		int y = globalY & (Settings::CHUNK_SIZE - 1);
-		int z = globalZ & (Settings::CHUNK_SIZE - 1);
+		int x = globalX & Settings::CHUNK_SIZE_MASK;
+		int y = globalY & Settings::CHUNK_SIZE_MASK;
+		int z = globalZ & Settings::CHUNK_SIZE_MASK;
 
 		uint8_t currentLightLevel = (chunk->getLightingAtInBoundaries(x, y, z) >> (4 * blockOrSky)) & 15;
 		if (currentLightLevel <= 1)
@@ -1054,9 +1054,9 @@ void World::darknessFloodFill()
 		int chunkGlobalY = chY * Settings::CHUNK_SIZE;
 		int chunkGlobalZ = chZ * Settings::CHUNK_SIZE;
 
-		int x = globalX & (Settings::CHUNK_SIZE - 1);
-		int y = globalY & (Settings::CHUNK_SIZE - 1);
-		int z = globalZ & (Settings::CHUNK_SIZE - 1);
+		int x = globalX & Settings::CHUNK_SIZE_MASK;
+		int y = globalY & Settings::CHUNK_SIZE_MASK;
+		int z = globalZ & Settings::CHUNK_SIZE_MASK;
 		
 		for (size_t side = 0; side < 6; side++)
 		{
@@ -1566,7 +1566,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 			{
 				break;
 			}
-			localY = Settings::CHUNK_SIZE - 1;
+			localY = Settings::CHUNK_SIZE_MASK;
 		}
 
 		Block block = chunk_->getBlockAtInBoundaries(x, localY, z);

@@ -231,7 +231,7 @@ void Chunk::generateBlocks()
 			continue;
 		}
 
-		int inBoundaryX = x & (Settings::CHUNK_SIZE - 1);
+		int inBoundaryX = x & Settings::CHUNK_SIZE_MASK;
 		int globalX = x + X * Settings::CHUNK_SIZE;
 		for (int z = 0; z < Settings::CHUNK_SIZE; z++)
 		{
@@ -260,7 +260,7 @@ void Chunk::generateBlocks()
 			continue;
 		}
 
-		int inBoundaryY = y & (Settings::CHUNK_SIZE - 1);
+		int inBoundaryY = y & Settings::CHUNK_SIZE_MASK;
 		int globalY = y + Y * Settings::CHUNK_SIZE;
 		for (int z = 0; z < Settings::CHUNK_SIZE; z++)
 		{
@@ -289,7 +289,7 @@ void Chunk::generateBlocks()
 			continue;
 		}
 
-		int inBoundaryZ = z & (Settings::CHUNK_SIZE - 1);
+		int inBoundaryZ = z & Settings::CHUNK_SIZE_MASK;
 		int globalZ = z + Z * Settings::CHUNK_SIZE;
 		for (int x = 0; x < Settings::CHUNK_SIZE; x++)
 		{
@@ -419,9 +419,9 @@ SizeT3 Chunk::getCoordinatesByIndex(size_t index)
 	constexpr size_t shift = floorlog2(Settings::CHUNK_SIZE);
 	return 
 	{
-		index & (Settings::CHUNK_SIZE - 1),
-		(index >> shift) & (Settings::CHUNK_SIZE - 1),
-		(index >> (shift << 1)) & (Settings::CHUNK_SIZE - 1)
+		index & Settings::CHUNK_SIZE_MASK,
+		(index >> shift) & Settings::CHUNK_SIZE_MASK,
+		(index >> (shift << 1)) & Settings::CHUNK_SIZE_MASK
 	};
 }
 
@@ -720,7 +720,7 @@ bool Chunk::isChunkClosed() const
 		{
 			for (int z = 0; z < Settings::CHUNK_SIZE; z++)
 			{
-				Block faceBlock = neighbour->getBlockAtInBoundaries(Settings::CHUNK_SIZE - 1, y, z);
+				Block faceBlock = neighbour->getBlockAtInBoundaries(Settings::CHUNK_SIZE_MASK, y, z);
 				if (ALL_BLOCK_DATA[(size_t)faceBlock].transparent)
 				{
 					return false;
@@ -752,7 +752,7 @@ bool Chunk::isChunkClosed() const
 		{
 			for (int z = 0; z < Settings::CHUNK_SIZE; z++)
 			{
-				Block faceBlock = neighbour->getBlockAtInBoundaries(x, Settings::CHUNK_SIZE - 1, z);
+				Block faceBlock = neighbour->getBlockAtInBoundaries(x, Settings::CHUNK_SIZE_MASK, z);
 				if (ALL_BLOCK_DATA[(size_t)faceBlock].transparent)
 				{
 					return false;
@@ -784,7 +784,7 @@ bool Chunk::isChunkClosed() const
 		{
 			for (int y = 0; y < Settings::CHUNK_SIZE; y++)
 			{
-				Block faceBlock = neighbour->getBlockAtInBoundaries(x, y, Settings::CHUNK_SIZE - 1);
+				Block faceBlock = neighbour->getBlockAtInBoundaries(x, y, Settings::CHUNK_SIZE_MASK);
 				if (ALL_BLOCK_DATA[(size_t)faceBlock].transparent)
 				{
 					return false;
@@ -815,8 +815,11 @@ void Chunk::fetchFaces()
 		{
 			for (size_t z = 0; z < Settings::CHUNK_SIZE; z++)
 			{
+				Profiler::start(TEST1_INDEX);
 				Block block = getBlockAtInBoundaries(x, y, z);
 				const BlockData& blockData = ALL_BLOCK_DATA[(size_t)block];
+				Profiler::end(TEST1_INDEX);
+
 				if (!blockData.createFaces)
 				{
 					continue;
@@ -826,6 +829,7 @@ void Chunk::fetchFaces()
 				size_t baseFaceIndex = (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6;
 				for (size_t normalID = 0; normalID < 6; normalID++)
 				{
+					Profiler::start(TEST2_INDEX);
 					size_t planeIndex = normalID >> 1;
 
 					int offCoords[3] = { (int)x, (int)y, (int)z };
@@ -834,9 +838,18 @@ void Chunk::fetchFaces()
 
 					BlockAndLighting faceBAL = getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], normalID);
 					Block faceBlock = faceBAL.block;
-					const BlockData& neighborData = ALL_BLOCK_DATA[(size_t)faceBlock];
-					if (faceBlock != Block::Void && faceBlock != block && neighborData.transparent)
+
+					if (faceBlock == Block::Void || faceBlock == block)
 					{
+						continue;
+					}
+
+					const BlockData& neighborData = ALL_BLOCK_DATA[(size_t)faceBlock];
+					Profiler::end(TEST2_INDEX);
+
+					if (neighborData.transparent)
+					{
+						Profiler::start(TEST3_INDEX);
 						auto& face = facesData[baseFaceIndex + normalID];
 						face.none = false;
 						face.transparent = blockData.transparent;
@@ -852,6 +865,7 @@ void Chunk::fetchFaces()
 						}
 #endif
 						face.ao = ao;
+						Profiler::end(TEST3_INDEX);
 					}
 				}
 			}
@@ -1048,9 +1062,9 @@ Block Chunk::getBlockAtSideCheck(int x, int y, int z, size_t side) const
 	{
 		return Block::Void;
 	}
-	x &= Settings::CHUNK_SIZE - 1;
-	y &= Settings::CHUNK_SIZE - 1;
-	z &= Settings::CHUNK_SIZE - 1;
+	x &= Settings::CHUNK_SIZE_MASK;
+	y &= Settings::CHUNK_SIZE_MASK;
+	z &= Settings::CHUNK_SIZE_MASK;
 	return chunk->getBlockAtInBoundaries(x, y, z);
 }
 
@@ -1058,11 +1072,7 @@ Block Chunk::getBlockAtSideCheck(int x, int y, int z, size_t side) const
 
 Block Chunk::getBlockAt(int x, int y, int z) const
 {
-	if (
-		x >= 0 && x < Settings::CHUNK_SIZE &&
-		y >= 0 && y < Settings::CHUNK_SIZE &&
-		z >= 0 && z < Settings::CHUNK_SIZE
-		)
+	if (((x | y | z) & -Settings::CHUNK_SIZE) == 0)
 	{
 		return getBlockAtInBoundaries(x, y, z);
 	}
@@ -1074,32 +1084,32 @@ Block Chunk::getBlockAt(int x, int y, int z) const
 	if (x < 0)
 	{
 		chX--;
-		x &= (Settings::CHUNK_SIZE - 1);
+		x &= Settings::CHUNK_SIZE_MASK;
 	}
 	else if (x >= Settings::CHUNK_SIZE)
 	{
 		chX++;
-		x &= (Settings::CHUNK_SIZE - 1);
+		x &= Settings::CHUNK_SIZE_MASK;
 	}
 	if (y < 0)
 	{
 		chY--;
-		y &= (Settings::CHUNK_SIZE - 1);
+		y &= Settings::CHUNK_SIZE_MASK;
 	}
 	else if (y >= Settings::CHUNK_SIZE)
 	{
 		chY++;
-		y &= (Settings::CHUNK_SIZE - 1);
+		y &= Settings::CHUNK_SIZE_MASK;
 	}
 	if (z < 0)
 	{
 		chZ--;
-		z &= (Settings::CHUNK_SIZE - 1);
+		z &= Settings::CHUNK_SIZE_MASK;
 	}
 	else if (z >= Settings::CHUNK_SIZE)
 	{
 		chZ++;
-		z &= (Settings::CHUNK_SIZE - 1);
+		z &= Settings::CHUNK_SIZE_MASK;
 	}
 
 	const Chunk* chunk = getChunkAt(chX, chY, chZ);
@@ -1118,7 +1128,7 @@ bool Chunk::canSideBeSeen(const glm::vec3& position, size_t side) const
 	}
 	else if (side == 1)
 	{
-		return position.x < (X + 1) * Settings::CHUNK_SIZE - 1;
+		return position.x < (X + 1) * Settings::CHUNK_SIZE_MASK;
 	}
 	else if (side == 2)
 	{
@@ -1126,7 +1136,7 @@ bool Chunk::canSideBeSeen(const glm::vec3& position, size_t side) const
 	}
 	else if (side == 3)
 	{
-		return position.y < (Y + 1) * Settings::CHUNK_SIZE - 1;
+		return position.y < (Y + 1) * Settings::CHUNK_SIZE_MASK;
 	}
 	else if (side == 4)
 	{
@@ -1134,7 +1144,7 @@ bool Chunk::canSideBeSeen(const glm::vec3& position, size_t side) const
 	}
 	else
 	{
-		return position.z < (Z + 1) * Settings::CHUNK_SIZE - 1;
+		return position.z < (Z + 1) * Settings::CHUNK_SIZE_MASK;
 	}
 }
 
@@ -1159,11 +1169,7 @@ void Chunk::setLightingAtInBoundaries(size_t x, size_t y, size_t z, uint8_t ligh
 
 uint8_t Chunk::getLightingAt(int x, int y, int z) const
 {
-	if (
-		x >= 0 && x < Settings::CHUNK_SIZE &&
-		y >= 0 && y < Settings::CHUNK_SIZE &&
-		z >= 0 && z < Settings::CHUNK_SIZE
-		)
+	if (((x | y | z) & -Settings::CHUNK_SIZE) == 0)
 	{
 		return getLightingAtInBoundaries(x, y, z);
 	}
@@ -1175,32 +1181,32 @@ uint8_t Chunk::getLightingAt(int x, int y, int z) const
 	if (x < 0)
 	{
 		chX--;
-		x &= (Settings::CHUNK_SIZE - 1);
+		x &= Settings::CHUNK_SIZE_MASK;
 	}
 	else if (x >= Settings::CHUNK_SIZE)
 	{
 		chX++;
-		x &= (Settings::CHUNK_SIZE - 1);
+		x &= Settings::CHUNK_SIZE_MASK;
 	}
 	if (y < 0)
 	{
 		chY--;
-		y &= (Settings::CHUNK_SIZE - 1);
+		y &= Settings::CHUNK_SIZE_MASK;
 	}
 	else if (y >= Settings::CHUNK_SIZE)
 	{
 		chY++;
-		y &= (Settings::CHUNK_SIZE - 1);
+		y &= Settings::CHUNK_SIZE_MASK;
 	}
 	if (z < 0)
 	{
 		chZ--;
-		z &= (Settings::CHUNK_SIZE - 1);
+		z &= Settings::CHUNK_SIZE_MASK;
 	}
 	else if (z >= Settings::CHUNK_SIZE)
 	{
 		chZ++;
-		z &= (Settings::CHUNK_SIZE - 1);
+		z &= Settings::CHUNK_SIZE_MASK;
 	}
 
 	const Chunk* chunk = getChunkAt(chX, chY, chZ);
@@ -1213,11 +1219,7 @@ uint8_t Chunk::getLightingAt(int x, int y, int z) const
 
 void Chunk::setLightingAt(int x, int y, int z, uint8_t lightPower, bool lightOrSky)
 {
-	if (
-		x >= 0 && x < Settings::CHUNK_SIZE &&
-		y >= 0 && y < Settings::CHUNK_SIZE &&
-		z >= 0 && z < Settings::CHUNK_SIZE
-		)
+	if (((x | y | z) & -Settings::CHUNK_SIZE) == 0)
 	{
 		setLightingAtInBoundaries(x, y, z, lightPower, lightOrSky);
 		return;
@@ -1230,32 +1232,32 @@ void Chunk::setLightingAt(int x, int y, int z, uint8_t lightPower, bool lightOrS
 	if (x < 0)
 	{
 		chX--;
-		x &= (Settings::CHUNK_SIZE - 1);
+		x &= Settings::CHUNK_SIZE_MASK;
 	}
 	else if (x >= Settings::CHUNK_SIZE)
 	{
 		chX++;
-		x &= (Settings::CHUNK_SIZE - 1);
+		x &= Settings::CHUNK_SIZE_MASK;
 	}
 	if (y < 0)
 	{
 		chY--;
-		y &= (Settings::CHUNK_SIZE - 1);
+		y &= Settings::CHUNK_SIZE_MASK;
 	}
 	else if (y >= Settings::CHUNK_SIZE)
 	{
 		chY++;
-		y &= (Settings::CHUNK_SIZE - 1);
+		y &= Settings::CHUNK_SIZE_MASK;
 	}
 	if (z < 0)
 	{
 		chZ--;
-		z &= (Settings::CHUNK_SIZE - 1);
+		z &= Settings::CHUNK_SIZE_MASK;
 	}
 	else if (z >= Settings::CHUNK_SIZE)
 	{
 		chZ++;
-		z &= (Settings::CHUNK_SIZE - 1);
+		z &= Settings::CHUNK_SIZE_MASK;
 	}
 
 	Chunk* chunk = getChunkAt(chX, chY, chZ);
@@ -1268,11 +1270,7 @@ void Chunk::setLightingAt(int x, int y, int z, uint8_t lightPower, bool lightOrS
 
 uint8_t Chunk::getLightingAtSideCheck(int x, int y, int z, size_t side) const
 {
-	if (
-		x >= 0 && x < Settings::CHUNK_SIZE &&
-		y >= 0 && y < Settings::CHUNK_SIZE &&
-		z >= 0 && z < Settings::CHUNK_SIZE
-		)
+	if (((x | y | z) & -Settings::CHUNK_SIZE) == 0)
 	{
 		return getLightingAtInBoundaries(x, y, z);
 	}
@@ -1281,19 +1279,15 @@ uint8_t Chunk::getLightingAtSideCheck(int x, int y, int z, size_t side) const
 	{
 		return 0;
 	}
-	x &= Settings::CHUNK_SIZE - 1;
-	y &= Settings::CHUNK_SIZE - 1;
-	z &= Settings::CHUNK_SIZE - 1;
+	x &= Settings::CHUNK_SIZE_MASK;
+	y &= Settings::CHUNK_SIZE_MASK;
+	z &= Settings::CHUNK_SIZE_MASK;
 	return chunk->getLightingAtInBoundaries(x, y, z);
 }
 
 void Chunk::setLightingAtSideCheck(int x, int y, int z, size_t side, uint8_t lightPower, bool lightOrSky)
 {
-	if (
-		x >= 0 && x < Settings::CHUNK_SIZE &&
-		y >= 0 && y < Settings::CHUNK_SIZE &&
-		z >= 0 && z < Settings::CHUNK_SIZE
-		)
+	if (((x | y | z) & -Settings::CHUNK_SIZE) == 0)
 	{
 		setLightingAtInBoundaries(x, y, z, lightPower, lightOrSky);
 		return;
@@ -1303,9 +1297,9 @@ void Chunk::setLightingAtSideCheck(int x, int y, int z, size_t side, uint8_t lig
 	{
 		return;
 	}
-	x &= Settings::CHUNK_SIZE - 1;
-	y &= Settings::CHUNK_SIZE - 1;
-	z &= Settings::CHUNK_SIZE - 1;
+	x &= Settings::CHUNK_SIZE_MASK;
+	y &= Settings::CHUNK_SIZE_MASK;
+	z &= Settings::CHUNK_SIZE_MASK;
 	chunk->setLightingAtInBoundaries(x, y, z, lightPower, lightOrSky);
 }
 
@@ -1321,11 +1315,7 @@ Chunk::BlockAndLighting Chunk::getBlockAndLightingAtInBoundaries(size_t x, size_
 
 Chunk::BlockAndLighting Chunk::getBlockAndLightingAt(int x, int y, int z) const
 {
-	if (
-		x >= 0 && x < Settings::CHUNK_SIZE &&
-		y >= 0 && y < Settings::CHUNK_SIZE &&
-		z >= 0 && z < Settings::CHUNK_SIZE
-		)
+	if (((x | y | z) & -Settings::CHUNK_SIZE) == 0)
 	{
 		return getBlockAndLightingAtInBoundaries(x, y, z);
 	}
@@ -1337,32 +1327,32 @@ Chunk::BlockAndLighting Chunk::getBlockAndLightingAt(int x, int y, int z) const
 	if (x < 0)
 	{
 		chX--;
-		x &= (Settings::CHUNK_SIZE - 1);
+		x &= Settings::CHUNK_SIZE_MASK;
 	}
 	else if (x >= Settings::CHUNK_SIZE)
 	{
 		chX++;
-		x &= (Settings::CHUNK_SIZE - 1);
+		x &= Settings::CHUNK_SIZE_MASK;
 	}
 	if (y < 0)
 	{
 		chY--;
-		y &= (Settings::CHUNK_SIZE - 1);
+		y &= Settings::CHUNK_SIZE_MASK;
 	}
 	else if (y >= Settings::CHUNK_SIZE)
 	{
 		chY++;
-		y &= (Settings::CHUNK_SIZE - 1);
+		y &= Settings::CHUNK_SIZE_MASK;
 	}
 	if (z < 0)
 	{
 		chZ--;
-		z &= (Settings::CHUNK_SIZE - 1);
+		z &= Settings::CHUNK_SIZE_MASK;
 	}
 	else if (z >= Settings::CHUNK_SIZE)
 	{
 		chZ++;
-		z &= (Settings::CHUNK_SIZE - 1);
+		z &= Settings::CHUNK_SIZE_MASK;
 	}
 
 	const Chunk* chunk = getChunkAt(chX, chY, chZ);
@@ -1375,11 +1365,7 @@ Chunk::BlockAndLighting Chunk::getBlockAndLightingAt(int x, int y, int z) const
 
 Chunk::BlockAndLighting Chunk::getBlockAndLightingAtSideCheck(int x, int y, int z, size_t side) const
 {
-	if (
-		x >= 0 && x < Settings::CHUNK_SIZE &&
-		y >= 0 && y < Settings::CHUNK_SIZE &&
-		z >= 0 && z < Settings::CHUNK_SIZE
-		)
+	if (((x | y | z) & -Settings::CHUNK_SIZE) == 0)
 	{
 		return getBlockAndLightingAtInBoundaries(x, y, z);
 	}
@@ -1388,9 +1374,9 @@ Chunk::BlockAndLighting Chunk::getBlockAndLightingAtSideCheck(int x, int y, int 
 	{
 		return {Block::Void, 0};
 	}
-	x &= Settings::CHUNK_SIZE - 1;
-	y &= Settings::CHUNK_SIZE - 1;
-	z &= Settings::CHUNK_SIZE - 1;
+	x &= Settings::CHUNK_SIZE_MASK;
+	y &= Settings::CHUNK_SIZE_MASK;
+	z &= Settings::CHUNK_SIZE_MASK;
 	return chunk->getBlockAndLightingAtInBoundaries(x, y, z);
 }
 

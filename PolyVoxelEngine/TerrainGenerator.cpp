@@ -294,9 +294,9 @@ Block TerrainGenerator::getBlock(int x, int y, int z, int height, Biome biome)
 bool TerrainGenerator::IsCaveInChunk(int x, int y, int z)
 {
 	// TODO: few chunks are 'closed' because caves are too frequent
-	x &= (Settings::CHUNK_SIZE - 1);
-	y &= (Settings::CHUNK_SIZE - 1);
-	z &= (Settings::CHUNK_SIZE - 1);
+	x &= Settings::CHUNK_SIZE_MASK;
+	y &= Settings::CHUNK_SIZE_MASK;
+	z &= Settings::CHUNK_SIZE_MASK;
 
 	float cheese = chunkCaveNoiseArray[x + y * Settings::CHUNK_SIZE + z * Settings::CHUNK_SIZE_SQUARED];
 	return cheese < 0.5f;
@@ -319,8 +319,8 @@ int TerrainGenerator::calculateHeight(int globalX, int globalZ)
 	Biome biome = getBiome(chunkX, chunkZ);
 	return TerrainGenerator::calculateInitialHeight(globalX, globalZ, biome);
 
-	int localX = globalX & (Settings::CHUNK_SIZE - 1);
-	int localZ = globalZ & (Settings::CHUNK_SIZE - 1);
+	int localX = globalX & Settings::CHUNK_SIZE_MASK;
+	int localZ = globalZ & Settings::CHUNK_SIZE_MASK;
 
 	bool interpolateX = (localX < Settings::BIOME_BORDER_INTERPOLATION_SIZE) || (localX > Settings::CHUNK_SIZE - Settings::BIOME_BORDER_INTERPOLATION_SIZE - 1);
 	bool interpolateZ = (localZ < Settings::BIOME_BORDER_INTERPOLATION_SIZE) || (localZ > Settings::CHUNK_SIZE - Settings::BIOME_BORDER_INTERPOLATION_SIZE - 1);
@@ -506,15 +506,12 @@ bool TerrainGenerator::loadSkyLightMaxHeightMapFromFile(int chunkX, int chunkZ, 
 	}
 
 	// TODO: TAKES TIME!
-	Profiler::start(TEST_INDEX);
-
 	file.read
 	(
 		reinterpret_cast<char*>(chunkColumnData->skyLightMaxHeightMap),
 		sizeof(chunkColumnData->skyLightMaxHeightMap)
 	);
 	file.close();
-	Profiler::end(TEST_INDEX);
 	return true;
 }
 

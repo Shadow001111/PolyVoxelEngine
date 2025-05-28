@@ -6,7 +6,7 @@
 #include <unordered_map>
 
 constexpr size_t PROFILER_MEMORY_TABLE_SIZE = 50;
-constexpr size_t PROFILER_CATEGORIES_COUNT = 10;
+constexpr size_t PROFILER_CATEGORIES_COUNT = 14;
 
 constexpr size_t BLOCK_GENERATION_INDEX = 0;
 constexpr size_t BLOCK_LIGHT_UPDATE_INDEX = 1;
@@ -17,7 +17,12 @@ constexpr size_t LOAD_CHUNKS_INDEX = 5;
 constexpr size_t UNLOAD_CHUNKS_INDEX = 6;
 constexpr size_t CHUNK_LOAD_DATA_INDEX = 7;
 constexpr size_t CHUNK_LIGHTING_INDEX = 8;
-constexpr size_t TEST_INDEX = 9;
+constexpr size_t TEST1_INDEX = 9;
+constexpr size_t TEST2_INDEX = 10;
+constexpr size_t TEST3_INDEX = 11;
+constexpr size_t TEST4_INDEX = 12;
+constexpr size_t TEST5_INDEX = 13;
+
 
 constexpr float PROFILER_DRAW_WIDTH = 0.5f;
 constexpr float PROFILER_DRAW_HEIGHT = 0.5f;
