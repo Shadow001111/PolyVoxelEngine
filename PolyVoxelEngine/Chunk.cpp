@@ -825,7 +825,6 @@ void Chunk::fetchFaces()
 
 					int offCoords[3] = { (int)x, (int)y, (int)z };
 					offCoords[planeIndex] += (normalID & 1) ? -1 : 1;
-					// TODO: in other methods: replace offsets with offCoords
 
 					BlockAndLighting faceBAL = getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], normalID);
 					Block faceBlock = faceBAL.block;
@@ -894,12 +893,11 @@ void Chunk::greedyMeshing()
 						continue;
 					}
 
-					size_t copyCoords[3] = { 0, 0, 0 };
+					size_t copyCoords[3] = { coords[0], coords[1], coords[2] };
 					int currentW = 1;
 					int currentH = 1;
 
 					// expand W
-					memcpy(copyCoords, coords, sizeof(copyCoords));
 					copyCoords[wCoordIndex]++;
 					while (coords[wCoordIndex] + currentW < Settings::CHUNK_SIZE)
 					{
@@ -913,7 +911,7 @@ void Chunk::greedyMeshing()
 					}
 
 					// expand H
-					memcpy(copyCoords, coords, sizeof(copyCoords));
+					copyCoords[wCoordIndex] = coords[wCoordIndex];
 					copyCoords[hCoordIndex]++;
 					while (coords[hCoordIndex] + currentH < Settings::CHUNK_SIZE)
 					{
@@ -937,7 +935,8 @@ void Chunk::greedyMeshing()
 					}
 
 					// fill
-					memcpy(copyCoords, coords, sizeof(copyCoords));
+					copyCoords[wCoordIndex] = coords[wCoordIndex];
+					copyCoords[hCoordIndex] = coords[hCoordIndex];
 					for (size_t dw = 0; dw < currentW; dw++)
 					{
 						copyCoords[hCoordIndex] = coords[hCoordIndex];
