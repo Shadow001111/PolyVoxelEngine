@@ -141,7 +141,7 @@ void PhysicEntity::physicUpdate(float dt)
 			}
 			else
 			{
-				std::cerr << "Entity entered non-chunk" << std::endl;
+				std::cerr << "Entity entered non-chunk\n";
 			}
 		}
 	}

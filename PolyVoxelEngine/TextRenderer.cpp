@@ -21,7 +21,7 @@ int TextRenderer::init(Shader* textShader)
     FT_Library ft;
     if (FT_Init_FreeType(&ft))
     {
-        std::cerr << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+        std::cerr << "ERROR::FREETYPE: Could not init FreeType Library\n";
         return -1;
     }
 
@@ -33,7 +33,7 @@ int TextRenderer::init(Shader* textShader)
     FT_Face face;
     if (FT_New_Face(ft, fontPath, 0, &face))
     {
-        std::cerr << "ERROR::FREETYPE: Failed to load font" << std::endl;
+        std::cerr << "ERROR::FREETYPE: Failed to load font\n";
         FT_Done_FreeType(ft);
         return -1;
     }
@@ -58,7 +58,7 @@ int TextRenderer::init(Shader* textShader)
     {
         if (FT_Load_Char(face, c, FT_LOAD_RENDER))
         {
-            std::cerr << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+            std::cerr << "ERROR::FREETYTPE: Failed to load Glyph\n";
             continue;
         }
         if (c == ' ')

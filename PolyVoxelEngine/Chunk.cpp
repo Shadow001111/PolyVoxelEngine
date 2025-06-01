@@ -486,7 +486,7 @@ char Chunk::getAOandSmoothLighting(bool maxAO, int x, int y, int z, size_t side,
 	// TODO: implement zero handling
 	if (bcenter == 0)
 	{
-		std::cerr << "Chunk.cpp ao and smooth lighting AAAAAAAAAAAAAAAAAAAAAAAAAA" << "\n";
+		std::cerr << "Chunk.cpp ao and smooth lighting AAAAAAAAAAAAAAAAAAAAAAAAAA\n";
 	}
 
 	uint8_t lcenter_and_15 = lcenter & 15;
@@ -577,7 +577,7 @@ void Chunk::loadData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_
 	std::ifstream file(filepath, std::ios::binary);
 	if (!file.is_open())
 	{
-		std::cerr << "Failed to open chunk data file" << std::endl;
+		std::cerr << "Failed to open chunk data file\n";
 		return;
 	}
 
@@ -597,7 +597,7 @@ void Chunk::loadData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_
 		file.read(reinterpret_cast<char*>(&count), sizeof(count));
 		if (count == 0)
 		{
-			std::cerr << "Chunk::loadData: block count is 0" << std::endl;
+			std::cerr << "Chunk::loadData: block count is 0\n";
 			continue;
 		}
 
@@ -627,7 +627,7 @@ void Chunk::saveData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_
 	std::ofstream file(filepath, std::ios::binary | std::ios::trunc);
 	if (!file.is_open())
 	{
-		std::cerr << "Failed to open chunk data file " << std::endl;
+		std::cerr << "Failed to open chunk data file \n";
 		return;
 	}
 
@@ -672,7 +672,7 @@ void Chunk::saveData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_
 	}
 	catch (const std::exception& e) 
 	{
-		std::cerr << "Failed to write to chunk data file: " << e.what() << std::endl;
+		std::cerr << "Failed to write to chunk data file: " << e.what() << "\n";
 	}
 	file.close();
 }

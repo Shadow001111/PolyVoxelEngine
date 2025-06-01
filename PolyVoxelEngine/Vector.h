@@ -352,7 +352,7 @@ void printVector(const Vector<T, maxSize>& vector)
 	{
 		std::cout << vector[i] << " ";
 	}
-	std::cout << std::endl;
+	std::cout << "\n";
 }
 
 template<typename T>
@@ -363,5 +363,5 @@ void printVector(const T& vector)
 	{
 		std::cout << vector[i] << " ";
 	}
-	std::cout << std::endl;
+	std::cout << "\n";
 }

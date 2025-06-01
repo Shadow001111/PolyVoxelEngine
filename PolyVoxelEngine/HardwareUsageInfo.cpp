@@ -31,14 +31,14 @@ int HardwareUsageInfo::init()
     nvmlReturn_t result = nvmlInit();
     if (result != NVML_SUCCESS) 
     {
-        std::cerr << "Failed to initialize NVML: " << nvmlErrorString(result) << std::endl;
+        std::cerr << "Failed to initialize NVML: " << nvmlErrorString(result) << "\n";
         return -1;
     }
     result = nvmlDeviceGetHandleByIndex(0, &device);
     if (result != NVML_SUCCESS) 
     {
         nvmlShutdown();
-        std::cerr << "Failed to get device handle: " << nvmlErrorString(result) << std::endl;
+        std::cerr << "Failed to get device handle: " << nvmlErrorString(result) << "\n";
         return -1;
     }
 }
@@ -89,7 +89,7 @@ nvmlUtilization_t* HardwareUsageInfo::getGPUUtilization()
     nvmlReturn_t result = nvmlDeviceGetUtilizationRates(device, &utilization);
     if (result != NVML_SUCCESS) 
     {
-        std::cerr << "Failed to get GPU utilization: " << nvmlErrorString(result) << std::endl;
+        std::cerr << "Failed to get GPU utilization: " << nvmlErrorString(result) << "\n";
         return nullptr;
     }
     return &utilization;
@@ -100,7 +100,7 @@ nvmlMemory_t* HardwareUsageInfo::getVRAMUsage()
     nvmlReturn_t result = nvmlDeviceGetMemoryInfo(device, &vramUsage);
     if (result != NVML_SUCCESS)
     {
-        std::cerr << "Failed to get VRAM usage: " << nvmlErrorString(result) << std::endl;
+        std::cerr << "Failed to get VRAM usage: " << nvmlErrorString(result) << "\n";
         return nullptr;
     }
     return &vramUsage;

@@ -32,13 +32,13 @@ void GraphicController::centerWindow()
 	GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 	if (primaryMonitor == NULL)
 	{
-		std::cerr << "Failed to get primary monitor" << std::endl;
+		std::cerr << "Failed to get primary monitor\n";
 		return;
 	}
 	const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
 	if (mode == NULL)
 	{
-		std::cerr << "Failed to get video mode" << std::endl;
+		std::cerr << "Failed to get video mode\n";
 		return;
 	}
 
@@ -61,7 +61,7 @@ int GraphicController::init(const GraphicSettings& graphicSettings, const GameSe
 #pragma region opengl init
 	if (window != nullptr)
 	{
-		std::cerr << "GraphicController is already initialized" << std::endl;
+		std::cerr << "GraphicController is already initialized\n";
 		return 0;
 	}
 
@@ -75,7 +75,7 @@ int GraphicController::init(const GraphicSettings& graphicSettings, const GameSe
 	window = glfwCreateWindow(width, height, "PolyVoxelEngine", graphicSettings.fullcreen ? glfwGetPrimaryMonitor() : NULL, NULL);
 	if (window == NULL) 
 	{
-		std::cerr << "Failed to create window" << std::endl;
+		std::cerr << "Failed to create window\n";
 		glfwTerminate();
 		return -1;
 	}
@@ -106,7 +106,7 @@ int GraphicController::init(const GraphicSettings& graphicSettings, const GameSe
 		unsigned char* pixels = stbi_load(graphicSettings.iconPath.c_str(), &width, &height, &channels, 4);
 		if (pixels == NULL)
 		{
-			std::cerr << "Failed to load icon image" << std::endl;
+			std::cerr << "Failed to load icon image\n";
 		}
 		else
 		{

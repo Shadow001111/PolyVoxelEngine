@@ -8,7 +8,7 @@ TextureArray::TextureArray(const char* filePath, int slot, int textureSize, int 
 
 	if (numChannels < 1 || numChannels > 4)
 	{
-		std::cerr << "Wrong texture channels count" << std::endl;
+		std::cerr << "Wrong texture channels count\n";
 		return;
 	}
 
@@ -17,7 +17,7 @@ TextureArray::TextureArray(const char* filePath, int slot, int textureSize, int 
 	
 	if (!bytes)
 	{
-		std::cerr << "Failed to load texture: " << filePath << std::endl;
+		std::cerr << "Failed to load texture: " << filePath << "\n";
 		return;
 	}
 

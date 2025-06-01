@@ -17,7 +17,7 @@ namespace Sound
         auto it = std::find(soundSources.begin(), soundSources.end(), this);
         if (it == soundSources.end())
         {
-            std::cerr << "SoundSource wasn't in vector" << std::endl;
+            std::cerr << "SoundSource wasn't in vector\n";
         }
         else
         {
@@ -32,7 +32,7 @@ namespace Sound
         SNDFILE* sndFile = sf_open(path, SFM_READ, &sfInfo);
         if (!sndFile)
         {
-            std::cerr << "Failed to open sound file: " << path << std::endl;
+            std::cerr << "Failed to open sound file: " << path << "\n";
             return;
         }
 
@@ -184,21 +184,21 @@ namespace Sound
     {
         if (device)
         {
-            std::cerr << "Audio device already opened" << std::endl;
+            std::cerr << "Audio device already opened\n";
             return -1;
         }
 
         device = alcOpenDevice(nullptr);
         if (!device)
         {
-            std::cerr << "Failed to open audio device" << std::endl;
+            std::cerr << "Failed to open audio device\n";
             return -1;
         }
 
         context = alcCreateContext(device, nullptr);
         if (!context)
         {
-            std::cerr << "Failed to create audio context" << std::endl;
+            std::cerr << "Failed to create audio context\n";
             alcCloseDevice(device);
             return -1;
         }

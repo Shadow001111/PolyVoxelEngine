@@ -10,14 +10,14 @@ Spline::Spline(const char* filepath)
 {
 	if (!std::filesystem::exists(filepath))
 	{
-		std::cerr << "Can't load spline: " << filepath << std::endl;
+		std::cerr << "Can't load spline: " << filepath << "\n";
 		return;
 	}
 
 	std::ifstream file(filepath, std::ios::binary);
 	if (!file.is_open())
 	{
-		std::cerr << "Failed to open spline file" << filepath << std::endl;
+		std::cerr << "Failed to open spline file" << filepath << "\n";
 		return;
 	}
 
@@ -25,7 +25,7 @@ Spline::Spline(const char* filepath)
 	file.read(reinterpret_cast<char*>(&count), sizeof(count));
 	if (count == 0)
 	{
-		std::cerr << "Spline points count is 0" << std::endl;
+		std::cerr << "Spline points count is 0\n";
 		return;
 	}
 
@@ -42,7 +42,7 @@ Spline::Spline(const char* filepath)
 		const auto& main = mainPoints[i];
 		if (main.x < lastX)
 		{
-			std::cerr << "Spline: '" << filepath << "', is not ordered right" << std::endl;
+			std::cerr << "Spline: '" << filepath << "', is not ordered right\n";
 			return;
 		}
 		lastX = main.x;
@@ -51,7 +51,7 @@ Spline::Spline(const char* filepath)
 			const auto& help = helpPoints[i];
 			if (help.x < lastX)
 			{
-				std::cerr << "Spline: '" << filepath << "', is not ordered right" << std::endl;
+				std::cerr << "Spline: '" << filepath << "', is not ordered right\n";
 				return;
 			}
 			lastX = help.x;

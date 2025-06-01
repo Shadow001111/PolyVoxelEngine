@@ -21,7 +21,7 @@ static std::string ReadFile(const char* filepath)
 {
 	std::ifstream file(filepath);
 	if (!file.is_open()) {
-		std::cout << "Failed opening file: " << filepath << std::endl;
+		std::cout << "Failed opening file: " << filepath << "\n";
 		throw(errno);
 	}
 
@@ -99,7 +99,7 @@ GLint Shader::getUniformPosition(const std::string& name)
 	if (it == uniformCache.end()) {
 		GLint position = glGetUniformLocation(ID, name.c_str());
 		if (position == -1) {
-			std::cout << "Uniform: " << name << " doesn't exist in: " << this->name << std::endl;
+			std::cout << "Uniform: " << name << " doesn't exist in: " << this->name << "\n";
 		}
 		uniformCache[name] = position;
 		return position;
@@ -158,15 +158,15 @@ void Shader::checkForCompilationErrors(unsigned int shader, const char* type) co
 		glGetProgramiv(shader, GL_LINK_STATUS, &hasCompiled);
 		if (hasCompiled == GL_FALSE) {
 			glGetProgramInfoLog(shader, 1024, NULL, infolog);
-			std::cout << "Failed to link shaders" << std::endl;
-			std::cout << infolog << std::endl;
+			std::cout << "Failed to link shaders\n";
+			std::cout << infolog << "\n";
 		}
 	}
 	else {
 		glGetShaderiv(shader, GL_COMPILE_STATUS, &hasCompiled);
 		if (hasCompiled == GL_FALSE) {
 			glGetShaderInfoLog(shader, 1024, NULL, infolog);
-			std::cout << "Failed to compile shader for:" << type << std::endl;
+			std::cout << "Failed to compile shader for:" << type << "\n";
 		}
 	}
 }

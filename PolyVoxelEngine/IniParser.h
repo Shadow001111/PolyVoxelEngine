@@ -29,13 +29,13 @@ T IniParser::Get(std::string section, std::string name, T defaultValue)
 	auto it1 = data.find(section);
 	if (it1 == data.end())
 	{
-		std::cerr << "IniParser: Section " + section + " doesnt exists" << std::endl;
+		std::cerr << "IniParser: Section " + section + " doesnt exists\n";
 		return defaultValue;
 	}
 	auto it2 = (it1->second).find(name);
 	if (it2 == (it1->second).end())
 	{
-		std::cerr << "IniParser: Variable " + name + " doesnt exists" << std::endl;
+		std::cerr << "IniParser: Variable " + name + " doesnt exists\n";
 		return defaultValue;
 	}
 
@@ -43,7 +43,7 @@ T IniParser::Get(std::string section, std::string name, T defaultValue)
 	T result;
 	if (!(iss >> result))
 	{
-		std::cerr << "IniParser: Can not convert string to specified type" << std::endl;
+		std::cerr << "IniParser: Can not convert string to specified type\n";
 		return defaultValue;
 	}
 	return result;

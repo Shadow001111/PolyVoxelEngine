@@ -50,7 +50,7 @@ FBO::FBO(int width, int height) : width(width), height(height)
 	auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
 	{
-		std::cerr << "PP Framebuffer error: " << fboStatus << std::endl;
+		std::cerr << "PP Framebuffer error: " << fboStatus << "\n";
 	}
 }
 

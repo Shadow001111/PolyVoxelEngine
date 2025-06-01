@@ -57,7 +57,7 @@ Chunk* World::getChunk(int x, int y, int z)
 	// TODO: remove
 	if (ret->state != Chunk::State::NotLoaded)
 	{
-		std::cerr << "GetChunk: " << toString(ret->state) << std::endl;
+		std::cerr << "GetChunk: " << toString(ret->state) << "\n";
 	}
 	ret->init(x, y, z);
 	return ret;
@@ -100,7 +100,7 @@ void World::releaseChunk(Chunk* chunk, bool returnDrawIdToPool = true)
 	}
 	else if (chunk->state == Chunk::State::Loading)
 	{
-		std::cerr << "Chunk was added to releasedLoadingChunks" << std::endl;
+		std::cerr << "Chunk was added to releasedLoadingChunks\n";
 		releasedLoadingChunks.push_back(chunk);
 	}
 }
@@ -216,7 +216,7 @@ void World::update(const glm::vec3& pos, bool isMoving)
 
 			if (it == temporalChunkBlockChanges.end())
 			{
-				std::cout << "Temporal SaveDataChunks failed" << std::endl;
+				std::cout << "Temporal SaveDataChunks failed\n";
 				continue;
 			}
 			std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_SIZE_CUBED>> blockChanges = it->second;
@@ -229,7 +229,7 @@ void World::update(const glm::vec3& pos, bool isMoving)
 	// released loading chunks
 	if (!releasedLoadingChunks.empty())
 	{
-		std::cout << releasedLoadingChunks.size() << std::endl;
+		std::cout << releasedLoadingChunks.size() << "\n";
 		for (auto it = releasedLoadingChunks.begin(); it != releasedLoadingChunks.end();)
 		{
 			Chunk* chunk = *it;
@@ -295,7 +295,7 @@ void World::generateChunkBlocksThread(Chunk* chunk)
 	// TODO: remove
 	if (chunk->state != Chunk::State::Loaded)
 	{
-		std::cerr << "GenerateChunkBlocksThread: " << toString(chunk->state) << std::endl;
+		std::cerr << "GenerateChunkBlocksThread: " << toString(chunk->state) << "\n";
 	}
 	
 	if (getSquaredDistanceToChunkLoader(glm::vec3(chunk->X, chunk->Y, chunk->Z)) > Settings::CHUNK_LOAD_RADIUS * Settings::CHUNK_LOAD_RADIUS)
@@ -1140,7 +1140,7 @@ void World::updateBlockLighting(const LightUpdate& lightUpdate)
 	// TODO: remove
 	if (chunk->state != Chunk::State::Loaded)
 	{
-		std::cerr << "UpdateBlockLighting: Chunk is unloaded" << std::endl;
+		std::cerr << "UpdateBlockLighting: Chunk is unloaded\n";
 		return;
 	}
 	size_t x = lightUpdate.x;
@@ -1418,7 +1418,7 @@ void World::updateSkyLighting(const LightUpdate& lightUpdate)
 	// TODO: remove
 	if (chunk->state != Chunk::State::Loaded)
 	{
-		std::cerr << "UpdateSkyLighting: Chunk is unloaded" << std::endl;
+		std::cerr << "UpdateSkyLighting: Chunk is unloaded\n";
 		return;
 	}
 	size_t x = lightUpdate.x;
@@ -1625,7 +1625,7 @@ WorldData World::loadWorldData()
 	std::ifstream file(Settings::WORLD_DATA_PATH, std::ios::binary);
 	if (!file.is_open())
 	{
-		std::cerr << "Failed to open player data file" << std::endl;
+		std::cerr << "Failed to open player data file\n";
 		return worldData;
 	}
 	file.read(reinterpret_cast<char*>(&worldData), sizeof(WorldData));
@@ -1638,7 +1638,7 @@ void World::saveWorldData(const WorldData& worldData)
 	std::ofstream file(Settings::WORLD_DATA_PATH, std::ios::binary | std::ios::trunc);
 	if (!file.is_open())
 	{
-		std::cerr << "Failed to open player data file " << std::endl;
+		std::cerr << "Failed to open player data file \n";
 		return;
 	}
 	file.write(reinterpret_cast<const char*>(&worldData), sizeof(WorldData));

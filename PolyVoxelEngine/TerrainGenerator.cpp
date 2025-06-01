@@ -471,7 +471,7 @@ void TerrainGenerator::unloadHeightMap(int chunkX, int chunkZ)
 	auto usedBy = it->second->usedBy.load();
 	if (usedBy > 0)
 	{
-		std::cerr << "Unloaded ChunkColumnData was used by: " << usedBy << " chunks" << std::endl;
+		std::cerr << "Unloaded ChunkColumnData was used by: " << usedBy << " chunks\n";
 	}
 
 	ChunkColumnData* chunkColumnData = it->second;
@@ -501,7 +501,7 @@ bool TerrainGenerator::loadSkyLightMaxHeightMapFromFile(int chunkX, int chunkZ, 
 	std::ifstream file(filepath, std::ios::binary);
 	if (!file.is_open())
 	{
-		std::cerr << "Failed to open sky light max height map file" << std::endl;
+		std::cerr << "Failed to open sky light max height map file\n";
 		return false;
 	}
 
@@ -526,7 +526,7 @@ void TerrainGenerator::saveSkyLightMaxHeightMapToFile(const ChunkColumnData* chu
 	std::ofstream file(filepath, std::ios::binary | std::ios::trunc);
 	if (!file.is_open())
 	{
-		std::cerr << "Failed to open sky light max height map file" << std::endl;
+		std::cerr << "Failed to open sky light max height map file\n";
 		return;
 	}
 
@@ -540,7 +540,7 @@ void TerrainGenerator::saveSkyLightMaxHeightMapToFile(const ChunkColumnData* chu
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "Failed to write to sky light max height map file: " << e.what() << std::endl;
+		std::cerr << "Failed to write to sky light max height map file: " << e.what() << "\n";
 	}
 	file.close();
 }
