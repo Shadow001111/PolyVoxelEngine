@@ -1,7 +1,8 @@
 #include "Profiler.h"
+#include <iostream>
 
-std::unordered_map<std::thread::id, Profiler::PerThreadData> Profiler::threadProfilerData;
-uint32_t Profiler::memoryTable[PROFILER_CATEGORIES_COUNT][PROFILER_MEMORY_TABLE_SIZE] = {};
+std::unordered_map<std::thread::id, Profiler::ThreadData> Profiler::profilerThreadData;
+uint32_t Profiler::systemTimeSamplesMemoryTable[PROFILER_CATEGORIES_COUNT][PROFILER_MEMORY_TABLE_SIZE] = {};
 size_t Profiler::memoryTableIndex = 0;
 
 const std::string profilerSamplesNames[PROFILER_CATEGORIES_COUNT] =
@@ -24,7 +25,7 @@ const std::string profilerSamplesNames[PROFILER_CATEGORIES_COUNT] =
 
 void Profiler::start(size_t index)
 {
-	threadProfilerData[std::this_thread::get_id()].profilerData[index].lastTimeSample = std::chrono::steady_clock::now();
+	profilerThreadData[std::this_thread::get_id()].samples[index].lastTimeSample = std::chrono::steady_clock::now();
 }
 
 void Profiler::end(size_t index)
@@ -34,10 +35,15 @@ void Profiler::end(size_t index)
 	{
 		return;
 	}
-	ProfilerData& data = threadProfilerData[std::this_thread::get_id()].profilerData[index];
+	ThreadData& threadData = profilerThreadData[std::this_thread::get_id()];
+	SystemSampleData& data = threadData.samples[index];
+
 	auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - data.lastTimeSample);
-	data.timeNS += duration.count();
+	auto durationInt = duration.count();
+
+	data.timeNS += durationInt;
 	data.lastTimeSample = end;
+	threadData.sumTimeNS += durationInt;
 }
 
 void Profiler::reset(size_t index)
@@ -46,12 +52,14 @@ void Profiler::reset(size_t index)
 	{
 		return;
 	}
-	for (auto& it : threadProfilerData)
+	for (auto& it : profilerThreadData)
 	{
+		Profiler::ThreadData& threadData = it.second;
 		for (size_t i = 0; i < PROFILER_CATEGORIES_COUNT; i++)
 		{
-			it.second.profilerData[i].timeNS = 0.0f;
+			threadData.samples[i].timeNS = 0.0f;
 		}
+		threadData.sumTimeNS = 0.0f;
 	}
 }
 
@@ -62,22 +70,22 @@ void Profiler::clean()
 
 void Profiler::saveToMemory()
 {
-	uint32_t timeSum = 0;
-
 	for (size_t i = 0; i < PROFILER_CATEGORIES_COUNT; i++)
 	{
-		memoryTable[i][memoryTableIndex] = 0;
+		systemTimeSamplesMemoryTable[i][memoryTableIndex] = 0;
 	}
-	for (auto& it : threadProfilerData)
+
+	for (auto& it : profilerThreadData)
 	{
-		PerThreadData& perThreadData = it.second;
+		ThreadData& threadData = it.second;
 		for (size_t i = 0; i < PROFILER_CATEGORIES_COUNT; i++)
 		{
-			ProfilerData& data = perThreadData.profilerData[i];
-			timeSum += data.timeNS;
-			memoryTable[i][memoryTableIndex] += data.timeNS;
+			SystemSampleData& data = threadData.samples[i];
+			systemTimeSamplesMemoryTable[i][memoryTableIndex] += data.timeNS;
 			data.timeNS = 0;
 		}
+		threadData.timeSamplesMemoryTable[memoryTableIndex] = threadData.sumTimeNS;
+		threadData.sumTimeNS = 0;
 	}
 
 	memoryTableIndex++;

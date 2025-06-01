@@ -34,20 +34,22 @@ extern const glm::vec3 profilerSamplesColors[PROFILER_CATEGORIES_COUNT];
 
 class Profiler
 {
-	struct ProfilerData
+	struct SystemSampleData
 	{
 		std::chrono::steady_clock::time_point lastTimeSample;
 		uint32_t timeNS = 0;
 	};
 
-	struct PerThreadData
+	struct ThreadData
 	{
-		ProfilerData profilerData[PROFILER_CATEGORIES_COUNT];
+		SystemSampleData samples[PROFILER_CATEGORIES_COUNT];
+		uint32_t sumTimeNS = 0;
+		uint32_t timeSamplesMemoryTable[PROFILER_MEMORY_TABLE_SIZE];
 	};
 
-	static std::unordered_map<std::thread::id, PerThreadData> threadProfilerData;
 public:
-	static uint32_t memoryTable[PROFILER_CATEGORIES_COUNT][PROFILER_MEMORY_TABLE_SIZE];
+	static std::unordered_map<std::thread::id, ThreadData> profilerThreadData;
+	static uint32_t systemTimeSamplesMemoryTable[PROFILER_CATEGORIES_COUNT][PROFILER_MEMORY_TABLE_SIZE];
 	static size_t memoryTableIndex;
 
 	static void start(size_t index);

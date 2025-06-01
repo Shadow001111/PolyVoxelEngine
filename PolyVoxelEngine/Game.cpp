@@ -126,10 +126,6 @@ void Game::renderImGui(float deltaTime, const World& world) const
 	{
 		ImGui::Text("FPS: %d / %d", int(1.0f / deltaTime), GraphicController::gameMaxFps);
 		ImGui::Text("Delta time: %f", deltaTime);
-	}
-
-	if (ImGui::CollapsingHeader("Dumb Info"))
-	{
 		ImGui::Text("Draw commands: %d", world.drawCommandsCount);
 		ImGui::Text("Chunks count: %d", Settings::MAX_RENDERED_CHUNKS_COUNT);
 	}
@@ -141,12 +137,11 @@ void Game::renderImGui(float deltaTime, const World& world) const
 
 		// Prepare data and find max value (optional for color normalization or something else)
 		float maxValue = 0.0f;
-
 		for (size_t category = 0; category < PROFILER_CATEGORIES_COUNT; category++)
 		{
 			for (size_t i = 0; i < PROFILER_MEMORY_TABLE_SIZE; i++)
 			{
-				float value = static_cast<float>(Profiler::memoryTable[category][(index + i) % PROFILER_MEMORY_TABLE_SIZE]) * 1e-6f;
+				float value = static_cast<float>(Profiler::systemTimeSamplesMemoryTable[category][(index + i) % PROFILER_MEMORY_TABLE_SIZE]) * 1e-6f;
 				samples[category][i] = value;
 				if (value > maxValue)
 				{
@@ -199,7 +194,42 @@ void Game::renderImGui(float deltaTime, const World& world) const
 
 			ImPlot::EndPlot();
 		}
+	}
 
+	if (ImGui::CollapsingHeader("Profiler2"))
+	{
+		int index = Profiler::memoryTableIndex;
+		static float samples[PROFILER_MEMORY_TABLE_SIZE];
+
+		for (const auto& it : Profiler::profilerThreadData)
+		{
+			const auto& threadData = it.second;
+
+			// Prepare data
+			float maxValue = 0.0f;
+			for (size_t i = 0; i < PROFILER_MEMORY_TABLE_SIZE; i++)
+			{
+				float value = threadData.timeSamplesMemoryTable[(index + i) % PROFILER_MEMORY_TABLE_SIZE] * 1e-6f;
+				samples[i] = value;
+				if (value > maxValue)
+				{
+					maxValue = value;
+				}
+			}
+
+			if (ImPlot::BeginPlot("Thread # Time Usage", ImVec2(-1, 300)))
+			{
+				float yLimit = fmaxf(30.0f, maxValue);
+
+				ImPlot::SetupAxes("Time stamp", "Time (ms)", ImPlotAxisFlags_NoGridLines, ImPlotAxisFlags_NoGridLines);
+				ImPlot::SetupAxisLimits(ImAxis_X1, 0, static_cast<float>(PROFILER_MEMORY_TABLE_SIZE), ImGuiCond_Always);
+				ImPlot::SetupAxisLimits(ImAxis_Y1, 0, yLimit, ImGuiCond_Always);
+
+				ImPlot::PlotBars("Thread #", samples, PROFILER_MEMORY_TABLE_SIZE, 0.8);
+
+				ImPlot::EndPlot();
+			}
+		}
 	}
 
 	//
