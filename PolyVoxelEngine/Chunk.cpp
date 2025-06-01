@@ -220,7 +220,7 @@ void Chunk::generateBlocks()
 	{
 		size_t neighbourIndex = x == -1 ? 1 : 0;
 		const Chunk* neighbour = neighbours[neighbourIndex];
-		if (neighbour == nullptr || neighbour->state != State::Loaded)
+		if (neighbour == nullptr)
 		{
 			continue;
 		}
@@ -249,7 +249,7 @@ void Chunk::generateBlocks()
 	{
 		size_t neighbourIndex = y == -1 ? 3 : 2;
 		const Chunk* neighbour = neighbours[neighbourIndex];
-		if (neighbour == nullptr || neighbour->state != State::Loaded)
+		if (neighbour == nullptr)
 		{
 			continue;
 		}
@@ -278,7 +278,7 @@ void Chunk::generateBlocks()
 	{
 		size_t neighbourIndex = z == -1 ? 5 : 4;
 		const Chunk* neighbour = neighbours[neighbourIndex];
-		if (neighbour == nullptr || neighbour->state != State::Loaded)
+		if (neighbour == nullptr)
 		{
 			continue;
 		}
@@ -486,18 +486,20 @@ char Chunk::getAOandSmoothLighting(bool maxAO, int x, int y, int z, size_t side,
 	// TODO: implement zero handling
 	if (bcenter == 0)
 	{
-		std::cerr << "Chunk.cpp ao and smooth lighting AAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
+		std::cerr << "Chunk.cpp ao and smooth lighting AAAAAAAAAAAAAAAAAAAAAAAAAA" << "\n";
 	}
 
-	uint8_t bl0 = ((lcenter & 15) + (la & 15) + (lb & 15) + (lc & 15)) / sum0;
-	uint8_t bl1 = ((lcenter & 15) + (lg & 15) + (lh & 15) + (la & 15)) / sum1;
-	uint8_t bl2 = ((lcenter & 15) + (le & 15) + (lf & 15) + (lg & 15)) / sum2;
-	uint8_t bl3 = ((lcenter & 15) + (lc & 15) + (ld & 15) + (le & 15)) / sum3;
+	uint8_t lcenter_and_15 = lcenter & 15;
+	uint8_t bl0 = (lcenter_and_15 + (la & 15) + (lb & 15) + (lc & 15)) / sum0;
+	uint8_t bl1 = (lcenter_and_15 + (lg & 15) + (lh & 15) + (la & 15)) / sum1;
+	uint8_t bl2 = (lcenter_and_15 + (le & 15) + (lf & 15) + (lg & 15)) / sum2;
+	uint8_t bl3 = (lcenter_and_15 + (lc & 15) + (ld & 15) + (le & 15)) / sum3;
 
-	uint8_t sl0 = ((lcenter >> 4) + (la >> 4) + (lb >> 4) + (lc >> 4)) / sum0;
-	uint8_t sl1 = ((lcenter >> 4) + (lg >> 4) + (lh >> 4) + (la >> 4)) / sum1;
-	uint8_t sl2 = ((lcenter >> 4) + (le >> 4) + (lf >> 4) + (lg >> 4)) / sum2;
-	uint8_t sl3 = ((lcenter >> 4) + (lc >> 4) + (ld >> 4) + (le >> 4)) / sum3;
+	uint8_t lcenter_sh_4 = lcenter >> 4;
+	uint8_t sl0 = (lcenter_sh_4 + (la >> 4) + (lb >> 4) + (lc >> 4)) / sum0;
+	uint8_t sl1 = (lcenter_sh_4 + (lg >> 4) + (lh >> 4) + (la >> 4)) / sum1;
+	uint8_t sl2 = (lcenter_sh_4 + (le >> 4) + (lf >> 4) + (lg >> 4)) / sum2;
+	uint8_t sl3 = (lcenter_sh_4 + (lc >> 4) + (ld >> 4) + (le >> 4)) / sum3;
 
 	smoothLighting[packOffsets[0]] = (sl0 << 4) | bl0;
 	smoothLighting[packOffsets[1]] = (sl1 << 4) | bl1;
@@ -818,7 +820,7 @@ void Chunk::fetchFaces()
 				}
 
 				bool maxAO = blockData.lightPower > 0;
-				Face* baseFace = facesData + (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6;
+				Face* baseFacePointer = facesData + (z + (y + x * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6;
 				for (size_t normalID = 0; normalID < 6; normalID++)
 				{
 					size_t planeIndex = normalID >> 1;
@@ -827,18 +829,16 @@ void Chunk::fetchFaces()
 					offCoords[planeIndex] += (normalID & 1) ? -1 : 1;
 
 					BlockAndLighting faceBAL = getBlockAndLightingAtSideCheck(offCoords[0], offCoords[1], offCoords[2], normalID);
-					Block faceBlock = faceBAL.block;
 
-					if (faceBlock == Block::Void || faceBlock == block)
+					if (faceBAL.block == block || faceBAL.block == Block::Void)
 					{
 						continue;
 					}
 
-					const BlockData& neighborData = ALL_BLOCK_DATA[(size_t)faceBlock];
-
+					const BlockData& neighborData = ALL_BLOCK_DATA[(size_t)faceBAL.block];
 					if (neighborData.transparent)
 					{
-						auto& face = baseFace[normalID];
+						auto& face = baseFacePointer[normalID];
 						face.none = false;
 						face.transparent = blockData.transparent;
 						face.textureID = blockData.textures[normalID];
