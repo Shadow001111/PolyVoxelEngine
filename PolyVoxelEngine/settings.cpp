@@ -37,7 +37,7 @@ namespace Settings
 	int DynamicSettings::generateChunksPerTickStationary = 200;
 	int DynamicSettings::generateChunksPerTickMoving = 100;
 
-	int CHUNK_LOAD_RADIUS = 5;
+	int CHUNK_LOAD_RADIUS = 8;
 	size_t MAX_RENDERED_CHUNKS_COUNT = calcVolume(CHUNK_LOAD_RADIUS);
 	size_t MAX_CHUNK_DRAW_COMMANDS_COUNT = MAX_RENDERED_CHUNKS_COUNT * 6;
 }

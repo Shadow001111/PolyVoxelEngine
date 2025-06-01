@@ -863,19 +863,19 @@ void Chunk::fetchFaces()
 
 void Chunk::greedyMeshing()
 {
-	auto getFaceIndex = [](const size_t* coords, size_t normalID)
-		{
-			return normalID + (coords[2] + (coords[1] + coords[0] * Settings::CHUNK_SIZE) * Settings::CHUNK_SIZE) * 6;
-		};
-
 	const size_t wIndexes[3] = { 1, 0, 0 };
 	const size_t hIndexes[3] = { 2, 2, 1 };
+
+	constexpr size_t FACE_STRIDE_Z = 6;
+	constexpr size_t FACE_STRIDE_Y = FACE_STRIDE_Z * Settings::CHUNK_SIZE;
+	constexpr size_t FACE_STRIDE_X = FACE_STRIDE_Y * Settings::CHUNK_SIZE;
 
 	unsigned int* facesCount = drawCommand.facesCount;
 
 	size_t coords[3] = { 0, 0, 0 };
 
 	Profiler::start(GREEDY_MESHING_INDEX);
+	size_t initialFaceIndex = 0;
 	for (coords[0] = 0; coords[0] < Settings::CHUNK_SIZE; coords[0]++)
 	{
 		for (coords[1] = 0; coords[1] < Settings::CHUNK_SIZE; coords[1]++)
@@ -887,62 +887,64 @@ void Chunk::greedyMeshing()
 					size_t plane = normalID >> 1;
 					size_t wCoordIndex = wIndexes[plane];
 					size_t hCoordIndex = hIndexes[plane];
-					const auto& currentFace = facesData[getFaceIndex(coords, normalID)];
+
+					const auto& currentFace = facesData[initialFaceIndex++];
 					if (currentFace.none)
 					{
 						continue;
 					}
 
 					size_t copyCoords[3] = { coords[0], coords[1], coords[2] };
-					int currentW = 1;
-					int currentH = 1;
 
 					// expand W
 					copyCoords[wCoordIndex]++;
-					while (coords[wCoordIndex] + currentW < Settings::CHUNK_SIZE)
+					while (copyCoords[wCoordIndex] < Settings::CHUNK_SIZE)
 					{
-						const auto& tempFace = facesData[getFaceIndex(copyCoords, normalID)];
-						if (tempFace.none || !(tempFace == currentFace))
+						size_t faceIndex = normalID + copyCoords[0] * FACE_STRIDE_X + copyCoords[1] * FACE_STRIDE_Y + copyCoords[2] * FACE_STRIDE_Z;
+						const auto& tempFace = facesData[faceIndex];
+						if (tempFace.none || tempFace != currentFace)
 						{
 							break;
 						}
-						currentW++;
 						copyCoords[wCoordIndex]++;
 					}
+					int currentW = copyCoords[wCoordIndex] - coords[wCoordIndex];
 
 					// expand H
 					copyCoords[wCoordIndex] = coords[wCoordIndex];
 					copyCoords[hCoordIndex]++;
-					while (coords[hCoordIndex] + currentH < Settings::CHUNK_SIZE)
+					while (copyCoords[hCoordIndex] < Settings::CHUNK_SIZE)
 					{
 						bool stopExpandH = false;
-						for (size_t dw = 0; dw < currentW; dw++)
+						copyCoords[wCoordIndex] = coords[wCoordIndex];
+						for (int i = 0; i < currentW; i++)
 						{
-							copyCoords[wCoordIndex] = coords[wCoordIndex] + dw;
-							const auto& tempFace = facesData[getFaceIndex(copyCoords, normalID)];
-							if (tempFace.none || !(tempFace == currentFace))
+							size_t faceIndex = normalID + copyCoords[0] * FACE_STRIDE_X + copyCoords[1] * FACE_STRIDE_Y + copyCoords[2] * FACE_STRIDE_Z;
+							const auto& tempFace = facesData[faceIndex];
+							if (tempFace.none || tempFace != currentFace)
 							{
 								stopExpandH = true;
 								break;
 							}
+							copyCoords[wCoordIndex]++;
 						}
 						if (stopExpandH)
 						{
 							break;
 						}
-						currentH++;
 						copyCoords[hCoordIndex]++;
 					}
+					int currentH = copyCoords[hCoordIndex] - coords[hCoordIndex];
 
 					// fill
 					copyCoords[wCoordIndex] = coords[wCoordIndex];
-					copyCoords[hCoordIndex] = coords[hCoordIndex];
 					for (size_t dw = 0; dw < currentW; dw++)
 					{
 						copyCoords[hCoordIndex] = coords[hCoordIndex];
 						for (size_t dh = 0; dh < currentH; dh++)
 						{
-							facesData[getFaceIndex(copyCoords, normalID)].none = true;
+							size_t faceIndex = normalID + copyCoords[0] * FACE_STRIDE_X + copyCoords[1] * FACE_STRIDE_Y + copyCoords[2] * FACE_STRIDE_Z;
+							facesData[faceIndex].none = true;
 							copyCoords[hCoordIndex]++;
 						}
 						copyCoords[wCoordIndex]++;
