@@ -1107,13 +1107,14 @@ Block Chunk::getBlockAt(int x, int y, int z) const
 
 bool Chunk::canSideBeSeen(const glm::vec3& position, size_t side) const
 {
+	// Somehow axis are inverted
 	if (side == 0)
 	{
 		return position.x > X * Settings::CHUNK_SIZE + 1;
 	}
 	else if (side == 1)
 	{
-		return position.x < (X + 1) * Settings::CHUNK_SIZE_MASK;
+		return position.x < (X + 1) * Settings::CHUNK_SIZE - 1;
 	}
 	else if (side == 2)
 	{
@@ -1121,7 +1122,7 @@ bool Chunk::canSideBeSeen(const glm::vec3& position, size_t side) const
 	}
 	else if (side == 3)
 	{
-		return position.y < (Y + 1) * Settings::CHUNK_SIZE_MASK;
+		return position.y < (Y + 1) * Settings::CHUNK_SIZE - 1;
 	}
 	else if (side == 4)
 	{
@@ -1129,7 +1130,7 @@ bool Chunk::canSideBeSeen(const glm::vec3& position, size_t side) const
 	}
 	else
 	{
-		return position.z < (Z + 1) * Settings::CHUNK_SIZE_MASK;
+		return position.z < (Z + 1) * Settings::CHUNK_SIZE - 1;
 	}
 }
 

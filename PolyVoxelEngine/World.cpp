@@ -267,6 +267,9 @@ void World::update(const glm::vec3& pos, bool isMoving)
 	float angle = (float)time / 24000.0f * 2.0f * (float)M_PI;
 	GraphicController::chunkProgram->bind();
 	GraphicController::chunkProgram->setUniformFloat("dayNightCycleSkyLightingSubtraction", (cosf(angle) + 1.0f) * 0.5f);
+
+	// world info
+	updateWorldInfo();
 }
 
 void World::generateChunksBlocks(const glm::vec3& pos, bool isMoving)
@@ -711,7 +714,9 @@ bool World::loadChunks(bool forced)
 
 void World::draw(const Camera& camera)
 {
-	drawCommandsCount = 0;
+	worldInfo.drawCommandsCount = 0;
+	worldInfo.chunkSidesTotal = 0;
+	worldInfo.chunkSidesPassed = 0;
 
 	// get render chunks
 	std::vector<ChunkDistance> renderChunks;
@@ -729,7 +734,7 @@ void World::draw(const Camera& camera)
 
 	size_t commandsCount, chunkPositionsCount;
 	getDrawCommands(renderChunks, camera, commandsCount, chunkPositionsCount, false);
-	drawCommandsCount += commandsCount;
+	worldInfo.drawCommandsCount += commandsCount;
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 	if (commandsCount > 0)
@@ -764,7 +769,7 @@ void World::draw(const Camera& camera)
 	// draw transparent
 	std::reverse(renderChunks.begin(), renderChunks.end());
 	getDrawCommands(renderChunks, camera, commandsCount, chunkPositionsCount, true);
-	drawCommandsCount += commandsCount;
+	worldInfo.drawCommandsCount += commandsCount;
 	glDisable(GL_CULL_FACE);
 	if (commandsCount > 0)
 	{
@@ -812,10 +817,23 @@ void World::regenerateChunks()
 	}
 }
 
-void World::getRenderChunks(std::vector<ChunkDistance>& renderChunks, const Camera& camera) const
+void World::updateWorldInfo()
+{
+	worldInfo.chunksCount = Chunk::chunkMap.size();
+	worldInfo.time = time;
+}
+
+const WorldInfo& World::getWorldInfo() const
+{
+	return worldInfo;
+}
+
+void World::getRenderChunks(std::vector<ChunkDistance>& renderChunks, const Camera& camera)
 {
 	Box chunkShape(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(Settings::HALF_CHUNK_SIZE));
 	renderChunks.reserve(Settings::MAX_RENDERED_CHUNKS_COUNT >> 2);
+	worldInfo.chunksWithFacesCount = 0;
+	worldInfo.frustumPassedChunksCount = 0;
 	for (const auto& pair : Chunk::chunkMap)
 	{
 		Chunk* chunk = pair.second;
@@ -823,6 +841,7 @@ void World::getRenderChunks(std::vector<ChunkDistance>& renderChunks, const Came
 		{
 			continue;
 		}
+		worldInfo.chunksWithFacesCount++;
 
 		chunkShape.center.x = (chunk->X + 0.5f) * Settings::CHUNK_SIZE;
 		chunkShape.center.y = (chunk->Y + 0.5f) * Settings::CHUNK_SIZE;
@@ -831,6 +850,7 @@ void World::getRenderChunks(std::vector<ChunkDistance>& renderChunks, const Came
 		{
 			continue;
 		}
+		worldInfo.frustumPassedChunksCount++;
 		auto dpos = chunkShape.center - camera.position;
 		float distance = glm::dot(dpos, dpos);
 		renderChunks.emplace_back(chunk, distance);
@@ -854,24 +874,34 @@ void World::getDrawCommands(const std::vector<ChunkDistance>& renderChunks, cons
 		bool anyFace = false;
 		for (size_t normalID = 0; normalID < 6; normalID++)
 		{
-			GLuint facesCount = command.facesCount[normalID + normalOffset];
-			if (facesCount > 0 && chunk->canSideBeSeen(camera.position, normalID))
+			unsigned int facesCount = command.facesCount[normalID + normalOffset];
+
+			if (facesCount == 0)
 			{
-				size_t index = commandsCount++;
-				chunkPositionIndexes[index] = positionsCount;
-				anyFace = true;
+				continue;
+			}
+			worldInfo.chunkSidesTotal++;
 
-				DrawArraysIndirectCommand& indirectCommand = drawCommands[index];
-				indirectCommand.instancesCount = facesCount;
+			if (!chunk->canSideBeSeen(camera.position, normalID))
+			{
+				continue;
+			}
+			worldInfo.chunkSidesPassed++;
 
-				if (transparent)
-				{
-					indirectCommand.baseInstance = command.offset + (normalID + 1) * (Settings::FACE_INSTANCES_PER_CHUNK / 6) - facesCount;
-				}
-				else
-				{
-					indirectCommand.baseInstance = command.offset + normalID * (Settings::FACE_INSTANCES_PER_CHUNK / 6);
-				}
+			size_t index = commandsCount++;
+			chunkPositionIndexes[index] = positionsCount;
+			anyFace = true;
+
+			DrawArraysIndirectCommand& indirectCommand = drawCommands[index];
+			indirectCommand.instancesCount = facesCount;
+
+			if (transparent)
+			{
+				indirectCommand.baseInstance = command.offset + (normalID + 1) * (Settings::FACE_INSTANCES_PER_CHUNK / 6) - facesCount;
+			}
+			else
+			{
+				indirectCommand.baseInstance = command.offset + normalID * (Settings::FACE_INSTANCES_PER_CHUNK / 6);
 			}
 		}
 		if (anyFace)

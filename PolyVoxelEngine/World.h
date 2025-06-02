@@ -29,6 +29,20 @@ struct WorldData
 	uint16_t worldTime = 12000;
 };
 
+struct WorldInfo
+{
+	uint32_t drawCommandsCount = 0;
+
+	size_t chunksCount = 0;
+	size_t chunksWithFacesCount = 0;
+	size_t frustumPassedChunksCount = 0;
+
+	size_t chunkSidesTotal = 0;
+	size_t chunkSidesPassed = 0;
+
+	uint16_t time = 0;
+};
+
 class World
 {
 	struct ChunkDistance
@@ -73,11 +87,13 @@ class World
 	glm::vec3* chunkPositions = nullptr;
 	unsigned int* chunkPositionIndexes = nullptr;
 
+	WorldInfo worldInfo;
+	uint16_t time = 0;
 
 	Chunk* getChunk(int x, int y, int z);
 	void releaseChunk(Chunk* chunk, bool returnDrawIdToPool);
 
-	void getRenderChunks(std::vector<ChunkDistance>& renderChunks, const Camera& camera) const;
+	void getRenderChunks(std::vector<ChunkDistance>& renderChunks, const Camera& camera);
 	void getDrawCommands(const std::vector<ChunkDistance>& renderChunks, const Camera& camera, size_t& commandsCount, size_t& positionsCount, bool transparent);
 
 	void addChunkToGenerateFaces(Chunk* chunk);
@@ -91,12 +107,8 @@ class World
 	void updateBlockLighting(const LightUpdate& lightUpdate);
 	void updateSkyLighting(const LightUpdate& lightUpdate);
 public:
-	uint16_t time = 0;
-
 	TextureArray blockTextures;
 	TextureArray numberTextures;
-
-	uint32_t drawCommandsCount = 0;
 
 	World(const WorldData& worldData);
 	~World();
@@ -123,5 +135,8 @@ public:
 
 	//
 	void regenerateChunks();
+
+	void updateWorldInfo();
+	const WorldInfo& getWorldInfo() const;
 };
 

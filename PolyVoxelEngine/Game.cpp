@@ -124,10 +124,41 @@ void Game::renderImGui(float deltaTime, const World& world) const
 
 	if (ImGui::CollapsingHeader("Info"))
 	{
+		const auto& worldInfo = world.getWorldInfo();
+
+		//
 		ImGui::Text("FPS: %d / %d", int(1.0f / deltaTime), GraphicController::gameMaxFps);
 		ImGui::Text("Delta time: %f", deltaTime);
-		ImGui::Text("Draw commands: %d", world.drawCommandsCount);
-		ImGui::Text("Chunks count: %d", Settings::MAX_RENDERED_CHUNKS_COUNT);
+		ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+
+		// world info
+		{
+			ImGui::Text("WorldInfo:");
+			ImGui::Indent(20.0f);
+
+			ImGui::Text("Time: %d/24000", worldInfo.time);
+
+			ImGui::Unindent(20.0f);
+			ImGui::Dummy(ImVec2(0.0f, 20.0f));
+		}
+		
+		// chunks info
+		{
+			ImGui::Text("ChunksInfo:");
+			ImGui::Indent(20.0f);
+
+			ImGui::Text("Chunks count: %d", worldInfo.chunksCount);
+			ImGui::Text("Chunks with faces: %d", worldInfo.chunksWithFacesCount);
+			ImGui::Text("Chunks that passed frustum culling: %d", worldInfo.frustumPassedChunksCount);
+
+			ImGui::Text("Chunks' sides 'have passed test'/'total': %d/%d | %.2f%%", worldInfo.chunkSidesPassed, worldInfo.chunkSidesTotal, (float)worldInfo.chunkSidesPassed / (float)worldInfo.chunkSidesTotal * 100.0f);
+
+			ImGui::Text("Draw commands: %d", worldInfo.drawCommandsCount);
+
+			ImGui::Unindent(20.0f);
+			ImGui::Dummy(ImVec2(0.0f, 20.0f));
+		}
 	}
 
 	if (ImGui::CollapsingHeader("Profiler"))
@@ -391,7 +422,9 @@ void Game::run()
 	}
 
 	// save world data
-	worldData.worldTime = world.time;
+	world.updateWorldInfo();
+	const auto& worldInfo = world.getWorldInfo();
+	worldData.worldTime = worldInfo.time;
 
 	worldData.playerPosition = player->physicEntity.position;
 	worldData.playerRotation = player->rotation;
