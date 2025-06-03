@@ -171,9 +171,7 @@ void Chunk::generateBlocks()
 
 	Profiler::end(BLOCK_GENERATION_INDEX);
 
-	Profiler::start(CHUNK_LOAD_DATA_INDEX);
 	loadData(blockChanges, X, Y, Z);
-	Profiler::end(CHUNK_LOAD_DATA_INDEX);
 
 	applyChanges();
 
@@ -581,15 +579,15 @@ void Chunk::loadData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_
 		return;
 	}
 
-	size_t sizeOfBlock = 0;
-	unsigned int mapSize = 0;
+	Profiler::start(CHUNK_LOAD_DATA_INDEX);
+
+	uint8_t sizeOfBlock = 0;
+	uint32_t mapSize = 0;
 
 	file.read(reinterpret_cast<char*>(&sizeOfBlock), 1);
 	file.read(reinterpret_cast<char*>(&mapSize), sizeOfBlock);
 
-	Vector<uint16_t, Settings::CHUNK_SIZE_CUBED> indexes;
-
-	for (unsigned int i = 0; i < mapSize; i++)
+	for (uint32_t i = 0; i < mapSize; i++)
 	{
 		Block block;
 		uint16_t count;
@@ -597,23 +595,23 @@ void Chunk::loadData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_
 		file.read(reinterpret_cast<char*>(&count), sizeof(count));
 		if (count == 0)
 		{
-			std::cerr << "Chunk::loadData: block count is 0\n";
 			continue;
 		}
 
 		file.read(reinterpret_cast<char*>(&block), sizeOfBlock);
 
+		auto& indexes = blockChanges[block];
 		indexes.resize(count);
+
 		file.read
 		(
-			reinterpret_cast<char*>(indexes.getData()),
-			count * sizeof(indexes[0])
+			reinterpret_cast<char*>(indexes.getData()), count * sizeof(indexes[0])
 		);
-
-		blockChanges[block] = std::move(indexes);
 	}
 
 	file.close();
+
+	Profiler::end(CHUNK_LOAD_DATA_INDEX);
 }
 
 void Chunk::saveData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_SIZE_CUBED>>& blockChanges, int X, int Y, int Z)
@@ -627,31 +625,23 @@ void Chunk::saveData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_
 	std::ofstream file(filepath, std::ios::binary | std::ios::trunc);
 	if (!file.is_open())
 	{
-		std::cerr << "Failed to open chunk data file \n";
+		std::cerr << "Failed to open chunk data file\n";
 		return;
 	}
 
 	try 
 	{
-		size_t sizeOfBlock = sizeof(Block);
+		constexpr uint8_t blockSizeBytes = static_cast<uint8_t>(sizeof(Block));
 		Block mapSize = (Block)blockChanges.size();
 
-		file.write
-		(
-			reinterpret_cast<const char*>(&sizeOfBlock),
-			1
-		);
-		file.write
-		(
-			reinterpret_cast<const char*>(&mapSize),
-			sizeOfBlock
-		);
+		file.write(reinterpret_cast<const char*>(&blockSizeBytes), 1);
+		file.write(reinterpret_cast<const char*>(&mapSize), blockSizeBytes);
 
 		for (const auto& pair : blockChanges)
 		{
 			const auto& indexes = pair.second;
 			Block block = pair.first;
-			uint16_t count = (uint16_t)indexes.getSize();
+			uint16_t count = indexes.getSize();
 
 			file.write
 			(
@@ -661,7 +651,7 @@ void Chunk::saveData(std::unordered_map<Block, Vector<uint16_t, Settings::CHUNK_
 			file.write
 			(
 				reinterpret_cast<const char*>(&block),
-				sizeOfBlock
+				blockSizeBytes
 			);
 			file.write
 			(
